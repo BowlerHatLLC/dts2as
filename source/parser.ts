@@ -63,6 +63,8 @@ class TS2ASParser
     private _moduleStack: string[];
     private _currentModuleNeedsRequire: boolean;
     private _namesInCurrentModule: string[];
+    private _variableStatementHasDeclareKeyword: boolean = false;
+    private _variableStatementHasExport: boolean = false;
     debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
     addExternalFile(fileName: string, sourceText: string)
@@ -197,6 +199,10 @@ class TS2ASParser
     
     private getAccessLevel(node: ts.Node): string
     {
+        if(this._variableStatementHasDeclareKeyword || this._variableStatementHasExport)
+        {
+            return as3.AccessModifiers[as3.AccessModifiers.public];
+        }
         if((node.flags & ts.NodeFlags.Export) === ts.NodeFlags.Export)
         {
             return as3.AccessModifiers[as3.AccessModifiers.public];
@@ -207,7 +213,7 @@ class TS2ASParser
            if(node.kind === ts.SyntaxKind.DeclareKeyword)
            {
                declareKeyword = true;
-           } 
+           }
         });
         if(declareKeyword)
         {
@@ -281,6 +287,23 @@ class TS2ASParser
                 break;
             }
             case ts.SyntaxKind.VariableStatement:
+            {
+                this._variableStatementHasExport = (node.flags & ts.NodeFlags.Export) === ts.NodeFlags.Export;
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.DeclareKeyword)
+                    {
+                        this._variableStatementHasDeclareKeyword = true;
+                    }
+                    else
+                    {
+                        this.readPackageLevelDefinitions(node);
+                    }
+                });
+                this._variableStatementHasDeclareKeyword = false;
+                this._variableStatementHasExport = false;
+                break;
+            }
             case ts.SyntaxKind.VariableDeclarationList:
             {
                 ts.forEachChild(node, this.readPackageLevelDefinitions.bind(this));
@@ -297,6 +320,21 @@ class TS2ASParser
                         console.info("Package Variable: " + as3PackageVariable.getFullyQualifiedName());
                     }
                     this._currentResult.types.push(as3PackageVariable);
+                }
+                else 
+                {
+                    let nodeName = (<ts.VariableDeclaration> node).name;
+                    let className = this.declarationNameToString(nodeName);
+                    let packageName = this._moduleStack.join(".");
+                    if(packageName)
+                    {
+                        className = packageName + "." + className;
+                    }
+                    let as3Class = as3.getDefinitionByName(className, this._currentResult.types);
+                    if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Class.external)
+                    {
+                        console.info("Replace Interface with Class: " + as3Class.getFullyQualifiedName());
+                    }
                 }
                 break;
             }
@@ -412,6 +450,26 @@ class TS2ASParser
         }
     }
     
+    private populateMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassLikeDeclaration|ts.InterfaceDeclaration)
+    {
+        declaration.members.forEach((member: ts.Declaration) =>
+        {
+            this.populateMember(member, typeDefinition);
+        });
+    }
+    
+    private mergeInterfaceAndVariable(interfaceDefinition: as3.InterfaceDefinition, variableDeclaration: ts.VariableDeclaration)
+    {
+        let variableAccessLevel = this.getAccessLevel(variableDeclaration);
+        let as3Class = new as3.ClassDefinition(interfaceDefinition.name,
+            interfaceDefinition.packageName, variableAccessLevel,
+            interfaceDefinition.sourceFile, interfaceDefinition.require,
+            this._currentFileIsExternal);
+            
+        let index = this._currentResult.types.indexOf(interfaceDefinition);
+        this._currentResult.types[index] = as3Class;
+    }
+    
     private readClass(classDeclaration: ts.ClassDeclaration): as3.ClassDefinition
     {
         let className = this.declarationNameToString(classDeclaration.name);
@@ -472,10 +530,7 @@ class TS2ASParser
             });
         }
     
-        classDeclaration.members.forEach((member: ts.Declaration) =>
-        {
-            this.populateMember(member, as3Class);
-        });
+        this.populateMembers(as3Class, classDeclaration);
     }
     
     private readInterface(interfaceDeclaration: ts.InterfaceDeclaration): as3.InterfaceDefinition
@@ -515,39 +570,41 @@ class TS2ASParser
             return;
         }
         
-        let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._currentResult.types);
-        if(!as3Interface)
+        let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._currentResult.types);
+        if(!existingInterface)
         {
             throw "Interface not found: " + fullyQualifiedInterfaceName;
         }
         
-        if(interfaceDeclaration.heritageClauses)
+        //if there's an interface and a var with the same name, it gets turned into a class
+        if(existingInterface instanceof as3.InterfaceDefinition)
         {
-            interfaceDeclaration.heritageClauses.forEach((heritageClause: ts.HeritageClause) =>    
+            let as3Interface = <as3.InterfaceDefinition> existingInterface;
+            if(interfaceDeclaration.heritageClauses)
             {
-                switch(heritageClause.token)
+                interfaceDeclaration.heritageClauses.forEach((heritageClause: ts.HeritageClause) =>    
                 {
-                    case ts.SyntaxKind.ExtendsKeyword:
+                    switch(heritageClause.token)
                     {
-                        heritageClause.types.forEach((type: ts.TypeNode) =>
+                        case ts.SyntaxKind.ExtendsKeyword:
                         {
-                            let interfaceName = this.typeNodeToAS3Type(type);
-                            let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._currentResult.types);
-                            if(!as3Interface)
+                            heritageClause.types.forEach((type: ts.TypeNode) =>
                             {
-                                throw "Interface not found: " + interfaceName;
-                            }
-                            as3Interface.interfaces.push(as3Interface);
-                        });
-                        break;
+                                let interfaceName = this.typeNodeToAS3Type(type);
+                                let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._currentResult.types);
+                                if(!as3Interface)
+                                {
+                                    throw "Interface not found: " + interfaceName;
+                                }
+                                as3Interface.interfaces.push(as3Interface);
+                            });
+                            break;
+                        }
                     }
-                }
-            });
+                });
+            }
         }
-        interfaceDeclaration.members.forEach((member: ts.Declaration) =>
-        {
-            this.populateMember(member, as3Interface);
-        });
+        this.populateMembers(existingInterface, interfaceDeclaration);
     }
     
     private readPackageFunction(functionDeclaration: ts.FunctionDeclaration): as3.PackageFunctionDefinition
@@ -590,6 +647,12 @@ class TS2ASParser
         {
             fullyQualifiedName = packageName + "." + variableName; 
         }
+        let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._currentResult.types);
+        if(existingDefinition instanceof as3.InterfaceDefinition)
+        {
+            this.mergeInterfaceAndVariable(existingDefinition, variableDeclaration);
+            return null;
+        }
         return new as3.PackageVariableDefinition(variableName, packageName, this.getAccessLevel(variableDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
@@ -604,14 +667,22 @@ class TS2ASParser
             fullyQualifiedPackageVariableName = packageName + "." + variableName;
         }
         
-        let as3PackageVariable = <as3.PackageVariableDefinition> as3.getDefinitionByName(fullyQualifiedPackageVariableName, this._currentResult.types);
-        if(!as3PackageVariable)
+        let as3PackageLevelDefinition = <as3.PackageLevelDefinition> as3.getDefinitionByName(fullyQualifiedPackageVariableName, this._currentResult.types);
+        if(!as3PackageLevelDefinition)
         {
             throw "Package-level variable not found: " + fullyQualifiedPackageVariableName;
         }
         
-        let variableType = this.typeNodeToAS3Type(variableDeclaration.type);
-        as3PackageVariable.type = variableType;
+        //if there's an interface and a var with the same name, it gets turned into a class
+        if(as3PackageLevelDefinition instanceof as3.PackageVariableDefinition)
+        {
+            let as3PackageVariable = <as3.PackageVariableDefinition> as3PackageLevelDefinition;
+            let variableType = this.typeNodeToAS3Type(variableDeclaration.type);
+            as3PackageVariable.type = variableType;
+        }
+        else
+        {
+        }
     }
     
     private populateMember(member: ts.Declaration, as3Type: as3.TypeDefinition)
