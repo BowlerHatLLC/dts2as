@@ -61,7 +61,9 @@ class TS2ASParser
     private _currentFileIsExternal: boolean;
     private _currentResult: TS2ASParserResult;
     private _moduleStack: string[];
+    private _currentModuleNeedsRequire: boolean;
     private _namesInCurrentModule: string[];
+    verbose: boolean = false;
     
     addExternalFile(fileName: string, sourceText: string)
     {
@@ -185,12 +187,23 @@ class TS2ASParser
     private declarationNameToString(name: ts.DeclarationName): string
     {
         let result = this._currentSourceFile.text.substring(ts["skipTrivia"](this._currentSourceFile.text, name.pos), name.end);
+        if(result.indexOf("\"") === 0)
+        {
+            //modules may be named as a string that needs to be required
+            result = result.substr(1, result.length - 2);
+            console.log(result);
+        }
         return result.trim();
     }
     
     private isExternal(node: ts.Node): boolean
     {
-        return this._currentFileIsExternal && (node.flags & ts.NodeFlags.Export) === ts.NodeFlags.Export;
+        if(this._currentFileIsExternal)
+        {
+            return true;
+        }
+        
+        return (node.flags & ts.NodeFlags.Export) !== ts.NodeFlags.Export;
     }
         
     private addConstructorMethodToAS3Class(as3Class: as3.ClassDefinition, constructorMethodToAdd: as3.ConstructorDefinition)
@@ -242,6 +255,7 @@ class TS2ASParser
                 let moduleDeclaration = <ts.ModuleDeclaration> node;
                 let moduleName = moduleDeclaration.name;
                 this._moduleStack.push(this.declarationNameToString(moduleName));
+                this._currentModuleNeedsRequire = moduleName.kind === ts.SyntaxKind.StringLiteral;
                 ts.forEachChild(node, this.readPackageLevelDefinitions.bind(this));
                 this._moduleStack.pop();
                 break;
@@ -282,6 +296,15 @@ class TS2ASParser
             {
                 let as3Class = this.readClass(<ts.ClassDeclaration> node);
                 this._currentResult.types.push(as3Class);
+                break;
+            }
+            default:
+            {
+                if(this.verbose)
+                {
+                    console.warn("Unknown SyntaxKind: " + node.kind.toString());
+                    console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
+                }
                 break;
             }
         }
@@ -346,7 +369,7 @@ class TS2ASParser
     {
         let className = this.declarationNameToString(classDeclaration.name);
         let packageName = this._moduleStack.join(".");
-        return new as3.ClassDefinition(className, packageName, this._currentSourceFile.fileName, this.isExternal(classDeclaration));
+        return new as3.ClassDefinition(className, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(classDeclaration));
     }
     
     private populateClass(classDeclaration: ts.ClassDeclaration)
@@ -426,7 +449,7 @@ class TS2ASParser
                 return null;
             }
         }
-        return new as3.InterfaceDefinition(interfaceName, packageName, this._currentSourceFile.fileName, this.isExternal(interfaceDeclaration));
+        return new as3.InterfaceDefinition(interfaceName, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(interfaceDeclaration));
     }
     
     private populateInterface(interfaceDeclaration: ts.InterfaceDeclaration)
@@ -484,7 +507,7 @@ class TS2ASParser
     {
         let functionName = this.declarationNameToString(functionDeclaration.name);
         let packageName = this._moduleStack.join(".");
-        return new as3.PackageFunctionDefinition(functionName, packageName, this._currentSourceFile.fileName, this.isExternal(functionDeclaration));
+        return new as3.PackageFunctionDefinition(functionName, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(functionDeclaration));
     }
     
     private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
@@ -520,7 +543,7 @@ class TS2ASParser
         {
             fullyQualifiedName = packageName + "." + variableName; 
         }
-        return new as3.PackageVariableDefinition(variableName, packageName, this._currentSourceFile.fileName, this.isExternal(variableDeclaration));
+        return new as3.PackageVariableDefinition(variableName, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(variableDeclaration));
     }
     
     private populatePackageVariable(variableDeclaration: ts.VariableDeclaration)
@@ -578,8 +601,11 @@ class TS2ASParser
             }
             default:
             {
-                console.error("Unknown SyntaxKind: " + member.kind.toString());
-                console.error(this._currentSourceFile.text.substring(member.pos, member.end));
+                if(this.verbose)
+                {
+                    console.warn("Unknown SyntaxKind: " + member.kind.toString());
+                    console.warn(this._currentSourceFile.text.substring(member.pos, member.end));
+                }
                 break;
             }
         }

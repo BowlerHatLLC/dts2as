@@ -13,8 +13,16 @@ let mkdirp = require("../node_modules/mkdirp");
 
 let outputPath = "./generated";
 let fileNames: string[];
+let verbose: boolean = false;
 
-let params = minimist(process.argv.slice(2));
+let params = minimist(process.argv.slice(2),
+{
+	boolean: ["verbose"],
+	alias:
+	{
+		v: ["verbose"]
+	}
+});
 for(let key in params)
 {
 	switch(key)
@@ -32,14 +40,25 @@ for(let key in params)
 			});
 			break;
 		}
+		case "verbose":
+		{
+			verbose = params[key];
+			break;
+		}
 		case "outDir":
 		{
 			outputPath = params[key];
 			break;
 		}
+		case "v":
+		{
+			//ignore aliases
+			break;
+		}
 		default:
 		{
 			console.error("Unknown argument: " + key);
+			process.exit(1);
 		}
 	}
 }
@@ -50,6 +69,7 @@ if(fileNames.length === 0)
 }
 
 let parser = new TS2ASParser();
+parser.verbose = verbose;
 
 let libFileName = "./node_modules/typescript/bin/lib.d.ts";
 let libSourceText = fs.readFileSync(libFileName, "utf8");
@@ -113,4 +133,5 @@ function printUsage()
 	console.info();
 	console.info("Options:");
 	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
+	console.info(" --verbose, -v                      Display verbose output.");
 }
