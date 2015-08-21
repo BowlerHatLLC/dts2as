@@ -194,7 +194,9 @@ export class ClassDefinition extends TypeDefinition
     constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean, external: boolean)
     {
         super(name, packageName, accessLevel, sourceFile, require, external);
+        this.superClass = null;
         this.interfaces = [];
+        this.constructorMethod = null;
     }
     
     superClass: ClassDefinition;
