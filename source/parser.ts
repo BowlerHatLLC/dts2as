@@ -160,6 +160,11 @@ class TS2ASParser
             //multiple possible return types mean that we need to generalize
             return as3.BuiltIns[as3.BuiltIns.Object];
         }
+        let openCurlyBraceIndex = typeInSource.indexOf("{");
+        if(openCurlyBraceIndex === 0)
+        {
+            return as3.BuiltIns[as3.BuiltIns.Object];
+        }
         let startGenericIndex = typeInSource.indexOf("<");
         //strip <T> section of generics
         if(startGenericIndex >= 0)
