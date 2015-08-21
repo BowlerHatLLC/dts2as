@@ -71,6 +71,7 @@ class ASEmitter
             classOutput += NEW_LINE;
         }
         
+        classOutput += this.emitRequireMetadata(as3Class);
         classOutput += "public class ";
         classOutput += className;
         if(superClass)
@@ -177,6 +178,7 @@ class ASEmitter
             interfaceOutput += NEW_LINE;
         }
         
+        interfaceOutput += this.emitRequireMetadata(as3Interface);
         interfaceOutput += "public interface ";
         interfaceOutput += interfaceName;
         if(interfaces.length > 0)
@@ -216,6 +218,7 @@ class ASEmitter
     emitPackageFunction(as3PackageFunction: as3.PackageFunctionDefinition): string
     {
         let packageFunctionOutput = this.emitStartPackage(as3PackageFunction.packageName);
+        packageFunctionOutput += this.emitRequireMetadata(as3PackageFunction);
         packageFunctionOutput += this.emitMethod(as3PackageFunction);
         packageFunctionOutput += NEW_LINE;
         packageFunctionOutput += this.emitEndPackage();
@@ -225,6 +228,7 @@ class ASEmitter
     emitPackageVariable(as3PackageVariable: as3.PackageVariableDefinition): string
     {
         let packageVariableOutput = this.emitStartPackage(as3PackageVariable.packageName);
+        packageVariableOutput += this.emitRequireMetadata(as3PackageVariable);
         packageVariableOutput += this.emitVariable(as3PackageVariable);
         packageVariableOutput += NEW_LINE;
         packageVariableOutput += this.emitEndPackage();
@@ -332,6 +336,15 @@ class ASEmitter
     private emitStartPackage(packageName: string): string
     {
         return "package " + packageName + NEW_LINE + "{" + NEW_LINE;
+    }
+    
+    private emitRequireMetadata(as3Type: as3.PackageLevelDefinition): string
+    {
+        if(as3Type.require)
+        {
+            return "[Require(\"" + as3Type.packageName + "\")]" + NEW_LINE;
+        }
+        return ""
     }
     
     private emitEndPackage(): string
