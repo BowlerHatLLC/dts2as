@@ -191,19 +191,29 @@ class TS2ASParser
         {
             //modules may be named as a string that needs to be required
             result = result.substr(1, result.length - 2);
-            console.log(result);
         }
         return result.trim();
     }
     
-    private isExternal(node: ts.Node): boolean
+    private getAccessLevel(node: ts.Node): string
     {
-        if(this._currentFileIsExternal)
+        if((node.flags & ts.NodeFlags.Export) === ts.NodeFlags.Export)
         {
-            return true;
+            return as3.AccessModifiers[as3.AccessModifiers.public];
         }
-        
-        return (node.flags & ts.NodeFlags.Export) !== ts.NodeFlags.Export;
+        var declareKeyword: boolean = false;
+        ts.forEachChild(node, (node) =>
+        {
+           if(node.kind === ts.SyntaxKind.DeclareKeyword)
+           {
+               declareKeyword = true;
+           } 
+        });
+        if(declareKeyword)
+        {
+            return as3.AccessModifiers[as3.AccessModifiers.public];
+        }
+        return as3.AccessModifiers[as3.AccessModifiers.internal];
     }
         
     private addConstructorMethodToAS3Class(as3Class: as3.ClassDefinition, constructorMethodToAdd: as3.ConstructorDefinition)
@@ -263,6 +273,10 @@ class TS2ASParser
             case ts.SyntaxKind.FunctionDeclaration:
             {
                 let as3PackageFunction = this.readPackageFunction(<ts.FunctionDeclaration> node);
+                if(this.verbose && !as3PackageFunction.external)
+                {
+                    console.info("Package Function: " + as3PackageFunction.getFullyQualifiedName());
+                }
                 this._currentResult.types.push(as3PackageFunction);
                 break;
             }
@@ -278,6 +292,10 @@ class TS2ASParser
                 //if it's a function alias, readPackageVariable() will return null
                 if(as3PackageVariable)
                 {
+                    if(this.verbose && !as3PackageVariable.external)
+                    {
+                        console.info("Package Variable: " + as3PackageVariable.getFullyQualifiedName());
+                    }
                     this._currentResult.types.push(as3PackageVariable);
                 }
                 break;
@@ -288,6 +306,10 @@ class TS2ASParser
                 //if it's a function alias, readInterface() will return null
                 if(as3Interface)
                 {
+                    if(this.verbose && !as3Interface.external)
+                    {
+                        console.info("Interface: " + as3Interface.getFullyQualifiedName());
+                    }
                     this._currentResult.types.push(as3Interface);
                 }
                 break;
@@ -295,7 +317,18 @@ class TS2ASParser
             case ts.SyntaxKind.ClassDeclaration:
             {
                 let as3Class = this.readClass(<ts.ClassDeclaration> node);
+                if(this.verbose && !as3Class.external)
+                {
+                    console.info("Class: " + as3Class.getFullyQualifiedName());
+                    console.info(as3Class.accessLevel)
+                }
                 this._currentResult.types.push(as3Class);
+                break;
+            }
+            case ts.SyntaxKind.DeclareKeyword:
+            case ts.SyntaxKind.EndOfFileToken:
+            {
+                //this is safe to ignore
                 break;
             }
             default:
@@ -362,6 +395,21 @@ class TS2ASParser
                 this.populateClass(<ts.ClassDeclaration> node);
                 break;
             }
+            case ts.SyntaxKind.DeclareKeyword:
+            case ts.SyntaxKind.EndOfFileToken:
+            {
+                //this is safe to ignore
+                break;
+            }
+            default:
+            {
+                if(this.verbose)
+                {
+                    console.warn("Unknown SyntaxKind: " + node.kind.toString());
+                    console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
+                }
+                break;
+            }
         }
     }
     
@@ -369,7 +417,7 @@ class TS2ASParser
     {
         let className = this.declarationNameToString(classDeclaration.name);
         let packageName = this._moduleStack.join(".");
-        return new as3.ClassDefinition(className, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(classDeclaration));
+        return new as3.ClassDefinition(className, packageName, this.getAccessLevel(classDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
     private populateClass(classDeclaration: ts.ClassDeclaration)
@@ -449,7 +497,7 @@ class TS2ASParser
                 return null;
             }
         }
-        return new as3.InterfaceDefinition(interfaceName, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(interfaceDeclaration));
+        return new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
     private populateInterface(interfaceDeclaration: ts.InterfaceDeclaration)
@@ -507,7 +555,7 @@ class TS2ASParser
     {
         let functionName = this.declarationNameToString(functionDeclaration.name);
         let packageName = this._moduleStack.join(".");
-        return new as3.PackageFunctionDefinition(functionName, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(functionDeclaration));
+        return new as3.PackageFunctionDefinition(functionName, packageName, this.getAccessLevel(functionDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
     private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
@@ -543,7 +591,7 @@ class TS2ASParser
         {
             fullyQualifiedName = packageName + "." + variableName; 
         }
-        return new as3.PackageVariableDefinition(variableName, packageName, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this.isExternal(variableDeclaration));
+        return new as3.PackageVariableDefinition(variableName, packageName, this.getAccessLevel(variableDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
     private populatePackageVariable(variableDeclaration: ts.VariableDeclaration)
@@ -603,7 +651,7 @@ class TS2ASParser
             {
                 if(this.verbose)
                 {
-                    console.warn("Unknown SyntaxKind: " + member.kind.toString());
+                    console.warn("Unknown SyntaxKind in member: " + member.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(member.pos, member.end));
                 }
                 break;
@@ -615,7 +663,7 @@ class TS2ASParser
     {
         let propertyName = this.declarationNameToString(propertyDeclaration.name);
         let propertyType = this.typeNodeToAS3Type(propertyDeclaration.type);
-        return new as3.PropertyDefinition(propertyName, propertyType);
+        return new as3.PropertyDefinition(propertyName, as3.AccessModifiers[as3.AccessModifiers.public], propertyType);
     }
     
     private populateParameters(functionLikeDeclaration: ts.FunctionLikeDeclaration): as3.ParameterDefinition[]

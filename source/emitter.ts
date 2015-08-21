@@ -72,7 +72,8 @@ class ASEmitter
         }
         
         classOutput += this.emitRequireMetadata(as3Class);
-        classOutput += "public class ";
+        classOutput += as3Class.accessLevel;
+        classOutput += " class ";
         classOutput += className;
         if(superClass)
         {
@@ -179,7 +180,8 @@ class ASEmitter
         }
         
         interfaceOutput += this.emitRequireMetadata(as3Interface);
-        interfaceOutput += "public interface ";
+        interfaceOutput += as3Interface.accessLevel;
+        interfaceOutput += " interface ";
         interfaceOutput += interfaceName;
         if(interfaces.length > 0)
         {
@@ -300,8 +302,10 @@ class ASEmitter
     {
         let propertyName = as3Property.name;
         let propertyType = as3Property.type;
+        let accessLevel = as3Property.accessLevel;
         
-        let propertyOutput = "public function get ";
+        let propertyOutput = accessLevel;
+        propertyOutput += " function get ";
         propertyOutput += propertyName;
         propertyOutput += "():";
         propertyOutput += propertyType;
@@ -310,7 +314,8 @@ class ASEmitter
         propertyOutput += "; }";
         propertyOutput += NEW_LINE;
         
-        propertyOutput += "public function set ";
+        propertyOutput += accessLevel;
+        propertyOutput += " function set ";
         propertyOutput += propertyName;
         propertyOutput += "(value:";
         propertyOutput += propertyType;
@@ -322,8 +327,10 @@ class ASEmitter
     {
         let propertyName = as3Property.name;
         let propertyType = as3Property.type;
+        let accessLevel = as3Property.accessLevel;
         
-        let propertyOutput = "public var ";
+        let propertyOutput = accessLevel;
+        propertyOutput += " var ";
         propertyOutput += propertyName;
         propertyOutput += ":";
         propertyOutput += propertyType;

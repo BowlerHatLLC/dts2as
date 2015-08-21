@@ -26,6 +26,7 @@ export interface PackageLevelDefinition
     sourceFile: string;
     require: boolean;
     external: boolean;
+    accessLevel: string;
     
     getFullyQualifiedName(): string;
 }
@@ -78,16 +79,18 @@ export class MethodDefinition extends FunctionDefinition
 
 export class PackageFunctionDefinition extends MethodDefinition implements PackageLevelDefinition
 {
-    constructor(name: string, packageName: string, sourceFile: string, require: boolean, external: boolean)
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean, external: boolean)
     {
         super(name);
         this.packageName = packageName;
+        this.accessLevel = accessLevel;
         this.sourceFile = sourceFile;
         this.require = require;
         this.external = external;
     }
     
     packageName: string;
+    accessLevel: string;
     sourceFile: string;
     require: boolean;
     external: boolean;
@@ -104,21 +107,23 @@ export class PackageFunctionDefinition extends MethodDefinition implements Packa
 
 export class PropertyDefinition
 {
-    constructor(name: string, type: TypeDefinition|string = null)
+    constructor(name: string, accessLevel: string, type: TypeDefinition|string = null)
     {
         this.name = name;
+        this.accessLevel = accessLevel;
         this.type = type;
     }
     
     name: string;
     type: TypeDefinition|string;
+    accessLevel: string;
 }
 
 export class PackageVariableDefinition extends PropertyDefinition implements PackageLevelDefinition
 {
-    constructor(name: string, packageName: string, sourceFile: string, require: boolean, external: boolean)
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean, external: boolean)
     {
-        super(name);
+        super(name, accessLevel);
         this.packageName = packageName;
         this.sourceFile = sourceFile;
         this.require = require;
@@ -142,10 +147,11 @@ export class PackageVariableDefinition extends PropertyDefinition implements Pac
 
 export class TypeDefinition implements PackageLevelDefinition
 {
-    constructor(name: string, packageName: string, sourceFile: string, require: boolean, external: boolean)
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean, external: boolean)
     {
         this.name = name;
         this.packageName = packageName;
+        this.accessLevel = accessLevel;
         this.sourceFile = sourceFile;
         this.require = require;
         this.external = external;
@@ -155,6 +161,7 @@ export class TypeDefinition implements PackageLevelDefinition
     
     name: string;
     packageName: string;
+    accessLevel: string;
     sourceFile: string;
     require: boolean;
     external: boolean;
@@ -173,9 +180,9 @@ export class TypeDefinition implements PackageLevelDefinition
 
 export class InterfaceDefinition extends TypeDefinition
 {
-    constructor(name: string, packageName: string, sourceFile: string, require: boolean, external: boolean)
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean, external: boolean)
     {
-        super(name, packageName, sourceFile, require, external);
+        super(name, packageName, accessLevel, sourceFile, require, external);
         this.interfaces = [];
     }
     
@@ -184,9 +191,9 @@ export class InterfaceDefinition extends TypeDefinition
 
 export class ClassDefinition extends TypeDefinition
 {
-    constructor(name: string, packageName: string, sourceFile: string, require: boolean, external: boolean)
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean, external: boolean)
     {
-        super(name, packageName, sourceFile, require, external);
+        super(name, packageName, accessLevel, sourceFile, require, external);
         this.interfaces = [];
     }
     
