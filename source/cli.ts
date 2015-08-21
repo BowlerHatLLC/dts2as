@@ -120,7 +120,7 @@ function writeAS3File(packageName: string, name: string, code: string)
 	let outputDirPath = packageParts.join(path.sep);
 	let outputFilePath = outputDirPath + path.sep + name + ".as"; 
 	mkdirp.sync(outputDirPath);
-	fs.writeFile(outputFilePath, code);
+	fs.writeFileSync(outputFilePath, code);
 }
 
 function printUsage()
