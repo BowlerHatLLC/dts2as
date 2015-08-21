@@ -13,14 +13,14 @@ let mkdirp = require("../node_modules/mkdirp");
 
 let outputPath = "./generated";
 let fileNames: string[];
-let verbose: boolean = false;
+let debugLevel: TS2ASParser.DebugLevel;
 
 let params = minimist(process.argv.slice(2),
 {
-	boolean: ["verbose"],
+	number: ["debug"],
 	alias:
 	{
-		v: ["verbose"]
+		v: ["version"]
 	}
 });
 for(let key in params)
@@ -40,10 +40,15 @@ for(let key in params)
 			});
 			break;
 		}
-		case "verbose":
+		case "debug":
 		{
-			verbose = params[key];
+			debugLevel = params[key];
 			break;
+		}
+		case "version":
+		{
+			printVersion();
+			process.exit();
 		}
 		case "outDir":
 		{
@@ -69,7 +74,7 @@ if(fileNames.length === 0)
 }
 
 let parser = new TS2ASParser();
-parser.verbose = verbose;
+parser.debugLevel = debugLevel;
 
 let libFileName = "./node_modules/typescript/bin/lib.d.ts";
 let libSourceText = fs.readFileSync(libFileName, "utf8");
@@ -123,6 +128,14 @@ function writeAS3File(packageName: string, name: string, code: string)
 	fs.writeFileSync(outputFilePath, code);
 }
 
+function printVersion()
+{
+	
+	let packageJSONString = fs.readFileSync(__dirname + path.sep + ".." + path.sep + "package.json", "utf8");
+	let packageJSON = JSON.parse(packageJSONString);
+	console.info("Version: " + packageJSON.version);
+}
+
 function printUsage()
 {
 	console.info("Syntax:   dts2as [options] [file ...]");
@@ -133,5 +146,6 @@ function printUsage()
 	console.info();
 	console.info("Options:");
 	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
-	console.info(" --verbose, -v                      Display verbose output.");
+	console.info(" --debug LEVEL                      Specify the level of debug output, in the range from 0 to 2. 0 means none, and 2 is most verbose.");
+	console.info(" -v, --version                      Print the version.");
 }

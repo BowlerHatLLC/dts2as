@@ -63,7 +63,7 @@ class TS2ASParser
     private _moduleStack: string[];
     private _currentModuleNeedsRequire: boolean;
     private _namesInCurrentModule: string[];
-    verbose: boolean = false;
+    debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
     addExternalFile(fileName: string, sourceText: string)
     {
@@ -273,7 +273,7 @@ class TS2ASParser
             case ts.SyntaxKind.FunctionDeclaration:
             {
                 let as3PackageFunction = this.readPackageFunction(<ts.FunctionDeclaration> node);
-                if(this.verbose && !as3PackageFunction.external)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3PackageFunction.external)
                 {
                     console.info("Package Function: " + as3PackageFunction.getFullyQualifiedName());
                 }
@@ -292,7 +292,7 @@ class TS2ASParser
                 //if it's a function alias, readPackageVariable() will return null
                 if(as3PackageVariable)
                 {
-                    if(this.verbose && !as3PackageVariable.external)
+                    if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3PackageVariable.external)
                     {
                         console.info("Package Variable: " + as3PackageVariable.getFullyQualifiedName());
                     }
@@ -306,7 +306,7 @@ class TS2ASParser
                 //if it's a function alias, readInterface() will return null
                 if(as3Interface)
                 {
-                    if(this.verbose && !as3Interface.external)
+                    if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Interface.external)
                     {
                         console.info("Interface: " + as3Interface.getFullyQualifiedName());
                     }
@@ -317,10 +317,9 @@ class TS2ASParser
             case ts.SyntaxKind.ClassDeclaration:
             {
                 let as3Class = this.readClass(<ts.ClassDeclaration> node);
-                if(this.verbose && !as3Class.external)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Class.external)
                 {
                     console.info("Class: " + as3Class.getFullyQualifiedName());
-                    console.info(as3Class.accessLevel)
                 }
                 this._currentResult.types.push(as3Class);
                 break;
@@ -333,7 +332,7 @@ class TS2ASParser
             }
             default:
             {
-                if(this.verbose)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
                 {
                     console.warn("Unknown SyntaxKind: " + node.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
@@ -403,7 +402,7 @@ class TS2ASParser
             }
             default:
             {
-                if(this.verbose)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
                 {
                     console.warn("Unknown SyntaxKind: " + node.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
@@ -649,7 +648,7 @@ class TS2ASParser
             }
             default:
             {
-                if(this.verbose)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
                 {
                     console.warn("Unknown SyntaxKind in member: " + member.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(member.pos, member.end));
@@ -704,6 +703,16 @@ class TS2ASParser
         return method;
     }
     
+}
+
+module TS2ASParser
+{
+    export enum DebugLevel
+    {
+        NONE = 0,
+        INFO = 1,
+        WARN = 2
+    }
 }
 
 export = TS2ASParser;
