@@ -73,6 +73,10 @@ class ASEmitter
         
         classOutput += this.emitRequireMetadata(as3Class);
         classOutput += as3Class.accessLevel;
+        if(as3Class.dynamic)
+        {
+            classOutput += " dynamic";
+        }
         classOutput += " class ";
         classOutput += className;
         if(superClass)

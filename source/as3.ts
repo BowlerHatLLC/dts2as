@@ -197,11 +197,13 @@ export class ClassDefinition extends TypeDefinition
         this.superClass = null;
         this.interfaces = [];
         this.constructorMethod = null;
+        this.dynamic = false;
     }
     
     superClass: ClassDefinition;
     interfaces: InterfaceDefinition[];
     constructorMethod: ConstructorDefinition;
+    dynamic: boolean;
 }
 
 export function getDefinitionByName(name: string, types: PackageLevelDefinition[]): PackageLevelDefinition

@@ -14,6 +14,23 @@ enum TypeScriptBuiltIns
     string
 }
 
+//the following top level classes are marked as dynamic in AS3
+const DYNAMIC_CLASSES =
+[
+    "ArgumentError",
+    "Array",
+    "Date",
+    "Error",
+    "EvalError",
+    "Object",
+    "RangeError",
+    "ReferenceError",
+    "RegExp",
+    "SyntaxError",
+    "TypeError",
+    "URIError"
+];
+
 let TS_TO_AS3_TYPE_MAP = {};
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.number]] = as3.BuiltIns[as3.BuiltIns.Number];
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.boolean]] = as3.BuiltIns[as3.BuiltIns.Boolean];
@@ -96,7 +113,23 @@ class TS2ASParser
             this._definitions = this._standardLibDefinitions.slice();
         }
         this.readPackageLevelDefinitions(this._currentSourceFile);
+        if(this._currentSourceFile.hasNoDefaultLib)
+        {
+            this.addDynamicFlagToStandardLibraryClasses();
+        }
         return this._currentSourceFile;
+    }
+    
+    private addDynamicFlagToStandardLibraryClasses()
+    {
+        for(let fullyQualifiedName of DYNAMIC_CLASSES)
+        {
+            let classToMakeDynamic = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedName, this._definitions);
+            if(classToMakeDynamic)
+            {
+                classToMakeDynamic.dynamic = true;
+            }
+        }
     }
 
     private isNameInCurrentModule(name: string)
