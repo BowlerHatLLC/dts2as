@@ -78,46 +78,43 @@ parser.debugLevel = debugLevel;
 
 let libFileName = "./node_modules/typescript/bin/lib.d.ts";
 let libSourceText = fs.readFileSync(libFileName, "utf8");
-parser.addExternalFile(libFileName, libSourceText);
+parser.setStandardLib(libFileName, libSourceText);
 
 fileNames.forEach(fileName =>
 {
 	let sourceText = fs.readFileSync(fileName, "utf8");
-	parser.addFile(fileName, sourceText);
+	let result = parser.parse(fileName, sourceText);
+	let emitter = new AS3Emitter(result);
+	result.forEach(function(as3Type:as3.PackageLevelDefinition)
+	{
+		if(as3Type.external)
+		{
+			//skip this one
+			return;
+		}
+		if("superClass" in as3Type)
+		{
+			let as3Class = <as3.ClassDefinition> as3Type;
+			writeAS3File(as3Class.packageName, as3Class.name, emitter.emitClass(as3Class));
+		}
+		else if("interfaces" in as3Type)
+		{
+			let as3Interface = <as3.InterfaceDefinition> as3Type;
+			writeAS3File(as3Interface.packageName, as3Interface.name, emitter.emitInterface(as3Interface));
+		}
+		else if("parameters" in as3Type)
+		{
+			let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
+			writeAS3File(as3PackageFunction.packageName, as3PackageFunction.name, emitter.emitPackageFunction(as3PackageFunction));
+		}
+		else
+		{
+			let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
+			writeAS3File(as3PackageVariable.packageName, as3PackageVariable.name, emitter.emitPackageVariable(as3PackageVariable));
+		}
+	});
 });
-
-let result = parser.parse();
-
-let emitter = new AS3Emitter(result.types);
-result.types.forEach(function(as3Type:as3.PackageLevelDefinition)
-{
-	if(as3Type.external)
-	{
-		//skip this one
-		return;
-	}
-	if("superClass" in as3Type)
-	{
-		let as3Class = <as3.ClassDefinition> as3Type;
-		writeAS3File(as3Class.packageName, as3Class.name, emitter.emitClass(as3Class));
-	}
-	else if("interfaces" in as3Type)
-	{
-		let as3Interface = <as3.InterfaceDefinition> as3Type;
-		writeAS3File(as3Interface.packageName, as3Interface.name, emitter.emitInterface(as3Interface));
-	}
-	else if("parameters" in as3Type)
-	{
-		let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
-		writeAS3File(as3PackageFunction.packageName, as3PackageFunction.name, emitter.emitPackageFunction(as3PackageFunction));
-	}
-	else
-	{
-		let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
-		writeAS3File(as3PackageVariable.packageName, as3PackageVariable.name, emitter.emitPackageVariable(as3PackageVariable));
-	}
-});
-		
+	
 function writeAS3File(packageName: string, name: string, code: string)
 {
 	let packageParts = packageName.split(".");

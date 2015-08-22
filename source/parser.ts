@@ -50,16 +50,15 @@ class TS2ASParser
 {
     constructor()
     {
-        this._sourceFiles = [];
         this._functionAliases = [];
-        this._currentResult = new TS2ASParserResult();
+        this._standardLibDefinitions = [];
     }
     
+    private _definitions: as3.PackageLevelDefinition[];
+    private _standardLibDefinitions: as3.PackageLevelDefinition[];
     private _functionAliases: string[]
-    private _sourceFiles: ts.SourceFile[];
     private _currentSourceFile: ts.SourceFile;
     private _currentFileIsExternal: boolean;
-    private _currentResult: TS2ASParserResult;
     private _moduleStack: string[];
     private _currentModuleNeedsRequire: boolean;
     private _namesInCurrentModule: string[];
@@ -67,38 +66,37 @@ class TS2ASParser
     private _variableStatementHasExport: boolean = false;
     debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
-    addExternalFile(fileName: string, sourceText: string)
+    setStandardLib(fileName: string, sourceText: string)
     {
         this._currentFileIsExternal = true;
-        this.addFileInternal(fileName, sourceText);
+        this._currentSourceFile = this.addFileInternal(fileName, sourceText);
+        this.populatePackageLevelDefinitions(this._currentSourceFile);
+        this._standardLibDefinitions = this._definitions.slice();
     }
     
-    addFile(fileName: string, sourceText: string)
+    parse(fileName: string, sourceText: string): as3.PackageLevelDefinition[]
     {
         this._currentFileIsExternal = false;
-        this.addFileInternal(fileName, sourceText);
+        this._currentSourceFile = this.addFileInternal(fileName, sourceText);
+        this.populatePackageLevelDefinitions(this._currentSourceFile);
+        return this._definitions;
     }
     
-    parse(): TS2ASParserResult
-    {
-        for(let sourceFile of this._sourceFiles)
-        {
-            this._currentSourceFile = sourceFile;
-            this.populatePackageLevelDefinitions(sourceFile);
-        }
-        return this._currentResult;
-    }
-    
-    private addFileInternal(fileName: string, sourceText: string)
+    private addFileInternal(fileName: string, sourceText: string): ts.SourceFile
     {
         this._namesInCurrentModule = [];
         this._moduleStack = [];
         this._currentSourceFile = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.ES5);
-        if(!this._currentFileIsExternal)
+        if(this._currentSourceFile.hasNoDefaultLib)
         {
-            this._sourceFiles.push(this._currentSourceFile);
+            this._definitions = [];
+        }
+        else
+        {
+            this._definitions = this._standardLibDefinitions.slice();
         }
         this.readPackageLevelDefinitions(this._currentSourceFile);
+        return this._currentSourceFile;
     }
 
     private isNameInCurrentModule(name: string)
@@ -288,7 +286,7 @@ class TS2ASParser
                 {
                     console.info("Package Function: " + as3PackageFunction.getFullyQualifiedName());
                 }
-                this._currentResult.types.push(as3PackageFunction);
+                this._definitions.push(as3PackageFunction);
                 break;
             }
             case ts.SyntaxKind.VariableStatement:
@@ -324,7 +322,7 @@ class TS2ASParser
                     {
                         console.info("Package Variable: " + as3PackageVariable.getFullyQualifiedName());
                     }
-                    this._currentResult.types.push(as3PackageVariable);
+                    this._definitions.push(as3PackageVariable);
                 }
                 else 
                 {
@@ -335,7 +333,7 @@ class TS2ASParser
                     {
                         className = packageName + "." + className;
                     }
-                    let as3Class = as3.getDefinitionByName(className, this._currentResult.types);
+                    let as3Class = as3.getDefinitionByName(className, this._definitions);
                     if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Class.external)
                     {
                         console.info("Replace Interface with Class: " + as3Class.getFullyQualifiedName());
@@ -353,7 +351,7 @@ class TS2ASParser
                     {
                         console.info("Interface: " + as3Interface.getFullyQualifiedName());
                     }
-                    this._currentResult.types.push(as3Interface);
+                    this._definitions.push(as3Interface);
                 }
                 break;
             }
@@ -364,7 +362,7 @@ class TS2ASParser
                 {
                     console.info("Class: " + as3Class.getFullyQualifiedName());
                 }
-                this._currentResult.types.push(as3Class);
+                this._definitions.push(as3Class);
                 break;
             }
             case ts.SyntaxKind.DeclareKeyword:
@@ -471,8 +469,8 @@ class TS2ASParser
             interfaceDefinition.sourceFile, interfaceDefinition.require,
             this._currentFileIsExternal);
             
-        let index = this._currentResult.types.indexOf(interfaceDefinition);
-        this._currentResult.types[index] = as3Class;
+        let index = this._definitions.indexOf(interfaceDefinition);
+        this._definitions[index] = as3Class;
     }
     
     private readClass(classDeclaration: ts.ClassDeclaration): as3.ClassDefinition
@@ -493,7 +491,7 @@ class TS2ASParser
             fullyQualifiedClassName = packageName + "." + className;
         }
         
-        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedClassName, this._currentResult.types);
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedClassName, this._definitions);
         if(!as3Class)
         {
             throw "Class not found: " + fullyQualifiedClassName;
@@ -509,7 +507,7 @@ class TS2ASParser
                     {
                         let superClassType = heritageClause.types[0];
                         let superClassName = this.typeNodeToAS3Type(superClassType);
-                        let superClass = <as3.ClassDefinition> as3.getDefinitionByName(superClassName, this._currentResult.types);
+                        let superClass = <as3.ClassDefinition> as3.getDefinitionByName(superClassName, this._definitions);
                         if(!superClass)
                         {
                             throw "Super class not found: " + superClassName;
@@ -522,7 +520,7 @@ class TS2ASParser
                         heritageClause.types.forEach((type: ts.TypeNode) =>
                         {
                             let interfaceName = this.typeNodeToAS3Type(type);
-                            let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._currentResult.types);
+                            let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._definitions);
                             if(!as3Interface)
                             {
                                 throw "Interface not found: " + interfaceName;
@@ -575,7 +573,7 @@ class TS2ASParser
             return;
         }
         
-        let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._currentResult.types);
+        let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
         if(!existingInterface)
         {
             throw "Interface not found: " + fullyQualifiedInterfaceName;
@@ -596,7 +594,7 @@ class TS2ASParser
                             heritageClause.types.forEach((type: ts.TypeNode) =>
                             {
                                 let interfaceName = this.typeNodeToAS3Type(type);
-                                let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._currentResult.types);
+                                let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._definitions);
                                 if(!as3Interface)
                                 {
                                     throw "Interface not found: " + interfaceName;
@@ -630,7 +628,7 @@ class TS2ASParser
             fullyQualifiedPackageFunctionName = packageName + "." + functionName;
         }
         
-        let as3PackageFunction = <as3.PackageFunctionDefinition> as3.getDefinitionByName(fullyQualifiedPackageFunctionName, this._currentResult.types);
+        let as3PackageFunction = <as3.PackageFunctionDefinition> as3.getDefinitionByName(fullyQualifiedPackageFunctionName, this._definitions);
         if(!as3PackageFunction)
         {
             throw "Package-level function not found: " + fullyQualifiedPackageFunctionName;
@@ -652,7 +650,7 @@ class TS2ASParser
         {
             fullyQualifiedName = packageName + "." + variableName; 
         }
-        let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._currentResult.types);
+        let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
         if(existingDefinition instanceof as3.InterfaceDefinition)
         {
             this.mergeInterfaceAndVariable(existingDefinition, variableDeclaration);
@@ -672,7 +670,7 @@ class TS2ASParser
             fullyQualifiedPackageVariableName = packageName + "." + variableName;
         }
         
-        let as3PackageLevelDefinition = <as3.PackageLevelDefinition> as3.getDefinitionByName(fullyQualifiedPackageVariableName, this._currentResult.types);
+        let as3PackageLevelDefinition = <as3.PackageLevelDefinition> as3.getDefinitionByName(fullyQualifiedPackageVariableName, this._definitions);
         if(!as3PackageLevelDefinition)
         {
             throw "Package-level variable not found: " + fullyQualifiedPackageVariableName;
