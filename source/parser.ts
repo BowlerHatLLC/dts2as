@@ -501,7 +501,7 @@ class TS2ASParser
             interfaceDefinition.packageName, variableAccessLevel,
             interfaceDefinition.sourceFile, interfaceDefinition.require,
             this._currentFileIsExternal);
-            
+           
         let index = this._definitions.indexOf(interfaceDefinition);
         this._definitions[index] = as3Class;
     }
@@ -606,6 +606,9 @@ class TS2ASParser
             return;
         }
         
+        //an interface may have been converted into a class,
+        //so that's why the superclass of InterfaceDefinition
+        //and ClassDefinition is used here.
         let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
         if(!existingInterface)
         {
@@ -615,7 +618,6 @@ class TS2ASParser
         //if there's an interface and a var with the same name, it gets turned into a class
         if(existingInterface instanceof as3.InterfaceDefinition)
         {
-            let as3Interface = <as3.InterfaceDefinition> existingInterface;
             if(interfaceDeclaration.heritageClauses)
             {
                 interfaceDeclaration.heritageClauses.forEach((heritageClause: ts.HeritageClause) =>    
@@ -627,12 +629,12 @@ class TS2ASParser
                             heritageClause.types.forEach((type: ts.TypeNode) =>
                             {
                                 let interfaceName = this.typeNodeToAS3Type(type);
-                                let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._definitions);
-                                if(!as3Interface)
+                                let otherInterface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._definitions);
+                                if(!otherInterface)
                                 {
                                     throw "Interface not found: " + interfaceName;
                                 }
-                                as3Interface.interfaces.push(as3Interface);
+                                existingInterface.interfaces.push(otherInterface);
                             });
                             break;
                         }
