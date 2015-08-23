@@ -711,15 +711,49 @@ class TS2ASParser
             throw "Package-level variable not found: " + fullyQualifiedPackageVariableName;
         }
         
-        //if there's an interface and a var with the same name, it gets turned into a class
+        let variableType = this.typeNodeToAS3Type(variableDeclaration.type);
         if(as3PackageLevelDefinition instanceof as3.PackageVariableDefinition)
         {
             let as3PackageVariable = <as3.PackageVariableDefinition> as3PackageLevelDefinition;
-            let variableType = this.typeNodeToAS3Type(variableDeclaration.type);
             as3PackageVariable.type = variableType;
         }
-        else
+        else if(as3PackageLevelDefinition instanceof as3.ClassDefinition)
         {
+            //if there's an interface and a var with the same name, it gets turned into a class
+            let as3SuperClass = <as3.TypeDefinition> as3.getDefinitionByName(variableType, this._definitions);
+            if(as3SuperClass === as3PackageLevelDefinition)
+            {
+                //if the variable is typed as its own name, then everything
+                //already defined on the class should be made static.
+                for(let property of as3PackageLevelDefinition.properties)
+                {
+                    property.isStatic = true;
+                }
+                for(let method of as3PackageLevelDefinition.methods)
+                {
+                    method.isStatic = true;
+                }
+            }
+            else
+            {
+                for(let property of as3SuperClass.properties)
+                {
+                    let staticProperty = new as3.PropertyDefinition(property.name, as3.AccessModifiers[as3.AccessModifiers.public], property.type, true);
+                    as3PackageLevelDefinition.properties.push(staticProperty);
+                }
+                for(let method of as3SuperClass.methods)
+                {
+                    let staticMethod = new as3.MethodDefinition(method.name, method.type, method.parameters.slice(), as3.AccessModifiers[as3.AccessModifiers.public], true);
+                    as3PackageLevelDefinition.methods.push(staticMethod);
+                }
+            }
+        }
+        else //something went terribly wrong
+        {
+            if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+            {
+                console.error("Cannot populate package variable named " + fullyQualifiedPackageVariableName + ".");
+            }
         }
     }
     
