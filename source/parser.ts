@@ -184,18 +184,23 @@ class TS2ASParser
         {
             return as3.BuiltIns[as3.BuiltIns.void];
         }
+        switch(type.kind)
+        {
+            case ts.SyntaxKind.FunctionType:
+            {
+                return as3.BuiltIns[as3.BuiltIns.Function];
+            }
+            case ts.SyntaxKind.UnionType:
+            {
+                return as3.BuiltIns[as3.BuiltIns.Object];
+            }
+            case ts.SyntaxKind.TypeLiteral:
+            {
+                return as3.BuiltIns[as3.BuiltIns.Object];
+            }
+        }
         let typeInSource = this._currentSourceFile.text.substring(ts["skipTrivia"](this._currentSourceFile.text, type.pos), type.end);
         typeInSource = typeInSource.trim();
-        if(typeInSource.indexOf("|") >= 0)
-        {
-            //multiple possible return types mean that we need to generalize
-            return as3.BuiltIns[as3.BuiltIns.Object];
-        }
-        let openCurlyBraceIndex = typeInSource.indexOf("{");
-        if(openCurlyBraceIndex === 0)
-        {
-            return as3.BuiltIns[as3.BuiltIns.Object];
-        }
         let startGenericIndex = typeInSource.indexOf("<");
         //strip <T> section of generics
         if(startGenericIndex >= 0)
