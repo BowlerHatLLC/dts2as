@@ -166,7 +166,7 @@ class ASEmitter
         }
         else
         {
-            classOutput += "() {}";
+            classOutput += "() {}" + NEW_LINE;
         }
         classOutput += NEW_LINE;
         
