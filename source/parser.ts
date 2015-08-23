@@ -771,7 +771,8 @@ class TS2ASParser
     {
         let propertyName = this.declarationNameToString(propertyDeclaration.name);
         let propertyType = this.typeNodeToAS3Type(propertyDeclaration.type);
-        return new as3.PropertyDefinition(propertyName, as3.AccessModifiers[as3.AccessModifiers.public], propertyType);
+        let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
+        return new as3.PropertyDefinition(propertyName, as3.AccessModifiers[as3.AccessModifiers.public], propertyType, isStatic);
     }
     
     private populateParameters(functionLikeDeclaration: ts.FunctionLikeDeclaration): as3.ParameterDefinition[]
@@ -805,11 +806,8 @@ class TS2ASParser
         let methodType = this.typeNodeToAS3Type(functionDeclaration.type);
         let methodParameters = this.populateParameters(functionDeclaration);
         let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
-        let method = new as3.MethodDefinition(methodName);
-        method.type = methodType;
-        method.parameters = methodParameters;
-        method.accessLevel = accessLevel;
-        return method;
+        let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
+        return new as3.MethodDefinition(methodName, methodType, methodParameters, accessLevel, isStatic);
     }
     
 }

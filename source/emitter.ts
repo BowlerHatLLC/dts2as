@@ -99,19 +99,51 @@ class ASEmitter
         classOutput += NEW_LINE;
         classOutput += "{" + NEW_LINE;
         
+        //static properties and methods first
+        let needsExtraNewLine: boolean = false;
+        as3Class.properties.forEach((property: as3.PropertyDefinition) =>
+        {
+            if(!property.isStatic)
+            {
+                return;
+            }
+            classOutput += this.emitProperty(property);
+            classOutput += NEW_LINE;
+            needsExtraNewLine = true;
+        });
+        if(needsExtraNewLine)
+        {
+            classOutput += NEW_LINE;
+        }
+        
+        needsExtraNewLine = false;
+        as3Class.methods.forEach((method: as3.MethodDefinition) =>
+        {
+            if(!method.isStatic)
+            {
+                return;
+            }
+            classOutput += this.emitMethod(method);
+            classOutput += NEW_LINE;
+            needsExtraNewLine = true;
+        });
+        if(needsExtraNewLine)
+        {
+            classOutput += NEW_LINE;
+        }
+        
         classOutput += "public function ";
         classOutput += className;
         if(as3Class.constructorMethod)
         {
             classOutput += this.emitParameters(as3Class.constructorMethod);
-            classOutput += NEW_LINE;
             if(superClass)
             {
-                classOutput += "{" + NEW_LINE;
-                classOutput += "super(";
+                classOutput += " {";
                 let constructorMethod = superClass.constructorMethod;
                 if(constructorMethod)
                 {
+                    classOutput += " super(";
                     let params = constructorMethod.parameters;
                     for(let i = 0, paramCount = params.length; i < paramCount; i++)
                     {
@@ -122,8 +154,8 @@ class ASEmitter
                         }
                         classOutput += as3TypeToDefaultReturnValue(<string> param.type);
                     }
+                    classOutput += "); ";
                 }
-                classOutput += ");" + NEW_LINE;
                 classOutput += "}";
             }
             else
@@ -138,14 +170,29 @@ class ASEmitter
         }
         classOutput += NEW_LINE;
         
+        needsExtraNewLine = false;
         as3Class.properties.forEach((property: as3.PropertyDefinition) =>
         {
+            if(property.isStatic)
+            {
+                return;
+            }
             classOutput += this.emitProperty(property);
             classOutput += NEW_LINE;
+            needsExtraNewLine = true;
         });
+        if(needsExtraNewLine)
+        {
+            classOutput += NEW_LINE;
+        }
         
+        needsExtraNewLine = false;
         as3Class.methods.forEach((method: as3.MethodDefinition) =>
         {
+            if(method.isStatic)
+            {
+                return;
+            }
             classOutput += this.emitMethod(method);
             classOutput += NEW_LINE;
         });
@@ -279,8 +326,13 @@ class ASEmitter
         let methodName = as3Method.name;
         let methodType = as3Method.type;
         let accessLevel = as3Method.accessLevel;
+        let isStatic = as3Method.isStatic;
         
         let methodOutput = "function ";
+        if(isStatic)
+        {
+            methodOutput = "static " + methodOutput;
+        }
         if(accessLevel !== null)
         {
             methodOutput = accessLevel + " " + methodOutput;
@@ -307,8 +359,13 @@ class ASEmitter
         let propertyName = as3Property.name;
         let propertyType = as3Property.type;
         let accessLevel = as3Property.accessLevel;
+        let isStatic = as3Property.isStatic;
         
         let propertyOutput = accessLevel;
+        if(isStatic)
+        {
+            propertyOutput += " static";
+        }
         propertyOutput += " function get ";
         propertyOutput += propertyName;
         propertyOutput += "():";
@@ -319,6 +376,10 @@ class ASEmitter
         propertyOutput += NEW_LINE;
         
         propertyOutput += accessLevel;
+        if(isStatic)
+        {
+            propertyOutput += " static";
+        }
         propertyOutput += " function set ";
         propertyOutput += propertyName;
         propertyOutput += "(value:";

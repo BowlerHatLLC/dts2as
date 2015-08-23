@@ -51,6 +51,7 @@ export class FunctionDefinition
     {
         this.name = name;
         this.type = type;
+        this.parameters = parameters || [];
     }
     
     name: string;
@@ -68,13 +69,15 @@ export class ConstructorDefinition extends FunctionDefinition
 
 export class MethodDefinition extends FunctionDefinition
 {
-    constructor(name: string, type: TypeDefinition|string = null, parameters: ParameterDefinition[] = null, accessLevel: string = null)
+    constructor(name: string, type: TypeDefinition|string = null, parameters: ParameterDefinition[] = null, accessLevel: string = null, isStatic: boolean = false)
     {
         super(name, type, parameters)
         this.accessLevel = accessLevel;
+        this.isStatic = isStatic;
     }
     
     accessLevel: string;
+    isStatic: boolean;
 }
 
 export class PackageFunctionDefinition extends MethodDefinition implements PackageLevelDefinition
@@ -107,16 +110,18 @@ export class PackageFunctionDefinition extends MethodDefinition implements Packa
 
 export class PropertyDefinition
 {
-    constructor(name: string, accessLevel: string, type: TypeDefinition|string = null)
+    constructor(name: string, accessLevel: string, type: TypeDefinition|string = null, isStatic: boolean = false)
     {
         this.name = name;
         this.accessLevel = accessLevel;
         this.type = type;
+        this.isStatic = isStatic;
     }
     
     name: string;
     type: TypeDefinition|string;
     accessLevel: string;
+    isStatic: boolean;
 }
 
 export class PackageVariableDefinition extends PropertyDefinition implements PackageLevelDefinition
