@@ -11,7 +11,8 @@ enum TypeScriptBuiltIns
     any,
     number,
     boolean,
-    string
+    string,
+    void
 }
 
 //the following top level classes are marked as dynamic in AS3
@@ -36,6 +37,7 @@ TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.number]] = as3.BuiltIns
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.boolean]] = as3.BuiltIns[as3.BuiltIns.Boolean];
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.string]] =  as3.BuiltIns[as3.BuiltIns.String];
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.any]] =  as3.BuiltIns[as3.BuiltIns.Object];
+TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.void]] =  as3.BuiltIns[as3.BuiltIns.void];
 
 class TS2ASParserResult
 {
@@ -198,6 +200,10 @@ class TS2ASParser
             {
                 return as3.BuiltIns[as3.BuiltIns.Object];
             }
+            case ts.SyntaxKind.StringLiteral:
+            {
+                return as3.BuiltIns[as3.BuiltIns.String];
+            }
         }
         let typeInSource = this._currentSourceFile.text.substring(ts["skipTrivia"](this._currentSourceFile.text, type.pos), type.end);
         typeInSource = typeInSource.trim();
@@ -320,11 +326,15 @@ class TS2ASParser
             case ts.SyntaxKind.FunctionDeclaration:
             {
                 let as3PackageFunction = this.readPackageFunction(<ts.FunctionDeclaration> node);
-                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3PackageFunction.external)
+                //if the function already exists, readPackageFunction() will return null
+                if(as3PackageFunction)
                 {
-                    console.info("Package Function: " + as3PackageFunction.getFullyQualifiedName());
+                    if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3PackageFunction.external)
+                    {
+                        console.info("Package Function: " + as3PackageFunction.getFullyQualifiedName());
+                    }
+                    this._definitions.push(as3PackageFunction);
                 }
-                this._definitions.push(as3PackageFunction);
                 break;
             }
             case ts.SyntaxKind.VariableStatement:
@@ -654,6 +664,18 @@ class TS2ASParser
     {
         let functionName = this.declarationNameToString(functionDeclaration.name);
         let packageName = this._moduleStack.join(".");
+        let fullyQualifiedName = functionName;
+        if(packageName)
+        {
+            fullyQualifiedName = packageName + "." + fullyQualifiedName;
+        }
+        let existingFunction = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
+        if(existingFunction)
+        {
+            //this function already exists, so this is an overload and we can
+            //ignore it, for now.
+            return null;
+        }
         return new as3.PackageFunctionDefinition(functionName, packageName, this.getAccessLevel(functionDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
