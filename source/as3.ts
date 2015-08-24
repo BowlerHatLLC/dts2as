@@ -33,7 +33,7 @@ export interface PackageLevelDefinition
 
 export class ParameterDefinition
 {
-    constructor(name: string, type: TypeDefinition|string, value: string)
+    constructor(name: string, type: TypeDefinition, value: string)
     {
         this.name = name;
         this.type = type;
@@ -41,13 +41,13 @@ export class ParameterDefinition
     }
     
     name: string;
-    type: TypeDefinition|string;
+    type: TypeDefinition;
     value: string;
 }
 
 export class FunctionDefinition
 {
-    constructor(name: string, type: TypeDefinition|string = null, parameters: ParameterDefinition[] = null)
+    constructor(name: string, type: TypeDefinition = null, parameters: ParameterDefinition[] = null)
     {
         this.name = name;
         this.type = type;
@@ -55,13 +55,13 @@ export class FunctionDefinition
     }
     
     name: string;
-    type: TypeDefinition|string;
+    type: TypeDefinition;
     parameters: ParameterDefinition[];
 }
 
 export class ConstructorDefinition extends FunctionDefinition
 {
-    constructor(name: string, type: TypeDefinition|string = null, parameters: ParameterDefinition[] = null)
+    constructor(name: string, type: TypeDefinition = null, parameters: ParameterDefinition[] = null)
     {
         super(name, type, parameters);
     }
@@ -69,7 +69,7 @@ export class ConstructorDefinition extends FunctionDefinition
 
 export class MethodDefinition extends FunctionDefinition
 {
-    constructor(name: string, type: TypeDefinition|string = null, parameters: ParameterDefinition[] = null, accessLevel: string = null, isStatic: boolean = false)
+    constructor(name: string, type: TypeDefinition = null, parameters: ParameterDefinition[] = null, accessLevel: string = null, isStatic: boolean = false)
     {
         super(name, type, parameters)
         this.accessLevel = accessLevel;
@@ -110,7 +110,7 @@ export class PackageFunctionDefinition extends MethodDefinition implements Packa
 
 export class PropertyDefinition
 {
-    constructor(name: string, accessLevel: string, type: TypeDefinition|string = null, isStatic: boolean = false)
+    constructor(name: string, accessLevel: string, type: TypeDefinition = null, isStatic: boolean = false)
     {
         this.name = name;
         this.accessLevel = accessLevel;
@@ -119,7 +119,7 @@ export class PropertyDefinition
     }
     
     name: string;
-    type: TypeDefinition|string;
+    type: TypeDefinition;
     accessLevel: string;
     isStatic: boolean;
 }

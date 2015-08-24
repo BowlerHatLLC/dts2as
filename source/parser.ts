@@ -39,43 +39,21 @@ TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.string]] =  as3.BuiltIn
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.any]] =  as3.BuiltIns[as3.BuiltIns.Object];
 TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.void]] =  as3.BuiltIns[as3.BuiltIns.void];
 
-class TS2ASParserResult
-{
-    types: as3.PackageLevelDefinition[] = [];
-}
-    
-function mergeFunctions(methodToKeep: as3.FunctionDefinition, methodToMerge: as3.FunctionDefinition)
-{
-    let methodToMergeParams = methodToMerge.parameters;
-    let methodToKeepParams = methodToKeep.parameters;
-    let methodToKeepParamsCount = methodToKeepParams.length;
-    for(let j = 0, paramCount = methodToMergeParams.length; j < paramCount; j++)
-    {
-        let paramToMerge = methodToMergeParams[j];
-        if(methodToKeepParamsCount <= j)
-        {
-            methodToKeepParams[j] = paramToMerge;
-        }
-        let paramToKeep = methodToKeepParams[j];
-        if(paramToMerge.type !== paramToKeep.type)
-        {
-            //the overload has a different type, so generalize to Object
-            paramToKeep.type = as3.BuiltIns[as3.BuiltIns.Object];
-        }
-    }
-}
-
 class TS2ASParser
 {
     constructor()
     {
         this._functionAliases = [];
+        this._typeAliasMap = {};
+        this._typeParameterMap = {};
         this._standardLibDefinitions = [];
     }
     
     private _definitions: as3.PackageLevelDefinition[];
     private _standardLibDefinitions: as3.PackageLevelDefinition[];
-    private _functionAliases: string[]
+    private _functionAliases: string[];
+    private _typeAliasMap: any;
+    private _typeParameterMap:any;
     private _currentSourceFile: ts.SourceFile;
     private _currentFileIsExternal: boolean;
     private _moduleStack: string[];
@@ -118,6 +96,11 @@ class TS2ASParser
         if(this._currentSourceFile.hasNoDefaultLib)
         {
             this.addDynamicFlagToStandardLibraryClasses();
+        
+            //void is a special type that is defined by the language, and it
+            //doesn't appear in the standard library. we need to add it
+            //manually.
+            this._definitions.push(new as3.InterfaceDefinition("void", null, null, null, false, true));
         }
         return this._currentSourceFile;
     }
@@ -152,6 +135,27 @@ class TS2ASParser
         return typeName;
     }
     
+    private mergeFunctions(methodToKeep: as3.FunctionDefinition, methodToMerge: as3.FunctionDefinition)
+    {
+        let methodToMergeParams = methodToMerge.parameters;
+        let methodToKeepParams = methodToKeep.parameters;
+        let methodToKeepParamsCount = methodToKeepParams.length;
+        for(let j = 0, paramCount = methodToMergeParams.length; j < paramCount; j++)
+        {
+            let paramToMerge = methodToMergeParams[j];
+            if(methodToKeepParamsCount <= j)
+            {
+                methodToKeepParams[j] = paramToMerge;
+            }
+            let paramToKeep = methodToKeepParams[j];
+            if(paramToMerge.type !== paramToKeep.type)
+            {
+                //the overload has a different type, so generalize to Object
+                paramToKeep.type = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+            }
+        }
+    }
+    
     private addNameToCurrentModule(node: ts.Node)
     {
         switch(node.kind)
@@ -180,43 +184,89 @@ class TS2ASParser
         }
     }
     
-    private typeNodeToAS3Type(type: ts.TypeNode): string
+    //checks the kind property of the TypeNode to see if a type can be
+    //determined without parsing the raw text.
+    private getAS3TypeFromTypeNodeKind(type: ts.TypeNode): as3.TypeDefinition
     {
-        if(!type)
+        let fullyQualifiedName: string = null;
+        if(type)
         {
-            return as3.BuiltIns[as3.BuiltIns.void];
+            switch(type.kind)
+            {
+                case ts.SyntaxKind.FunctionType:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Function];
+                    break;
+                }
+                case ts.SyntaxKind.UnionType:
+                {
+                    //TODO: find common base class
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Object];
+                    break;
+                }
+                case ts.SyntaxKind.TypeLiteral:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Object];
+                    break;
+                }
+                case ts.SyntaxKind.StringLiteral:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
+                    break;
+                }
+                case ts.SyntaxKind.ArrayType:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Array];
+                    break;
+                }
+            }
         }
-        switch(type.kind)
+        else
         {
-            case ts.SyntaxKind.FunctionType:
-            {
-                return as3.BuiltIns[as3.BuiltIns.Function];
-            }
-            case ts.SyntaxKind.UnionType:
-            {
-                return as3.BuiltIns[as3.BuiltIns.Object];
-            }
-            case ts.SyntaxKind.TypeLiteral:
-            {
-                return as3.BuiltIns[as3.BuiltIns.Object];
-            }
-            case ts.SyntaxKind.StringLiteral:
-            {
-                return as3.BuiltIns[as3.BuiltIns.String];
-            }
+            fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.void];
         }
+        if(fullyQualifiedName)
+        {
+            return <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedName, this._definitions);
+        }
+        return null;
+    }
+    
+    private simplifyTypeNode(type: ts.TypeNode): string
+    {
         let typeInSource = this._currentSourceFile.text.substring(ts["skipTrivia"](this._currentSourceFile.text, type.pos), type.end);
         typeInSource = typeInSource.trim();
-        let startGenericIndex = typeInSource.indexOf("<");
         //strip <T> section of generics
+        let startGenericIndex = typeInSource.indexOf("<");
         if(startGenericIndex >= 0)
         {
             typeInSource = typeInSource.substr(0, startGenericIndex);
         }
-        if(typeInSource.indexOf("[]") >= 0)
+        //strip [] section of array
+        let endArrayIndex = typeInSource.lastIndexOf("]");
+        if(endArrayIndex === typeInSource.length - 1)
         {
-            //this is a typed array
-            return as3.BuiltIns[as3.BuiltIns.Array];
+            typeInSource = typeInSource.substr(0, endArrayIndex - 1);
+        }
+        return typeInSource;
+    }
+    
+    private getAS3FullyQualifiedNameFromTSTypeNode(type: ts.TypeNode): string
+    {
+        let result = this.getAS3TypeFromTypeNodeKind(type);
+        if(result)
+        {
+            return result.getFullyQualifiedName();
+        }
+        
+        let typeInSource = this.simplifyTypeNode(type);
+        if(typeInSource in this._typeParameterMap)
+        {
+            typeInSource = this._typeParameterMap[typeInSource];
+        }
+        if(typeInSource in this._typeAliasMap)
+        {
+            typeInSource = this._typeAliasMap[typeInSource];
         }
         if(this.isNameInCurrentModule(typeInSource))
         {
@@ -231,6 +281,12 @@ class TS2ASParser
             return TS_TO_AS3_TYPE_MAP[typeInSource];
         }
         return typeInSource;
+    }
+    
+    private getAS3TypeFromTSTypeNode(type: ts.TypeNode): as3.TypeDefinition
+    {
+        let typeName = this.getAS3FullyQualifiedNameFromTSTypeNode(type);
+        return <as3.TypeDefinition> as3.getDefinitionByName(typeName, this._definitions);
     }
     
     private declarationNameToString(name: ts.DeclarationName): string
@@ -273,7 +329,7 @@ class TS2ASParser
     {
         if(as3Class.constructorMethod)
         {
-            mergeFunctions(as3Class.constructorMethod, constructorMethodToAdd);
+            this.mergeFunctions(as3Class.constructorMethod, constructorMethodToAdd);
         }
         else
         {
@@ -291,7 +347,7 @@ class TS2ASParser
             {
                 continue;
             }
-            mergeFunctions(existingMethod, methodToAdd);
+            this.mergeFunctions(existingMethod, methodToAdd);
             return;
         }
         //otherwise, add the new method
@@ -413,6 +469,17 @@ class TS2ASParser
                 this._definitions.push(as3Class);
                 break;
             }
+            case ts.SyntaxKind.TypeAliasDeclaration:
+            {
+                let typeAliasDeclaration = <ts.TypeAliasDeclaration> node;
+                let aliasName = this.declarationNameToString(typeAliasDeclaration.name);
+                let aliasType = this.getAS3TypeFromTSTypeNode(typeAliasDeclaration.type);
+                this._typeAliasMap[aliasName] = aliasType.getFullyQualifiedName();
+                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
+                {
+                    console.info("Creating type alias from " + aliasName + " to " + aliasType.getFullyQualifiedName() + ".");
+                }
+            }
             case ts.SyntaxKind.DeclareKeyword:
             case ts.SyntaxKind.EndOfFileToken:
             {
@@ -483,6 +550,7 @@ class TS2ASParser
                 this.populateClass(<ts.ClassDeclaration> node);
                 break;
             }
+            case ts.SyntaxKind.TypeAliasDeclaration:
             case ts.SyntaxKind.DeclareKeyword:
             case ts.SyntaxKind.EndOfFileToken:
             {
@@ -521,6 +589,54 @@ class TS2ASParser
         this._definitions[index] = as3Class;
     }
     
+    private populateTypeParameters(declaration: ts.Declaration): string[]
+    {
+        let typeParameters: string[] = [];
+        
+        ts.forEachChild(declaration, (node) =>
+        {
+            if(node.kind === ts.SyntaxKind.TypeParameter)
+            {
+                let typeParameterDeclaration = <ts.TypeParameterDeclaration> node;
+                let typeParameterName = this.declarationNameToString(typeParameterDeclaration.name);
+                
+                let as3TypeName: string = null;
+                if(typeParameterDeclaration.constraint)
+                {
+                    let constraint = <ts.TypeNode> typeParameterDeclaration.constraint;
+                    let tsConstraintName = this.simplifyTypeNode(constraint);
+                    let as3Constraint = this.getAS3TypeFromTypeNodeKind(constraint);
+                    if(as3Constraint)
+                    {
+                        as3TypeName = as3Constraint.getFullyQualifiedName();
+                    }
+                }
+                if(!as3TypeName)
+                {
+                    //fall back to object if there is no constraint
+                    as3TypeName = as3.BuiltIns[as3.BuiltIns.Object]
+                }
+                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
+                {
+                    console.info("Mapping type parameter " + typeParameterName + " to " + as3TypeName + " in " + this.declarationNameToString(declaration.name) + ".");
+                }
+                this._typeParameterMap[typeParameterName] = as3TypeName;
+                typeParameters.push(typeParameterName);
+                
+            }
+        });
+        
+        return typeParameters;
+    }
+    
+    private cleanupTypeParameters(typeParameters: string[])
+    {
+        for(let param of typeParameters)
+        {
+            delete this._typeParameterMap[param];
+        }
+    }
+    
     private readClass(classDeclaration: ts.ClassDeclaration): as3.ClassDefinition
     {
         let className = this.declarationNameToString(classDeclaration.name);
@@ -545,6 +661,8 @@ class TS2ASParser
             throw "Class not found: " + fullyQualifiedClassName;
         }
         
+        let typeParameters = this.populateTypeParameters(classDeclaration);
+        
         if(classDeclaration.heritageClauses)
         {
             classDeclaration.heritageClauses.forEach((heritageClause: ts.HeritageClause) =>    
@@ -553,12 +671,12 @@ class TS2ASParser
                 {
                     case ts.SyntaxKind.ExtendsKeyword:
                     {
-                        let superClassType = heritageClause.types[0];
-                        let superClassName = this.typeNodeToAS3Type(superClassType);
-                        let superClass = <as3.ClassDefinition> as3.getDefinitionByName(superClassName, this._definitions);
+                        let superClassTSType = heritageClause.types[0];
+                        let superClassAS3Type = this.getAS3TypeFromTSTypeNode(superClassTSType);
+                        let superClass = <as3.ClassDefinition> superClassAS3Type;
                         if(!superClass)
                         {
-                            throw "Super class not found: " + superClassName;
+                            throw "Super class not found: " + this.getAS3FullyQualifiedNameFromTSTypeNode(superClassTSType);
                         }
                         as3Class.superClass = superClass;
                         break;
@@ -567,11 +685,11 @@ class TS2ASParser
                     {
                         heritageClause.types.forEach((type: ts.TypeNode) =>
                         {
-                            let interfaceName = this.typeNodeToAS3Type(type);
-                            let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._definitions);
+                            let interfaceAS3Type = this.getAS3TypeFromTSTypeNode(type);
+                            let as3Interface = <as3.InterfaceDefinition> interfaceAS3Type;
                             if(!as3Interface)
                             {
-                                throw "Interface not found: " + interfaceName;
+                                throw "Interface to implement not found: " + this.getAS3FullyQualifiedNameFromTSTypeNode(type);
                             }
                             as3Class.interfaces.push(as3Interface);
                         });
@@ -582,6 +700,8 @@ class TS2ASParser
         }
     
         this.populateMembers(as3Class, classDeclaration);
+        
+        this.cleanupTypeParameters(typeParameters);
     }
     
     private readInterface(interfaceDeclaration: ts.InterfaceDeclaration): as3.InterfaceDefinition
@@ -599,6 +719,10 @@ class TS2ASParser
             if(member.kind === ts.SyntaxKind.CallSignature)
             {
                 this._functionAliases.push(fullyQualifiedInterfaceName);
+                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
+                {
+                    console.info("Creating function alias from " + fullyQualifiedInterfaceName + ".");
+                }
                 return null;
             }
         }
@@ -630,6 +754,8 @@ class TS2ASParser
             throw "Interface not found: " + fullyQualifiedInterfaceName;
         }
         
+        let typeParameters = this.populateTypeParameters(interfaceDeclaration);
+        
         //if there's an interface and a var with the same name, it gets turned into a class
         if(existingInterface instanceof as3.InterfaceDefinition)
         {
@@ -643,11 +769,11 @@ class TS2ASParser
                         {
                             heritageClause.types.forEach((type: ts.TypeNode) =>
                             {
-                                let interfaceName = this.typeNodeToAS3Type(type);
-                                let otherInterface = <as3.InterfaceDefinition> as3.getDefinitionByName(interfaceName, this._definitions);
+                                let interfaceAS3Type = this.getAS3TypeFromTSTypeNode(type);
+                                let otherInterface = <as3.InterfaceDefinition> interfaceAS3Type;
                                 if(!otherInterface)
                                 {
-                                    throw "Interface not found: " + interfaceName;
+                                    throw "Interface to extend not found: " + this.getAS3FullyQualifiedNameFromTSTypeNode(type);
                                 }
                                 existingInterface.interfaces.push(otherInterface);
                             });
@@ -658,6 +784,8 @@ class TS2ASParser
             }
         }
         this.populateMembers(existingInterface, interfaceDeclaration);
+        
+        this.cleanupTypeParameters(typeParameters);
     }
     
     private readPackageFunction(functionDeclaration: ts.FunctionDeclaration): as3.PackageFunctionDefinition
@@ -696,9 +824,8 @@ class TS2ASParser
             throw "Package-level function not found: " + fullyQualifiedPackageFunctionName;
         }
         
-        let functionType = this.typeNodeToAS3Type(functionDeclaration.type);
         let functionParameters = this.populateParameters(functionDeclaration);
-        as3PackageFunction.type = functionType;
+        as3PackageFunction.type = this.getAS3TypeFromTSTypeNode(functionDeclaration.type)
         as3PackageFunction.parameters = functionParameters;
         as3PackageFunction.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
     }
@@ -738,7 +865,7 @@ class TS2ASParser
             throw "Package-level variable not found: " + fullyQualifiedPackageVariableName;
         }
         
-        let variableType = this.typeNodeToAS3Type(variableDeclaration.type);
+        let variableType = this.getAS3TypeFromTSTypeNode(variableDeclaration.type);
         if(as3PackageLevelDefinition instanceof as3.PackageVariableDefinition)
         {
             let as3PackageVariable = <as3.PackageVariableDefinition> as3PackageLevelDefinition;
@@ -747,8 +874,7 @@ class TS2ASParser
         else if(as3PackageLevelDefinition instanceof as3.ClassDefinition)
         {
             //if there's an interface and a var with the same name, it gets turned into a class
-            let as3SuperClass = <as3.TypeDefinition> as3.getDefinitionByName(variableType, this._definitions);
-            if(as3SuperClass === as3PackageLevelDefinition)
+            if(variableType === as3PackageLevelDefinition)
             {
                 //if the variable is typed as its own name, then everything
                 //already defined on the class should be made static.
@@ -763,12 +889,12 @@ class TS2ASParser
             }
             else
             {
-                for(let property of as3SuperClass.properties)
+                for(let property of variableType.properties)
                 {
                     let staticProperty = new as3.PropertyDefinition(property.name, as3.AccessModifiers[as3.AccessModifiers.public], property.type, true);
                     as3PackageLevelDefinition.properties.push(staticProperty);
                 }
-                for(let method of as3SuperClass.methods)
+                for(let method of variableType.methods)
                 {
                     let staticMethod = new as3.MethodDefinition(method.name, method.type, method.parameters.slice(), as3.AccessModifiers[as3.AccessModifiers.public], true);
                     as3PackageLevelDefinition.methods.push(staticMethod);
@@ -831,7 +957,14 @@ class TS2ASParser
     private populateProperty(propertyDeclaration: ts.PropertyDeclaration): as3.PropertyDefinition
     {
         let propertyName = this.declarationNameToString(propertyDeclaration.name);
-        let propertyType = this.typeNodeToAS3Type(propertyDeclaration.type);
+        let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
+        if(!propertyType)
+        {
+            // TODO : remove this!
+            {
+                propertyType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+            }
+        }
         let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
         return new as3.PropertyDefinition(propertyName, as3.AccessModifiers[as3.AccessModifiers.public], propertyType, isStatic);
     }
@@ -844,7 +977,7 @@ class TS2ASParser
         {
             let value = parameters[i];
             let parameterName = this.declarationNameToString(value.name);
-            let parameterType = this.typeNodeToAS3Type(value.type);
+            let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
             //TODO: get value
             let parameterValue = null;//value.initializer;
             as3Parameters.push(new as3.ParameterDefinition(parameterName, parameterType, parameterValue));
@@ -863,12 +996,18 @@ class TS2ASParser
     
     private populateMethod(functionDeclaration: ts.FunctionDeclaration, as3Type: as3.TypeDefinition): as3.MethodDefinition
     {
+        let typeParameters = this.populateTypeParameters(functionDeclaration);
+        
         let methodName = this.declarationNameToString(functionDeclaration.name);
-        let methodType = this.typeNodeToAS3Type(functionDeclaration.type);
+        let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
         let methodParameters = this.populateParameters(functionDeclaration);
         let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
         let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
-        return new as3.MethodDefinition(methodName, methodType, methodParameters, accessLevel, isStatic);
+        let as3Method = new as3.MethodDefinition(methodName, methodType, methodParameters, accessLevel, isStatic)
+        
+        this.cleanupTypeParameters(typeParameters);
+        
+        return as3Method;
     }
     
 }

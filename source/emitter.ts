@@ -10,11 +10,12 @@ let AS3_RETURN_VALUE_MAP = {};
 AS3_RETURN_VALUE_MAP[as3.BuiltIns[as3.BuiltIns.Number]] = "0";
 AS3_RETURN_VALUE_MAP[as3.BuiltIns[as3.BuiltIns.Boolean]] = "false";
 
-function as3TypeToDefaultReturnValue(type: string): string
+function as3TypeToDefaultReturnValue(type: as3.TypeDefinition): string
 {
-    if(AS3_RETURN_VALUE_MAP.hasOwnProperty(type))
+    let fullyQualifiedName = type.getFullyQualifiedName();
+    if(AS3_RETURN_VALUE_MAP.hasOwnProperty(fullyQualifiedName))
     {
-        return AS3_RETURN_VALUE_MAP[type];
+        return AS3_RETURN_VALUE_MAP[fullyQualifiedName];
     }
     return KEYWORD_NULL;
 }
@@ -152,7 +153,7 @@ class ASEmitter
                         {
                             classOutput += ", ";
                         }
-                        classOutput += as3TypeToDefaultReturnValue(<string> param.type);
+                        classOutput += as3TypeToDefaultReturnValue(param.type);
                     }
                     classOutput += "); ";
                 }
@@ -339,17 +340,19 @@ class ASEmitter
         }
         methodOutput += methodName;
         methodOutput += this.emitParameters(as3Method);
-        if(methodType !== as3.BuiltIns[as3.BuiltIns.void])
+        if(methodType.getFullyQualifiedName() !== as3.BuiltIns[as3.BuiltIns.void])
         {
             methodOutput += ":";
-            methodOutput += methodType;
+            methodOutput += methodType.getFullyQualifiedName();
             methodOutput += " { return ";
-            methodOutput += as3TypeToDefaultReturnValue(<string> methodType);
+            methodOutput += as3TypeToDefaultReturnValue(methodType);
             methodOutput += "; }";
         }
         else //void
         {
-            methodOutput += ":" + methodType + " {}";
+            methodOutput += ":";
+            methodOutput += methodType.getFullyQualifiedName();
+            methodOutput += " {}";
         }
         return methodOutput;
     }
@@ -369,9 +372,9 @@ class ASEmitter
         propertyOutput += " function get ";
         propertyOutput += propertyName;
         propertyOutput += "():";
-        propertyOutput += propertyType;
+        propertyOutput += propertyType.getFullyQualifiedName();
         propertyOutput += " { return ";
-        propertyOutput += as3TypeToDefaultReturnValue(<string> propertyType);
+        propertyOutput += as3TypeToDefaultReturnValue(propertyType);
         propertyOutput += "; }";
         propertyOutput += NEW_LINE;
         
@@ -383,7 +386,7 @@ class ASEmitter
         propertyOutput += " function set ";
         propertyOutput += propertyName;
         propertyOutput += "(value:";
-        propertyOutput += propertyType;
+        propertyOutput += propertyType.getFullyQualifiedName();
         propertyOutput += "):" + as3.BuiltIns[as3.BuiltIns.void] + " {}";
         return propertyOutput;
     }
@@ -398,7 +401,7 @@ class ASEmitter
         propertyOutput += " var ";
         propertyOutput += propertyName;
         propertyOutput += ":";
-        propertyOutput += propertyType;
+        propertyOutput += propertyType.getFullyQualifiedName();
         propertyOutput += ";";
         propertyOutput += NEW_LINE;
         
@@ -441,7 +444,8 @@ class ASEmitter
                 signatureOutput += parameter.name;
                 if(parameter.type)
                 {
-                    signatureOutput += ":" + parameter.type;
+                    signatureOutput += ":";
+                    signatureOutput += parameter.type.getFullyQualifiedName();
                 } 
             }
         }
