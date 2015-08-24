@@ -979,8 +979,23 @@ class TS2ASParser
             let parameterName = this.declarationNameToString(value.name);
             let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
             //TODO: get value
-            let parameterValue = null;//value.initializer;
-            as3Parameters.push(new as3.ParameterDefinition(parameterName, parameterType, parameterValue));
+            let parameterValue = null;
+            
+            var isOptional: boolean = false;
+            var isRest: boolean = false;
+            ts.forEachChild(value, (node) =>
+            {
+                if(node.kind === ts.SyntaxKind.DotDotDotToken)
+                {
+                    isRest = true;
+                }
+                else if(node.kind === ts.SyntaxKind.QuestionToken)
+                {
+                    isOptional = true;
+                }
+            });
+            
+            as3Parameters.push(new as3.ParameterDefinition(parameterName, parameterType, parameterValue, isRest));
         }
         return as3Parameters;
     }

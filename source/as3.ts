@@ -33,16 +33,18 @@ export interface PackageLevelDefinition
 
 export class ParameterDefinition
 {
-    constructor(name: string, type: TypeDefinition, value: string)
+    constructor(name: string, type: TypeDefinition, value: string, isRest: boolean)
     {
         this.name = name;
         this.type = type;
         this.value = value;
+        this.isRest = isRest;
     }
     
     name: string;
     type: TypeDefinition;
     value: string;
+    isRest: boolean;
 }
 
 export class FunctionDefinition

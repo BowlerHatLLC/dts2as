@@ -441,6 +441,10 @@ class ASEmitter
                     signatureOutput += ", ";
                 }
                 let parameter = parameters[i];
+                if(parameter.isRest)
+                {
+                    signatureOutput += "...";
+                }
                 signatureOutput += parameter.name;
                 if(parameter.type)
                 {
