@@ -496,7 +496,7 @@ class TS2ASParser
             }
             default:
             {
-                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
                 {
                     console.warn("Unknown SyntaxKind: " + node.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
@@ -567,7 +567,7 @@ class TS2ASParser
             }
             default:
             {
-                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
                 {
                     console.warn("Unknown SyntaxKind: " + node.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
@@ -577,7 +577,7 @@ class TS2ASParser
         }
     }
     
-    private populateMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassLikeDeclaration|ts.InterfaceDeclaration)
+    private populateMembers(typeDefinition: as3.TypeDefinition, declaration: {members: ts.NodeArray<ts.Node>})
     {
         declaration.members.forEach((member: ts.Declaration) =>
         {
@@ -858,7 +858,16 @@ class TS2ASParser
         let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
         if(existingDefinition instanceof as3.InterfaceDefinition)
         {
+            //this is a decomposed class where the variable name and the
+            //instance side have the same name
             this.mergeInterfaceAndVariable(existingDefinition, variableDeclaration);
+            return null;
+        }
+        else if(existingDefinition instanceof as3.StaticSideClassDefinition)
+        {
+            //this is a decomposed class where the variable name and the static
+            //side have the same name
+            existingDefinition.accessLevel = this.getAccessLevel(variableDeclaration);
             return null;
         }
         return new as3.PackageVariableDefinition(variableName, packageName, this.getAccessLevel(variableDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
@@ -886,14 +895,28 @@ class TS2ASParser
         {
             let as3PackageVariable = <as3.PackageVariableDefinition> as3PackageLevelDefinition;
             as3PackageVariable.type = variableType;
+            return;
         }
-        else if(as3PackageLevelDefinition instanceof as3.ClassDefinition)
+        if(as3PackageLevelDefinition instanceof as3.StaticSideClassDefinition)
         {
-            //if there's an interface and a var with the same name, it gets turned into a class
+            //this is a decomposed class where the variable name and the static
+            //side have the same name. we need to make everything static;
+            for(let property of as3PackageLevelDefinition.properties)
+            {
+                property.isStatic = true;
+            }
+            for(let method of as3PackageLevelDefinition.methods)
+            {
+                method.isStatic = true;
+            }
+            return;
+        }
+        if(as3PackageLevelDefinition instanceof as3.ClassDefinition)
+        {
+            //this is a decomposed class where the variable name and the
+            //instance side have the same name
             if(variableType === as3PackageLevelDefinition)
             {
-                //if the variable is typed as its own name, then everything
-                //already defined on the class should be made static.
                 for(let property of as3PackageLevelDefinition.properties)
                 {
                     property.isStatic = true;
@@ -902,11 +925,24 @@ class TS2ASParser
                 {
                     method.isStatic = true;
                 }
+                return;
             }
-            else if(variableType instanceof as3.StaticSideClassDefinition)
+            if(variableDeclaration.type.kind === ts.SyntaxKind.TypeLiteral)
             {
-                //otherwise, we should copy over the members from the separate
-                //static-side definition
+                //the static side of this decomposed class is a type literal
+                //so we haven't created the AS3 class for it yet. we need to
+                //do it on the fly.
+                let tempStaticSideClass = new as3.StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+                let typeLiteral = <ts.TypeLiteralNode> variableDeclaration.type;
+                this.populateMembers(tempStaticSideClass, typeLiteral);
+                variableType = tempStaticSideClass;
+            }
+            if(variableType instanceof as3.StaticSideClassDefinition)
+            {
+                //the static side of this decomposed class is a different
+                //interface than the instance side. we need to copy over
+                //all the members from the static side to the instance side
+                //and make them static
                 for(let property of variableType.properties)
                 {
                     let staticProperty = new as3.PropertyDefinition(property.name, as3.AccessModifiers[as3.AccessModifiers.public], property.type, true);
@@ -918,21 +954,20 @@ class TS2ASParser
                     as3PackageLevelDefinition.methods.push(staticMethod);
                 }
                 as3PackageLevelDefinition.constructorMethod = variableType.constructorMethod;
+                return;
             }
-            else //something went terribly wrong
+            
+            //something went wrong. it's a class, but we couldn't find the static side.
+            if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
             {
-                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
-                {
-                    console.error("Cannot populate class from package variable named " + fullyQualifiedPackageVariableName + ".");
-                }
+                console.error("Cannot populate class from package variable named " + fullyQualifiedPackageVariableName + ".");
             }
+            return;
         }
-        else //something went terribly wrong 
+        //something went terribly wrong. it's not a variable or a class.
+        if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
         {
-            if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
-            {
-                console.error("Cannot populate package variable named " + fullyQualifiedPackageVariableName + ".");
-            }
+            console.error("Cannot populate package variable named " + fullyQualifiedPackageVariableName + ".");
         }
     }
     
@@ -964,6 +999,7 @@ class TS2ASParser
                 this.addMethodToAS3Type(as3Type, as3Method);
                 break;
             }
+            case ts.SyntaxKind.CallSignature:
             case ts.SyntaxKind.IndexSignature:
             {
                 //this is safe to ignore
@@ -971,7 +1007,7 @@ class TS2ASParser
             }
             default:
             {
-                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
                 {
                     console.warn("Unknown SyntaxKind in member: " + member.kind.toString());
                     console.warn(this._currentSourceFile.text.substring(member.pos, member.end));
