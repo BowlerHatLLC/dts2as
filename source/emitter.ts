@@ -49,6 +49,7 @@ class ASEmitter
                 imports.push(as3Interface.getFullyQualifiedName());
             });
         }
+        this.addMemberImports(as3Class, imports);
         
         for(let as3Import of arrayValues(imports))
         {
@@ -92,7 +93,7 @@ class ASEmitter
             {
                 return;
             }
-            classOutput += this.emitProperty(property);
+            classOutput += this.emitProperty(property, as3Class);
             classOutput += NEW_LINE;
             needsExtraNewLine = true;
         });
@@ -108,7 +109,7 @@ class ASEmitter
             {
                 return;
             }
-            classOutput += this.emitMethod(method);
+            classOutput += this.emitMethod(method, as3Class);
             classOutput += NEW_LINE;
             needsExtraNewLine = true;
         });
@@ -121,7 +122,7 @@ class ASEmitter
         classOutput += className;
         if(as3Class.constructorMethod)
         {
-            classOutput += this.emitParameters(as3Class.constructorMethod);
+            classOutput += this.emitParameters(as3Class.constructorMethod, as3Class);
             if(superClass)
             {
                 classOutput += " {";
@@ -162,7 +163,7 @@ class ASEmitter
             {
                 return;
             }
-            classOutput += this.emitProperty(property);
+            classOutput += this.emitProperty(property, as3Class);
             classOutput += NEW_LINE;
             needsExtraNewLine = true;
         });
@@ -178,7 +179,7 @@ class ASEmitter
             {
                 return;
             }
-            classOutput += this.emitMethod(method);
+            classOutput += this.emitMethod(method, as3Class);
             classOutput += NEW_LINE;
         });
         
@@ -208,6 +209,7 @@ class ASEmitter
                 imports.push(otherInterface.getFullyQualifiedName());
             });
         }
+        this.addMemberImports(as3Interface, imports);
         
         for(let as3Import of arrayValues(imports))
         {
@@ -236,13 +238,13 @@ class ASEmitter
         
         as3Interface.properties.forEach((property: as3.PropertyDefinition) =>
         {
-            interfaceOutput += this.emitProperty(property);
+            interfaceOutput += this.emitProperty(property, as3Interface);
             interfaceOutput += NEW_LINE;
         });
         
         as3Interface.methods.forEach((method: as3.MethodDefinition) =>
         {
-            interfaceOutput += this.emitMethod(method);
+            interfaceOutput += this.emitMethod(method, as3Interface);
             interfaceOutput += NEW_LINE;
         });
         
@@ -255,9 +257,19 @@ class ASEmitter
     
     emitPackageFunction(as3PackageFunction: as3.PackageFunctionDefinition): string
     {
+        let imports: string[] = [];
+        this.addMethodImport(as3PackageFunction, as3PackageFunction, imports);
+        
         let packageFunctionOutput = this.emitStartPackage(as3PackageFunction.packageName);
+        
+        for(let as3Import of arrayValues(imports))
+        {
+            packageFunctionOutput += "import " + as3Import + ";";
+            packageFunctionOutput += NEW_LINE;
+        }
+        
         packageFunctionOutput += this.emitRequireMetadata(as3PackageFunction);
-        packageFunctionOutput += this.emitMethod(as3PackageFunction);
+        packageFunctionOutput += this.emitMethod(as3PackageFunction, as3PackageFunction);
         packageFunctionOutput += NEW_LINE;
         packageFunctionOutput += this.emitEndPackage();
         return packageFunctionOutput;
@@ -265,9 +277,18 @@ class ASEmitter
     
     emitPackageVariable(as3PackageVariable: as3.PackageVariableDefinition): string
     {
+        let imports: string[] = [];
+        this.addPropertyImport(as3PackageVariable, as3PackageVariable, imports);
+        
         let packageVariableOutput = this.emitStartPackage(as3PackageVariable.packageName);
+        
+        for(let as3Import of arrayValues(imports))
+        {
+            packageVariableOutput += "import " + as3Import + ";";
+            packageVariableOutput += NEW_LINE;
+        }
         packageVariableOutput += this.emitRequireMetadata(as3PackageVariable);
-        packageVariableOutput += this.emitVariable(as3PackageVariable);
+        packageVariableOutput += this.emitVariable(as3PackageVariable, as3PackageVariable);
         packageVariableOutput += NEW_LINE;
         packageVariableOutput += this.emitEndPackage();
         return packageVariableOutput;
@@ -306,76 +327,127 @@ class ASEmitter
         return true;
     }
     
-    private emitMethod(as3Method: as3.MethodDefinition): string
+    private addMemberImports(as3Type: as3.TypeDefinition, imports: string[])
+    {
+        as3Type.properties.forEach((as3Property) =>
+        {
+            this.addPropertyImport(as3Property, as3Type, imports);
+        });
+        as3Type.methods.forEach((as3Method) =>
+        {
+            this.addMethodImport(as3Method, as3Type, imports);
+        });
+    }
+    
+    private addPropertyImport(as3Property: as3.PropertyDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
+    {
+        let propertyType = as3Property.type;
+        if(!this.requiresImport(propertyType, as3Type))
+        {
+            return;
+        }
+        imports.push(propertyType.getFullyQualifiedName());
+    }
+    
+    private addMethodImport(as3Method: as3.MethodDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
+    {
+        let methodType = as3Method.type;
+        if(!this.requiresImport(methodType, as3Type))
+        {
+            return;
+        }
+        imports.push(methodType.getFullyQualifiedName());
+    }
+    
+    private emitMethod(as3Method: as3.MethodDefinition, scope: as3.PackageLevelDefinition): string
     {
         let methodName = as3Method.name;
         let methodType = as3Method.type;
         let accessLevel = as3Method.accessLevel;
         let isStatic = as3Method.isStatic;
+        let isInterface = scope instanceof as3.InterfaceDefinition;
         
         let methodOutput = "function ";
         if(isStatic)
         {
             methodOutput = "static " + methodOutput;
         }
-        if(accessLevel !== null)
+        if(!isInterface && accessLevel !== null)
         {
             methodOutput = accessLevel + " " + methodOutput;
         }
         methodOutput += methodName;
-        methodOutput += this.emitParameters(as3Method);
-        if(methodType.getFullyQualifiedName() !== as3.BuiltIns[as3.BuiltIns.void])
+        methodOutput += this.emitParameters(as3Method, scope);
+        methodOutput += ":";
+        methodOutput += this.getNameToEmit(methodType, scope);
+        if(!isInterface)
         {
-            methodOutput += ":";
-            methodOutput += methodType.getFullyQualifiedName();
-            methodOutput += " { return ";
-            methodOutput += as3.getDefaultReturnValueForType(methodType);
-            methodOutput += "; }";
-        }
-        else //void
-        {
-            methodOutput += ":";
-            methodOutput += methodType.getFullyQualifiedName();
-            methodOutput += " {}";
+            if(methodType.getFullyQualifiedName() !== as3.BuiltIns[as3.BuiltIns.void])
+            {
+                methodOutput += " { return ";
+                methodOutput += as3.getDefaultReturnValueForType(methodType);
+                methodOutput += "; }";
+            }
+            else //void
+            {
+                if(!isInterface)
+                {
+                    methodOutput += " {}";
+                }
+            }
         }
         return methodOutput;
     }
     
-    private emitProperty(as3Property: as3.PropertyDefinition): string
+    private emitProperty(as3Property: as3.PropertyDefinition, scope: as3.PackageLevelDefinition): string
     {
         let propertyName = as3Property.name;
         let propertyType = as3Property.type;
         let accessLevel = as3Property.accessLevel;
         let isStatic = as3Property.isStatic;
+        let isInterface = scope instanceof as3.InterfaceDefinition;
         
-        let propertyOutput = accessLevel;
+        let getterOutput = "function get ";
         if(isStatic)
         {
-            propertyOutput += " static";
+            getterOutput = "static" + " " + getterOutput;
         }
-        propertyOutput += " function get ";
-        propertyOutput += propertyName;
-        propertyOutput += "():";
-        propertyOutput += propertyType.getFullyQualifiedName();
-        propertyOutput += " { return ";
-        propertyOutput += as3.getDefaultReturnValueForType(propertyType);
-        propertyOutput += "; }";
-        propertyOutput += NEW_LINE;
+        if(!isInterface && accessLevel !== null)
+        {
+            getterOutput = accessLevel + " " + getterOutput;
+        }
+        getterOutput += propertyName;
+        getterOutput += "():";
+        getterOutput += this.getNameToEmit(propertyType, scope);
+        if(!isInterface)
+        {
+            getterOutput += " { return ";
+            getterOutput += as3.getDefaultReturnValueForType(propertyType);
+            getterOutput += "; }";
+        }
+        getterOutput += NEW_LINE;
         
-        propertyOutput += accessLevel;
+        let setterOutput = "function set ";
         if(isStatic)
         {
-            propertyOutput += " static";
+            setterOutput = "static" + " " + setterOutput;
         }
-        propertyOutput += " function set ";
-        propertyOutput += propertyName;
-        propertyOutput += "(value:";
-        propertyOutput += propertyType.getFullyQualifiedName();
-        propertyOutput += "):" + as3.BuiltIns[as3.BuiltIns.void] + " {}";
-        return propertyOutput;
+        if(!isInterface && accessLevel !== null)
+        {
+            setterOutput = accessLevel + " " + setterOutput;
+        }
+        setterOutput += propertyName;
+        setterOutput += "(value:";
+        setterOutput += this.getNameToEmit(propertyType, scope);
+        setterOutput += "):" + as3.BuiltIns[as3.BuiltIns.void];
+        if(!isInterface)
+        {
+            setterOutput += " {}";
+        }
+        return getterOutput + setterOutput;
     }
     
-    private emitVariable(as3Property: as3.PropertyDefinition): string
+    private emitVariable(as3Property: as3.PropertyDefinition, scope: as3.PackageLevelDefinition): string
     {
         let propertyName = as3Property.name;
         let propertyType = as3Property.type;
@@ -385,7 +457,7 @@ class ASEmitter
         propertyOutput += " var ";
         propertyOutput += propertyName;
         propertyOutput += ":";
-        propertyOutput += propertyType.getFullyQualifiedName();
+        propertyOutput += this.getNameToEmit(propertyType, scope);
         propertyOutput += ";";
         propertyOutput += NEW_LINE;
         
@@ -411,7 +483,7 @@ class ASEmitter
         return "}";
     }
     
-    private emitParameters(as3Function: as3.FunctionDefinition): string
+    private emitParameters(as3Function: as3.FunctionDefinition, scope: as3.PackageLevelDefinition): string
     {   
         let parameters = as3Function.parameters;
         
@@ -430,10 +502,11 @@ class ASEmitter
                     signatureOutput += "...";
                 }
                 signatureOutput += parameter.name;
-                if(parameter.type)
+                let parameterType = parameter.type;
+                if(parameterType)
                 {
                     signatureOutput += ":";
-                    signatureOutput += parameter.type.getFullyQualifiedName();
+                    signatureOutput += this.getNameToEmit(parameterType, scope);
                 }
                 if(parameter.value)
                 {

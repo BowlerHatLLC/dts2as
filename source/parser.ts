@@ -980,6 +980,10 @@ class TS2ASParser
             {
                 let propertyDeclaration = <ts.PropertyDeclaration> member;
                 let as3Property = this.populateProperty(propertyDeclaration);
+                if("superClass" in as3Type)
+                {
+                    as3Property.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+                }
                 as3Type.properties.push(as3Property);
                 break;
             }
@@ -1021,15 +1025,8 @@ class TS2ASParser
     {
         let propertyName = this.declarationNameToString(propertyDeclaration.name);
         let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
-        if(!propertyType)
-        {
-            // TODO : remove this!
-            {
-                propertyType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
-            }
-        }
         let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
-        return new as3.PropertyDefinition(propertyName, as3.AccessModifiers[as3.AccessModifiers.public], propertyType, isStatic);
+        return new as3.PropertyDefinition(propertyName, null, propertyType, isStatic);
     }
     
     private populateParameters(functionLikeDeclaration: ts.FunctionLikeDeclaration): as3.ParameterDefinition[]
