@@ -419,7 +419,7 @@ class TS2ASParser
             case ts.SyntaxKind.VariableDeclaration:
             {
                 let as3PackageVariable = this.readPackageVariable(<ts.VariableDeclaration> node);
-                //if it's a function alias, readPackageVariable() will return null
+                //if it's a decomposed class, readPackageVariable() will return null
                 if(as3PackageVariable)
                 {
                     if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3PackageVariable.external)
@@ -440,7 +440,7 @@ class TS2ASParser
                     let as3Class = as3.getDefinitionByName(className, this._definitions);
                     if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Class.external)
                     {
-                        console.info("Replace Interface with Class: " + as3Class.getFullyQualifiedName());
+                        console.info("Replace Interface/Variable with Class: " + as3Class.getFullyQualifiedName());
                     }
                 }
                 break;
@@ -448,8 +448,15 @@ class TS2ASParser
             case ts.SyntaxKind.InterfaceDeclaration:
             {
                 let as3Interface = this.readInterface(<ts.InterfaceDeclaration> node);
-                //if it's a function alias, readInterface() will return null
-                if(as3Interface)
+                if(as3Interface instanceof as3.StaticSideClassDefinition)
+                {
+                    if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Interface.external)
+                    {
+                        console.info("Replace Interface with Static-side Class: " + as3Interface.getFullyQualifiedName());
+                    }
+                    this._definitions.push(as3Interface);
+                }
+                else if(as3Interface instanceof as3.InterfaceDefinition)
                 {
                     if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Interface.external)
                     {
@@ -457,6 +464,7 @@ class TS2ASParser
                     }
                     this._definitions.push(as3Interface);
                 }
+                //if it's a function alias, readInterface() will return null
                 break;
             }
             case ts.SyntaxKind.ClassDeclaration:
@@ -713,6 +721,14 @@ class TS2ASParser
         {
             fullyQualifiedInterfaceName = packageName + "." + interfaceName;
         }
+        let definesConstructor: boolean = false;
+        for(let member of interfaceDeclaration.members)
+        {
+            if(member.kind === ts.SyntaxKind.ConstructSignature)
+            {
+                return new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+            }
+        }
         if(interfaceDeclaration.members.length === 1)
         {
             let member = interfaceDeclaration.members[0];
@@ -887,8 +903,10 @@ class TS2ASParser
                     method.isStatic = true;
                 }
             }
-            else
+            else if(variableType instanceof as3.StaticSideClassDefinition)
             {
+                //otherwise, we should copy over the members from the separate
+                //static-side definition
                 for(let property of variableType.properties)
                 {
                     let staticProperty = new as3.PropertyDefinition(property.name, as3.AccessModifiers[as3.AccessModifiers.public], property.type, true);
@@ -899,9 +917,17 @@ class TS2ASParser
                     let staticMethod = new as3.MethodDefinition(method.name, method.type, method.parameters.slice(), as3.AccessModifiers[as3.AccessModifiers.public], true);
                     as3PackageLevelDefinition.methods.push(staticMethod);
                 }
+                as3PackageLevelDefinition.constructorMethod = variableType.constructorMethod;
+            }
+            else //something went terribly wrong
+            {
+                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+                {
+                    console.error("Cannot populate class from package variable named " + fullyQualifiedPackageVariableName + ".");
+                }
             }
         }
-        else //something went terribly wrong
+        else //something went terribly wrong 
         {
             if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
             {
@@ -922,6 +948,7 @@ class TS2ASParser
                 as3Type.properties.push(as3Property);
                 break;
             }
+            case ts.SyntaxKind.ConstructSignature:
             case ts.SyntaxKind.Constructor:
             {
                 let constructorDeclaration = <ts.ConstructorDeclaration> member;

@@ -213,6 +213,8 @@ export class ClassDefinition extends TypeDefinition
     dynamic: boolean;
 }
 
+export class StaticSideClassDefinition extends ClassDefinition {}
+
 export function getDefinitionByName(name: string, types: PackageLevelDefinition[]): PackageLevelDefinition
 {
     for(let as3Type of types)
