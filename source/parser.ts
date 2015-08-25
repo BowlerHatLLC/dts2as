@@ -1005,7 +1005,6 @@ class TS2ASParser
             let value = parameters[i];
             let parameterName = this.declarationNameToString(value.name);
             let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
-            //TODO: get value
             let parameterValue = null;
             
             var isOptional: boolean = false;
@@ -1021,6 +1020,23 @@ class TS2ASParser
                     isOptional = true;
                 }
             });
+            
+            if(isOptional)
+            {
+                //AS3 doesn't have optional parameters. in AS3, this parameter
+                //would have a default value instead.
+                parameterValue = "undefined";
+            }
+            else
+            {
+                let initializer = value.initializer;
+                if(initializer)
+                {
+                    let initializerText = this._currentSourceFile.text.substring(initializer.pos, initializer.end);
+                    initializerText = initializerText.trim();
+                    parameterValue = initializerText;
+                }
+            }
             
             as3Parameters.push(new as3.ParameterDefinition(parameterName, parameterType, parameterValue, isRest));
         }
