@@ -226,3 +226,18 @@ export function getDefinitionByName(name: string, types: PackageLevelDefinition[
     }
     return null;
 }
+
+let KEYWORD_NULL = "null";
+let AS3_RETURN_VALUE_MAP = {};
+AS3_RETURN_VALUE_MAP[BuiltIns[BuiltIns.Number]] = "0";
+AS3_RETURN_VALUE_MAP[BuiltIns[BuiltIns.Boolean]] = "false";
+
+export function getDefaultReturnValueForType(type: TypeDefinition): string
+{
+    let fullyQualifiedName = type.getFullyQualifiedName();
+    if(AS3_RETURN_VALUE_MAP.hasOwnProperty(fullyQualifiedName))
+    {
+        return AS3_RETURN_VALUE_MAP[fullyQualifiedName];
+    }
+    return KEYWORD_NULL;
+}

@@ -2,23 +2,7 @@
 
 import as3 = require("./as3");
 
-let KEYWORD_NULL = "null";
-
 let NEW_LINE = "\n";
-
-let AS3_RETURN_VALUE_MAP = {};
-AS3_RETURN_VALUE_MAP[as3.BuiltIns[as3.BuiltIns.Number]] = "0";
-AS3_RETURN_VALUE_MAP[as3.BuiltIns[as3.BuiltIns.Boolean]] = "false";
-
-function as3TypeToDefaultReturnValue(type: as3.TypeDefinition): string
-{
-    let fullyQualifiedName = type.getFullyQualifiedName();
-    if(AS3_RETURN_VALUE_MAP.hasOwnProperty(fullyQualifiedName))
-    {
-        return AS3_RETURN_VALUE_MAP[fullyQualifiedName];
-    }
-    return KEYWORD_NULL;
-}
 
 function arrayValues(array: Array<any>): Array<any>
 {
@@ -153,7 +137,7 @@ class ASEmitter
                         {
                             classOutput += ", ";
                         }
-                        classOutput += as3TypeToDefaultReturnValue(param.type);
+                        classOutput += as3.getDefaultReturnValueForType(param.type);
                     }
                     classOutput += "); ";
                 }
@@ -345,7 +329,7 @@ class ASEmitter
             methodOutput += ":";
             methodOutput += methodType.getFullyQualifiedName();
             methodOutput += " { return ";
-            methodOutput += as3TypeToDefaultReturnValue(methodType);
+            methodOutput += as3.getDefaultReturnValueForType(methodType);
             methodOutput += "; }";
         }
         else //void
@@ -374,7 +358,7 @@ class ASEmitter
         propertyOutput += "():";
         propertyOutput += propertyType.getFullyQualifiedName();
         propertyOutput += " { return ";
-        propertyOutput += as3TypeToDefaultReturnValue(propertyType);
+        propertyOutput += as3.getDefaultReturnValueForType(propertyType);
         propertyOutput += "; }";
         propertyOutput += NEW_LINE;
         
@@ -450,7 +434,12 @@ class ASEmitter
                 {
                     signatureOutput += ":";
                     signatureOutput += parameter.type.getFullyQualifiedName();
-                } 
+                }
+                if(parameter.value)
+                {
+                    signatureOutput += " = ";
+                    signatureOutput += parameter.value;
+                }
             }
         }
         signatureOutput += ")";
