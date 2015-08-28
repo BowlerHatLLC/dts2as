@@ -96,51 +96,89 @@ let libFileName = "./node_modules/typescript/bin/lib.d.ts";
 let libSourceText = fs.readFileSync(libFileName, "utf8");
 parser.setStandardLib(libFileName, libSourceText);
 
+function canEmit(symbol: as3.PackageLevelDefinition): boolean
+{
+	if(symbol.external)
+	{
+		return false;
+	}
+	if(excludedSymbols && excludedSymbols.indexOf(symbol.getFullyQualifiedName()) >= 0)
+	{
+		return false;
+	}
+	return true;
+}
+
 fileNames.forEach(fileName =>
 {
 	let sourceText = fs.readFileSync(fileName, "utf8");
-	let result = parser.parse(fileName, sourceText);
-	let emitter = new AS3Emitter(result);
-	result.forEach(function(as3Type:as3.PackageLevelDefinition)
+	let packageLevelSymbols = parser.parse(fileName, sourceText);
+	let emitter = new AS3Emitter(packageLevelSymbols);
+	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
 	{
-		if(as3Type.external)
+		if(!canEmit(as3Type))
 		{
-			//skip this one
 			return;
 		}
-		if(excludedSymbols && excludedSymbols.indexOf(as3Type.getFullyQualifiedName()) >= 0)
+		//delete all output files first, if they exist, to detect duplicates
+		//so that we can display a warning
+		deleteAS3File(as3Type);
+	});
+	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
+	{
+		if(!canEmit(as3Type))
 		{
 			return;
 		}
 		if("superClass" in as3Type)
 		{
 			let as3Class = <as3.ClassDefinition> as3Type;
-			writeAS3File(as3Class.packageName, as3Class.name, emitter.emitClass(as3Class));
+			writeAS3File(as3Class, emitter.emitClass(as3Class));
 		}
 		else if("interfaces" in as3Type)
 		{
 			let as3Interface = <as3.InterfaceDefinition> as3Type;
-			writeAS3File(as3Interface.packageName, as3Interface.name, emitter.emitInterface(as3Interface));
+			writeAS3File(as3Interface, emitter.emitInterface(as3Interface));
 		}
 		else if("parameters" in as3Type)
 		{
 			let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
-			writeAS3File(as3PackageFunction.packageName, as3PackageFunction.name, emitter.emitPackageFunction(as3PackageFunction));
+			writeAS3File(as3PackageFunction, emitter.emitPackageFunction(as3PackageFunction));
 		}
 		else
 		{
 			let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
-			writeAS3File(as3PackageVariable.packageName, as3PackageVariable.name, emitter.emitPackageVariable(as3PackageVariable));
+			writeAS3File(as3PackageVariable, emitter.emitPackageVariable(as3PackageVariable));
 		}
 	});
 });
-	
-function writeAS3File(packageName: string, name: string, code: string)
+
+function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 {
-	let packageParts = packageName.split(".");
+	let packageParts = symbol.packageName.split(".");
 	packageParts.unshift(outputPath);
-	let outputDirPath = packageParts.join(path.sep);
-	let outputFilePath = outputDirPath + path.sep + name + ".as"; 
+	packageParts.push(symbol.name + ".as");
+	return path.join.apply(null, packageParts);
+}
+
+function deleteAS3File(symbol: as3.PackageLevelDefinition)
+{
+	let outputFilePath = getAS3FilePath(symbol);
+	if(fs.existsSync(outputFilePath))
+	{
+		fs.unlinkSync(outputFilePath);
+	}
+}
+	
+function writeAS3File(symbol: as3.PackageLevelDefinition, code: string)
+{
+	let outputFilePath = getAS3FilePath(symbol);
+	if(fs.existsSync(outputFilePath))
+	{
+		console.warn("Warning: Multiple ActionScript symbols share the same output file path. Skipping symbol: " + symbol.getFullyQualifiedName());
+		return;
+	}
+	let outputDirPath = path.dirname(outputFilePath);
 	mkdirp.sync(outputDirPath);
 	fs.writeFileSync(outputFilePath, code);
 }
