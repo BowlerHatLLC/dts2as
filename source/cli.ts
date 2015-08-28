@@ -11,7 +11,7 @@ import AS3Emitter = require("./emitter");
 import as3 = require("./as3");
 let mkdirp = require("../node_modules/mkdirp");
 
-let outputPath = "./generated";
+let outputPath;
 let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
@@ -175,8 +175,13 @@ fileNames.forEach(fileName =>
 
 function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 {
+	let as3OutputPath = outputPath;
+	if(!as3OutputPath)
+	{
+		as3OutputPath = path.dirname(symbol.sourceFile);
+	}
 	let packageParts = symbol.packageName.split(".");
-	packageParts.unshift(outputPath);
+	packageParts.unshift(as3OutputPath);
 	packageParts.push(symbol.name + ".as");
 	return path.join.apply(null, packageParts);
 }
