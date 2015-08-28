@@ -14,12 +14,14 @@ let mkdirp = require("../node_modules/mkdirp");
 let outputPath = "./generated";
 let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
+let excludedSymbols: string[];
 
 let params = minimist(process.argv.slice(2),
 {
 	number: ["debug"],
 	alias:
 	{
+		e: ["excludeSymbol"],
 		v: ["version"]
 	}
 });
@@ -55,6 +57,20 @@ for(let key in params)
 			outputPath = params[key];
 			break;
 		}
+		case "excludeSymbol":
+		{
+			let value = params[key];
+			if(value instanceof String)
+			{
+				excludedSymbols = [value];
+			}
+			else
+			{
+				excludedSymbols = value;
+			}
+			break;
+		}
+		case "e":
 		case "v":
 		{
 			//ignore aliases
@@ -90,6 +106,10 @@ fileNames.forEach(fileName =>
 		if(as3Type.external)
 		{
 			//skip this one
+			return;
+		}
+		if(excludedSymbols && excludedSymbols.indexOf(as3Type.getFullyQualifiedName()) >= 0)
+		{
 			return;
 		}
 		if("superClass" in as3Type)
@@ -140,9 +160,11 @@ function printUsage()
 	console.info("Examples: dts2as hello.d.ts");
 	console.info("          dts2as file1.d.ts file2.d.ts");
 	console.info("          dts2as --outDir ./as3-files file.d.ts");
+	console.info("          dts2as --excludeSymbol com.example.SomeType file.d.ts");
 	console.info();
 	console.info("Options:");
 	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
+	console.info(" -e SYMBOL, --excludeSymbol SYMBOL  Specify the fully-qualified of a symbol to exclude when emitting ActionScript.");
 	console.info(" --debug LEVEL                      Specify the level of debug output, in the range from 0 to 2. 0 means none, and 2 is most verbose.");
 	console.info(" -v, --version                      Print the version.");
 }
