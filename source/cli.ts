@@ -205,7 +205,7 @@ function writeAS3File(symbol: as3.PackageLevelDefinition, code: string)
 
 function printVersion()
 {
-	let packageJSONString = fs.readFileSync(__dirname + path.sep + ".." + path.sep + "package.json", "utf8");
+	let packageJSONString = fs.readFileSync(path.join(__dirname, "..", "package.json"), "utf8");
 	let packageJSON = JSON.parse(packageJSONString);
 	console.info("Version: " + packageJSON.version);
 }
