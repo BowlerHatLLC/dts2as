@@ -380,7 +380,11 @@ class ASEmitter
         methodOutput += this.emitParameters(as3Method, scope);
         methodOutput += ":";
         methodOutput += this.getNameToEmit(methodType, scope);
-        if(!isInterface)
+        if(isInterface)
+        {
+            methodOutput += ";";
+        }
+        else
         {
             if(methodType.getFullyQualifiedName() !== as3.BuiltIns[as3.BuiltIns.void])
             {
@@ -419,7 +423,11 @@ class ASEmitter
         getterOutput += propertyName;
         getterOutput += "():";
         getterOutput += this.getNameToEmit(propertyType, scope);
-        if(!isInterface)
+        if(isInterface)
+        {
+            getterOutput += ";";
+        }
+        else
         {
             getterOutput += " { return ";
             getterOutput += as3.getDefaultReturnValueForType(propertyType);
@@ -440,7 +448,11 @@ class ASEmitter
         setterOutput += "(value:";
         setterOutput += this.getNameToEmit(propertyType, scope);
         setterOutput += "):" + as3.BuiltIns[as3.BuiltIns.void];
-        if(!isInterface)
+        if(isInterface)
+        {
+            setterOutput += ";";
+        }
+        else
         {
             setterOutput += " {}";
         }
