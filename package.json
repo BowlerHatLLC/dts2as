@@ -1,0 +1,28 @@
+{
+  "name": "dts2as",
+  "version": "1.0.0",
+  "description": "Command line tool to convert TypeScript definition files to ActionScript 3 externs files",
+  "repository": "BowlerHatLLC/dts2as",
+  "author": "Josh Tynjala",
+  "license": "Apache-2.0",
+  "keywords": [
+    "TypeScript",
+    "ActionScript"
+  ],
+  "files": [
+    "bin"
+  ],
+  "bin": {
+    "dts2as": "./bin/dts2as"
+  },
+  "scripts": {
+    "build": "tsc source/*.ts --module commonjs --target ES5 --outDir bin"
+  },
+  "dependencies": {
+    "minimist": "^1.1.3",
+    "mkdirp": "^0.5.1",
+    "typescript": "^1.5.3"
+  },
+  "devDependencies": {
+  }
+}
