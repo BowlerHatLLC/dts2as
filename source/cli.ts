@@ -15,13 +15,15 @@ let outputPath = "./generated";
 let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
+let includedSymbols: string[];
 
 let params = minimist(process.argv.slice(2),
 {
 	number: ["debug"],
 	alias:
 	{
-		e: ["excludeSymbol"],
+		i: ["include"],
+		e: ["exclude"],
 		v: ["version"]
 	}
 });
@@ -57,7 +59,7 @@ for(let key in params)
 			outputPath = params[key];
 			break;
 		}
-		case "excludeSymbol":
+		case "exclude":
 		{
 			let value = params[key];
 			if(value instanceof String)
@@ -70,7 +72,21 @@ for(let key in params)
 			}
 			break;
 		}
+		case "include":
+		{
+			let value = params[key];
+			if(value instanceof String)
+			{
+				includedSymbols = [value];
+			}
+			else
+			{
+				includedSymbols = value;
+			}
+			break;
+		}
 		case "e":
+		case "i":
 		case "v":
 		{
 			//ignore aliases
@@ -103,6 +119,10 @@ function canEmit(symbol: as3.PackageLevelDefinition): boolean
 		return false;
 	}
 	if(excludedSymbols && excludedSymbols.indexOf(symbol.getFullyQualifiedName()) >= 0)
+	{
+		return false;
+	}
+	if(includedSymbols && includedSymbols.indexOf(symbol.getFullyQualifiedName()) < 0)
 	{
 		return false;
 	}
@@ -185,7 +205,6 @@ function writeAS3File(symbol: as3.PackageLevelDefinition, code: string)
 
 function printVersion()
 {
-	
 	let packageJSONString = fs.readFileSync(__dirname + path.sep + ".." + path.sep + "package.json", "utf8");
 	let packageJSON = JSON.parse(packageJSONString);
 	console.info("Version: " + packageJSON.version);
@@ -198,11 +217,12 @@ function printUsage()
 	console.info("Examples: dts2as hello.d.ts");
 	console.info("          dts2as file1.d.ts file2.d.ts");
 	console.info("          dts2as --outDir ./as3-files file.d.ts");
-	console.info("          dts2as --excludeSymbol com.example.SomeType file.d.ts");
+	console.info("          dts2as --exclude com.example.SomeType file.d.ts");
 	console.info();
 	console.info("Options:");
 	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
-	console.info(" -e SYMBOL, --excludeSymbol SYMBOL  Specify the fully-qualified of a symbol to exclude when emitting ActionScript.");
+	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
+	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
 	console.info(" --debug LEVEL                      Specify the level of debug output, in the range from 0 to 2. 0 means none, and 2 is most verbose.");
 	console.info(" -v, --version                      Print the version.");
 }
