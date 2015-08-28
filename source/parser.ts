@@ -361,12 +361,23 @@ class TS2ASParser
         {
             case ts.SyntaxKind.SourceFile:
             {
-                ts.forEachChild(node, this.readPackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.EndOfFileToken)
+                    {
+                        //safe to ignore end of file
+                        return;
+                    }
+                    this.readPackageLevelDefinitions(node);
+                });
                 break;
             }
             case ts.SyntaxKind.ModuleBlock:
             {
-                ts.forEachChild(node, this.readPackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    this.readPackageLevelDefinitions(node);
+                });
                 break;
             }
             case ts.SyntaxKind.ModuleDeclaration:
@@ -375,7 +386,21 @@ class TS2ASParser
                 let moduleName = moduleDeclaration.name;
                 this._moduleStack.push(this.declarationNameToString(moduleName));
                 this._currentModuleNeedsRequire = moduleName.kind === ts.SyntaxKind.StringLiteral;
-                ts.forEachChild(node, this.readPackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.Identifier ||
+                        node.kind === ts.SyntaxKind.StringLiteral)
+                    {
+                        //safe to skip name of module
+                        return;
+                    }
+                    if(node.kind === ts.SyntaxKind.DeclareKeyword)
+                    {
+                        //safe to skip declare keyword
+                        return;
+                    }
+                    this.readPackageLevelDefinitions(node);
+                });
                 this._moduleStack.pop();
                 break;
             }
@@ -395,12 +420,15 @@ class TS2ASParser
             }
             case ts.SyntaxKind.VariableStatement:
             {
-                this._variableStatementHasExport = (node.flags & ts.NodeFlags.Export) === ts.NodeFlags.Export;
                 ts.forEachChild(node, (node) =>
                 {
                     if(node.kind === ts.SyntaxKind.DeclareKeyword)
                     {
                         this._variableStatementHasDeclareKeyword = true;
+                    }
+                    else if(node.kind === ts.SyntaxKind.ExportKeyword)
+                    {
+                        this._variableStatementHasExport = true;
                     }
                     else
                     {
@@ -487,11 +515,6 @@ class TS2ASParser
                 {
                     console.info("Creating type alias from " + aliasName + " to " + aliasType.getFullyQualifiedName() + ".");
                 }
-            }
-            case ts.SyntaxKind.DeclareKeyword:
-            case ts.SyntaxKind.EndOfFileToken:
-            {
-                //this is safe to ignore
                 break;
             }
             default:
@@ -513,14 +536,30 @@ class TS2ASParser
         {
             case ts.SyntaxKind.SourceFile:
             {
-                ts.forEachChild(node, this.populatePackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.EndOfFileToken)
+                    {
+                        //safe to ignore end of file token in source file
+                        return;
+                    }
+                    if(node.kind === ts.SyntaxKind.TypeAliasDeclaration)
+                    {
+                        //we took care of type aliases in the first pass
+                        return;
+                    }
+                    this.populatePackageLevelDefinitions(node);
+                });
                 break;
             }
             case ts.SyntaxKind.ModuleBlock:
             {
                 this._namesInCurrentModule = [];
                 ts.forEachChild(node, this.addNameToCurrentModule.bind(this));
-                ts.forEachChild(node, this.populatePackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    this.populatePackageLevelDefinitions(node);
+                });
                 break;
             }
             case ts.SyntaxKind.ModuleDeclaration:
@@ -528,7 +567,21 @@ class TS2ASParser
                 let moduleDeclaration = <ts.ModuleDeclaration> node;
                 let moduleName = moduleDeclaration.name;
                 this._moduleStack.push(this.declarationNameToString(moduleName));
-                ts.forEachChild(node, this.populatePackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.Identifier ||
+                        node.kind === ts.SyntaxKind.StringLiteral)
+                    {
+                        //safe to ignore name of module
+                        return;
+                    }
+                    if(node.kind === ts.SyntaxKind.DeclareKeyword)
+                    {
+                        //we already took care of the declare keyword
+                        return;
+                    }
+                    this.populatePackageLevelDefinitions(node);
+                });
                 this._moduleStack.pop();
                 break;
             }
@@ -540,7 +593,16 @@ class TS2ASParser
             case ts.SyntaxKind.VariableStatement:
             case ts.SyntaxKind.VariableDeclarationList:
             {
-                ts.forEachChild(node, this.populatePackageLevelDefinitions.bind(this));
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.DeclareKeyword ||
+                        node.kind === ts.SyntaxKind.ExportKeyword)
+                    {
+                        //we already took care of the declare or export keyword
+                        return;
+                    }
+                    this.populatePackageLevelDefinitions(node);
+                });
                 break;
             }
             case ts.SyntaxKind.VariableDeclaration:
@@ -556,13 +618,6 @@ class TS2ASParser
             case ts.SyntaxKind.ClassDeclaration:
             {
                 this.populateClass(<ts.ClassDeclaration> node);
-                break;
-            }
-            case ts.SyntaxKind.TypeAliasDeclaration:
-            case ts.SyntaxKind.DeclareKeyword:
-            case ts.SyntaxKind.EndOfFileToken:
-            {
-                //this is safe to ignore
                 break;
             }
             default:
@@ -1108,8 +1163,8 @@ module TS2ASParser
     export enum DebugLevel
     {
         NONE = 0,
-        INFO = 1,
-        WARN = 2
+        WARN = 1,
+        INFO = 2
     }
 }
 
