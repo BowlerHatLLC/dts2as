@@ -228,6 +228,5 @@ function printUsage()
 	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
 	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
-	console.info(" --debug LEVEL                      Specify the level of debug output, in the range from 0 to 2. 0 means none, and 2 is most verbose.");
-	console.info(" -v, --version                      Print the version.");
+	console.info(" -v, --version                      Print the version of dts2as.");
 }
