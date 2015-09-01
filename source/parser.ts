@@ -401,6 +401,7 @@ class TS2ASParser
                     }
                     this.readPackageLevelDefinitions(node);
                 });
+                this._currentModuleNeedsRequire = false;
                 this._moduleStack.pop();
                 break;
             }
