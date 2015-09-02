@@ -302,10 +302,16 @@ class ASEmitter
         {
             return name;
         }
-        //if it's in the same package as the scope, it can be shortened.
-        //however, there's one exception. if there's a top level definition
-        //with the same name, we need to be specific.
-        if(packageName === scope.packageName && as3.getDefinitionByName(name, this._types) === null)
+        //if there's a top level definition or another symbol in the same
+        //package as the scope with the same name, we need to be specific.
+        let nameInPackage = name;
+        let scopePackageName = scope.packageName;
+        if(nameInPackage.length > 0)
+        {
+            nameInPackage = scopePackageName + nameInPackage;
+        }
+        if(as3.getDefinitionByName(name, this._types) === null ||
+            (packageName !== scopePackageName && as3.getDefinitionByName(nameInPackage, this._types) === null))
         {
             return name;
         }

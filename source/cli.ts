@@ -2,6 +2,7 @@
 /// <reference path="./parser.ts" />
 /// <reference path="./emitter.ts" />
 /// <reference path="./as3.ts" />
+/// <reference path="../node_modules/typescript/bin/typescript.d.ts" />
 
 import fs = require("fs");
 import path = require("path");
@@ -9,6 +10,7 @@ import minimist = require("minimist");
 import TS2ASParser = require("./parser");
 import AS3Emitter = require("./emitter");
 import as3 = require("./as3");
+import ts = require("typescript");
 let mkdirp = require("../node_modules/mkdirp");
 
 let outputPath;
@@ -16,6 +18,7 @@ let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
 let includedSymbols: string[];
+let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
 
 let params = minimist(process.argv.slice(2),
 {
@@ -57,6 +60,34 @@ for(let key in params)
 		case "outDir":
 		{
 			outputPath = params[key];
+			break;
+		}
+		case "target":
+		{
+			let scriptTargetName = params[key];
+			switch(scriptTargetName)
+			{
+				case "ES3":
+				{
+					scriptTarget = ts.ScriptTarget.ES3;
+					break;
+				}
+				case "ES5":
+				{
+					scriptTarget = ts.ScriptTarget.ES5;
+					break;
+				}
+				case "ES6":
+				{
+					scriptTarget = ts.ScriptTarget.ES6;
+					break;
+				}
+				default:
+				{
+					console.error("Unknown script target: " + scriptTargetName);
+					process.exit(1);
+				}
+			}
 			break;
 		}
 		case "exclude":
@@ -105,12 +136,8 @@ if(fileNames.length === 0)
 	process.exit();
 }
 
-let parser = new TS2ASParser();
+let parser = new TS2ASParser(scriptTarget);
 parser.debugLevel = debugLevel;
-
-let libFileName = "./node_modules/typescript/bin/lib.d.ts";
-let libSourceText = fs.readFileSync(libFileName, "utf8");
-parser.setStandardLib(libFileName, libSourceText);
 
 function canEmit(symbol: as3.PackageLevelDefinition): boolean
 {
@@ -131,8 +158,7 @@ function canEmit(symbol: as3.PackageLevelDefinition): boolean
 
 fileNames.forEach(fileName =>
 {
-	let sourceText = fs.readFileSync(fileName, "utf8");
-	let packageLevelSymbols = parser.parse(fileName, sourceText);
+	let packageLevelSymbols = parser.parse(fileName);
 	let emitter = new AS3Emitter(packageLevelSymbols);
 	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
 	{
@@ -228,5 +254,6 @@ function printUsage()
 	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
 	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
+	console.info(" -t VERSION, --target VERSION       Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
 	console.info(" -v, --version                      Print the version of dts2as.");
 }

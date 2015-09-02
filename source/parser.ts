@@ -3,6 +3,7 @@
 /// <reference path="../node_modules/typescript/bin/typescript.d.ts" />
 
 import path = require("path");
+import fs = require("fs");
 import as3 = require("./as3");
 import ts = require("typescript");
 
@@ -41,16 +42,18 @@ TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.void]] =  as3.BuiltIns[
 
 class TS2ASParser
 {
-    constructor()
+    constructor(scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5)
     {
+        this._scriptTarget = scriptTarget;
         this._functionAliases = [];
         this._typeAliasMap = {};
         this._typeParameterMap = {};
-        this._standardLibDefinitions = [];
+        this._sourceFiles = [];
     }
     
+    private _hasNoDefaultLib: boolean;
+    private _sourceFiles: ts.SourceFile[];
     private _definitions: as3.PackageLevelDefinition[];
-    private _standardLibDefinitions: as3.PackageLevelDefinition[];
     private _functionAliases: string[];
     private _typeAliasMap: any;
     private _typeParameterMap:any;
@@ -58,42 +61,102 @@ class TS2ASParser
     private _currentFileIsExternal: boolean;
     private _moduleStack: string[];
     private _currentModuleNeedsRequire: boolean;
-    private _namesInCurrentModule: string[];
     private _variableStatementHasDeclareKeyword: boolean = false;
     private _variableStatementHasExport: boolean = false;
+    private _scriptTarget: ts.ScriptTarget;
     debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
-    setStandardLib(fileName: string, sourceText: string)
+    parse(fileName: string): as3.PackageLevelDefinition[]
     {
-        this._currentFileIsExternal = true;
-        this._currentSourceFile = this.addFileInternal(fileName, sourceText);
-        this.populatePackageLevelDefinitions(this._currentSourceFile);
-        this._standardLibDefinitions = this._definitions.slice();
-    }
-    
-    parse(fileName: string, sourceText: string): as3.PackageLevelDefinition[]
-    {
-        this._currentFileIsExternal = false;
-        this._currentSourceFile = this.addFileInternal(fileName, sourceText);
-        this.populatePackageLevelDefinitions(this._currentSourceFile);
-        return this._definitions;
-    }
-    
-    private addFileInternal(fileName: string, sourceText: string): ts.SourceFile
-    {
-        this._namesInCurrentModule = [];
-        this._moduleStack = [];
-        this._currentSourceFile = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.ES5);
-        if(this._currentSourceFile.hasNoDefaultLib)
+        this.findSourceFiles(fileName);
+        let referencedFileIsStandardLib = this._sourceFiles.some((sourceFile) =>
         {
+            return sourceFile.hasNoDefaultLib;
+        });
+        if(referencedFileIsStandardLib)
+        {
+            if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+            {
+                console.info("Referenced files contain a standard library.");
+            }
             this._definitions = [];
         }
         else
         {
-            this._definitions = this._standardLibDefinitions.slice();
+            if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+            {
+                console.info("Using default standard library for script target.");
+            }
+            this.readStandardLibrary();
         }
-        this.readPackageLevelDefinitions(this._currentSourceFile);
-        if(this._currentSourceFile.hasNoDefaultLib)
+        this._sourceFiles.forEach((sourceFile, index) =>
+        {
+            this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
+            this.readSourceFile(sourceFile);
+        });
+        this._sourceFiles.forEach((sourceFile, index) =>
+        {
+            this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
+            this.populatePackageLevelDefinitions(sourceFile);
+        });
+        return this._definitions;
+    }
+    
+    private readStandardLibrary()
+    {
+        let standardLibFileName: string;
+        switch(this._scriptTarget)
+        {
+            case ts.ScriptTarget.ES3:
+            case ts.ScriptTarget.ES5:
+            {
+                standardLibFileName = "lib.d.ts";
+                break;
+            }
+            case ts.ScriptTarget.ES6:
+            {
+                standardLibFileName = "lib.es6.d.ts";
+                break;
+            }
+            default:
+            {
+                throw ("Unknown ts.ScriptTarget: " + this._scriptTarget);
+            }
+        }
+        let standardLibPath = path.join("node_modules", "typescript", "bin", standardLibFileName);
+        let sourceText = fs.readFileSync(standardLibPath, "utf8");
+        let sourceFile = ts.createSourceFile(standardLibPath, sourceText, this._scriptTarget);
+        this._definitions = [];
+        this._currentFileIsExternal = true;
+        this.readSourceFile(sourceFile);
+        this.populatePackageLevelDefinitions(sourceFile);
+    }
+    
+    private findSourceFiles(fileName: string)
+    {
+        let sourceText = fs.readFileSync(fileName, "utf8");
+        let sourceFile = ts.createSourceFile(fileName, sourceText, this._scriptTarget);
+        sourceFile.referencedFiles.forEach((fileReference) =>
+        {
+            var fileName = path.resolve(path.dirname(sourceFile.fileName), fileReference.fileName);
+            let sourceFileExists = this._sourceFiles.some((sourceFile) =>
+            {
+                return sourceFile.fileName === fileName;
+            });
+            if(sourceFileExists)
+            {
+                return;
+            }
+            this.findSourceFiles(fileName);
+        });
+        this._sourceFiles.push(sourceFile);
+    }
+    
+    private readSourceFile(sourceFile: ts.SourceFile)
+    {
+        this._moduleStack = [];
+        this.readPackageLevelDefinitions(sourceFile);
+        if(sourceFile.hasNoDefaultLib)
         {
             this.addDynamicFlagToStandardLibraryClasses();
         
@@ -102,7 +165,6 @@ class TS2ASParser
             //manually.
             this._definitions.push(new as3.InterfaceDefinition("void", null, null, null, false, true));
         }
-        return this._currentSourceFile;
     }
     
     private addDynamicFlagToStandardLibraryClasses()
@@ -117,22 +179,18 @@ class TS2ASParser
         }
     }
 
-    private isNameInCurrentModule(name: string)
+    private isNameInPackage(name: string, packageName: string)
     {
-        if(this._moduleStack.length === 0)
+        let fullyQualifiedName = name;
+        if(packageName.length > 0)
         {
-            return false;
+            fullyQualifiedName = packageName + "." + name;
         }
-        return this._namesInCurrentModule.indexOf(name) >= 0;
-    }
-    
-    private getFullyQualifiedName(typeName: string): string
-    {
-        if(this._moduleStack.length > 0)
+        if(this._functionAliases.indexOf(fullyQualifiedName) >= 0)
         {
-            return this._moduleStack.join(".") + "." + typeName;
+            return true;
         }
-        return typeName;
+        return as3.getDefinitionByName(fullyQualifiedName, this._definitions) !== null;
     }
     
     private mergeFunctions(methodToKeep: as3.FunctionDefinition, methodToMerge: as3.FunctionDefinition)
@@ -152,34 +210,6 @@ class TS2ASParser
             {
                 //the overload has a different type, so generalize to Object
                 paramToKeep.type = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
-            }
-        }
-    }
-    
-    private addNameToCurrentModule(node: ts.Node)
-    {
-        switch(node.kind)
-        {
-            case ts.SyntaxKind.FunctionDeclaration:
-            {
-                let functionDeclaration = <ts.FunctionDeclaration> node;
-                let functionName = this.declarationNameToString(functionDeclaration.name);
-                this._namesInCurrentModule.push(functionName);
-                break;
-            }
-            case ts.SyntaxKind.InterfaceDeclaration:
-            {
-                let interfaceDeclaration = <ts.InterfaceDeclaration> node;
-                let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
-                this._namesInCurrentModule.push(interfaceName);
-                break;
-            }
-            case ts.SyntaxKind.ClassDeclaration:
-            {
-                let classDeclaration = <ts.ClassDeclaration> node;
-                let className = this.declarationNameToString(classDeclaration.name);
-                this._namesInCurrentModule.push(className);
-                break;
             }
         }
     }
@@ -268,9 +298,16 @@ class TS2ASParser
         {
             typeInSource = this._typeAliasMap[typeInSource];
         }
-        if(this.isNameInCurrentModule(typeInSource))
+        var moduleStack = this._moduleStack.slice();
+        while(moduleStack.length > 0)
         {
-            typeInSource = this.getFullyQualifiedName(typeInSource);
+            let packageName = moduleStack.join(".");
+            if(this.isNameInPackage(typeInSource, packageName))
+            {
+                typeInSource = packageName + "." + typeInSource;
+                break;
+            }
+            moduleStack.pop();
         }
         if(this._functionAliases.indexOf(typeInSource) >= 0)
         {
@@ -361,6 +398,7 @@ class TS2ASParser
         {
             case ts.SyntaxKind.SourceFile:
             {
+                this._currentSourceFile = <ts.SourceFile> node;
                 ts.forEachChild(node, (node) =>
                 {
                     if(node.kind === ts.SyntaxKind.EndOfFileToken)
@@ -537,6 +575,7 @@ class TS2ASParser
         {
             case ts.SyntaxKind.SourceFile:
             {
+                this._currentSourceFile = <ts.SourceFile> node;
                 ts.forEachChild(node, (node) =>
                 {
                     if(node.kind === ts.SyntaxKind.EndOfFileToken)
@@ -555,8 +594,6 @@ class TS2ASParser
             }
             case ts.SyntaxKind.ModuleBlock:
             {
-                this._namesInCurrentModule = [];
-                ts.forEachChild(node, this.addNameToCurrentModule.bind(this));
                 ts.forEachChild(node, (node) =>
                 {
                     this.populatePackageLevelDefinitions(node);
@@ -711,7 +748,6 @@ class TS2ASParser
     private populateClass(classDeclaration: ts.ClassDeclaration)
     {
         let className = this.declarationNameToString(classDeclaration.name);
-        this._namesInCurrentModule.push(className);
         let packageName = this._moduleStack.join(".");
         let fullyQualifiedClassName = className;
         if(packageName.length > 0)
@@ -740,7 +776,7 @@ class TS2ASParser
                         let superClass = <as3.ClassDefinition> superClassAS3Type;
                         if(!superClass)
                         {
-                            throw "Super class not found: " + this.getAS3FullyQualifiedNameFromTSTypeNode(superClassTSType);
+                            throw "Super class " + this.getAS3FullyQualifiedNameFromTSTypeNode(superClassTSType) + " not found for " + fullyQualifiedClassName + " to extend.";
                         }
                         as3Class.superClass = superClass;
                         break;
@@ -753,7 +789,7 @@ class TS2ASParser
                             let as3Interface = <as3.InterfaceDefinition> interfaceAS3Type;
                             if(!as3Interface)
                             {
-                                throw "Interface to implement not found: " + this.getAS3FullyQualifiedNameFromTSTypeNode(type);
+                                throw "Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedClassName + " to implement.";
                             }
                             as3Class.interfaces.push(as3Interface);
                         });
@@ -804,7 +840,6 @@ class TS2ASParser
     private populateInterface(interfaceDeclaration: ts.InterfaceDeclaration)
     {
         let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
-        this._namesInCurrentModule.push(interfaceName);
         let packageName = this._moduleStack.join(".");
         let fullyQualifiedInterfaceName = interfaceName;
         if(packageName.length > 0)
@@ -845,7 +880,7 @@ class TS2ASParser
                                 let otherInterface = <as3.InterfaceDefinition> interfaceAS3Type;
                                 if(!otherInterface)
                                 {
-                                    throw "Interface to extend not found: " + this.getAS3FullyQualifiedNameFromTSTypeNode(type);
+                                    throw "Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.";
                                 }
                                 existingInterface.interfaces.push(otherInterface);
                             });
@@ -882,7 +917,6 @@ class TS2ASParser
     private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
     {
         let functionName = this.declarationNameToString(functionDeclaration.name);
-        this._namesInCurrentModule.push(functionName);
         let packageName = this._moduleStack.join(".");
         let fullyQualifiedPackageFunctionName = functionName;
         if(packageName.length > 0)
@@ -926,13 +960,16 @@ class TS2ASParser
             existingDefinition.accessLevel = this.getAccessLevel(variableDeclaration);
             return null;
         }
+        else if(existingDefinition !== null)
+        {
+            throw "Definition with name " + fullyQualifiedName + " already exists. Cannot create package variable.";
+        }
         return new as3.PackageVariableDefinition(variableName, packageName, this.getAccessLevel(variableDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
     private populatePackageVariable(variableDeclaration: ts.VariableDeclaration)
     {
         let variableName = this.declarationNameToString(variableDeclaration.name);
-        this._namesInCurrentModule.push(variableName);
         let packageName = this._moduleStack.join(".");
         let fullyQualifiedPackageVariableName = variableName;
         if(packageName.length > 0)
@@ -1081,6 +1118,10 @@ class TS2ASParser
     {
         let propertyName = this.declarationNameToString(propertyDeclaration.name);
         let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
+        if(!propertyType)
+        {
+            throw "Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " for property " + propertyName + ".";
+        }
         let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
         return new as3.PropertyDefinition(propertyName, null, propertyType, isStatic);
     }
@@ -1094,6 +1135,10 @@ class TS2ASParser
             let value = parameters[i];
             let parameterName = this.declarationNameToString(value.name);
             let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
+            if(!parameterType)
+            {
+                throw "Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(value.type) + " not found for parameter " + parameterName + ".";
+            }
             let parameterValue = null;
             
             var isOptional: boolean = false;
@@ -1147,6 +1192,10 @@ class TS2ASParser
         
         let methodName = this.declarationNameToString(functionDeclaration.name);
         let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
+        if(!methodType)
+        {
+            throw "Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " for method " + methodName + ".";
+        }
         let methodParameters = this.populateParameters(functionDeclaration);
         let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
         let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
