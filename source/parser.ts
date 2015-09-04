@@ -120,7 +120,7 @@ class TS2ASParser
             }
             default:
             {
-                throw ("Unknown ts.ScriptTarget: " + this._scriptTarget);
+                throw new Error("Unknown ts.ScriptTarget: " + this._scriptTarget);
             }
         }
         let standardLibPath = path.join("node_modules", "typescript", "bin", standardLibFileName);
@@ -758,7 +758,7 @@ class TS2ASParser
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedClassName, this._definitions);
         if(!as3Class)
         {
-            throw "Class not found: " + fullyQualifiedClassName;
+            throw new Error("Class not found: " + fullyQualifiedClassName);
         }
         
         let typeParameters = this.populateTypeParameters(classDeclaration);
@@ -776,7 +776,7 @@ class TS2ASParser
                         let superClass = <as3.ClassDefinition> superClassAS3Type;
                         if(!superClass)
                         {
-                            throw "Super class " + this.getAS3FullyQualifiedNameFromTSTypeNode(superClassTSType) + " not found for " + fullyQualifiedClassName + " to extend.";
+                            throw new Error("Super class " + this.getAS3FullyQualifiedNameFromTSTypeNode(superClassTSType) + " not found for " + fullyQualifiedClassName + " to extend.");
                         }
                         as3Class.superClass = superClass;
                         break;
@@ -789,7 +789,7 @@ class TS2ASParser
                             let as3Interface = <as3.InterfaceDefinition> interfaceAS3Type;
                             if(!as3Interface)
                             {
-                                throw "Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedClassName + " to implement.";
+                                throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedClassName + " to implement.");
                             }
                             as3Class.interfaces.push(as3Interface);
                         });
@@ -858,7 +858,7 @@ class TS2ASParser
         let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
         if(!existingInterface)
         {
-            throw "Interface not found: " + fullyQualifiedInterfaceName;
+            throw new Error("Interface not found: " + fullyQualifiedInterfaceName);
         }
         
         let typeParameters = this.populateTypeParameters(interfaceDeclaration);
@@ -880,7 +880,7 @@ class TS2ASParser
                                 let otherInterface = <as3.InterfaceDefinition> interfaceAS3Type;
                                 if(!otherInterface)
                                 {
-                                    throw "Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.";
+                                    throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.");
                                 }
                                 existingInterface.interfaces.push(otherInterface);
                             });
@@ -927,7 +927,7 @@ class TS2ASParser
         let as3PackageFunction = <as3.PackageFunctionDefinition> as3.getDefinitionByName(fullyQualifiedPackageFunctionName, this._definitions);
         if(!as3PackageFunction)
         {
-            throw "Package-level function not found: " + fullyQualifiedPackageFunctionName;
+            throw new Error("Package-level function not found: " + fullyQualifiedPackageFunctionName);
         }
         
         let functionParameters = this.populateParameters(functionDeclaration);
@@ -962,7 +962,7 @@ class TS2ASParser
         }
         else if(existingDefinition !== null)
         {
-            throw "Definition with name " + fullyQualifiedName + " already exists. Cannot create package variable.";
+            throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package variable.");
         }
         return new as3.PackageVariableDefinition(variableName, packageName, this.getAccessLevel(variableDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
@@ -980,7 +980,7 @@ class TS2ASParser
         let as3PackageLevelDefinition = <as3.PackageLevelDefinition> as3.getDefinitionByName(fullyQualifiedPackageVariableName, this._definitions);
         if(!as3PackageLevelDefinition)
         {
-            throw "Package-level variable not found: " + fullyQualifiedPackageVariableName;
+            throw new Error("Package-level variable not found: " + fullyQualifiedPackageVariableName);
         }
         
         let variableType = this.getAS3TypeFromTSTypeNode(variableDeclaration.type);
@@ -1120,7 +1120,7 @@ class TS2ASParser
         let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
         if(!propertyType)
         {
-            throw "Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " for property " + propertyName + ".";
+            throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " not found for property " + propertyName + ".");
         }
         let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
         return new as3.PropertyDefinition(propertyName, null, propertyType, isStatic);
@@ -1137,7 +1137,7 @@ class TS2ASParser
             let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
             if(!parameterType)
             {
-                throw "Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(value.type) + " not found for parameter " + parameterName + ".";
+                throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(value.type) + " not found for parameter " + parameterName + ".");
             }
             let parameterValue = null;
             
@@ -1194,7 +1194,7 @@ class TS2ASParser
         let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
         if(!methodType)
         {
-            throw "Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " for method " + methodName + ".";
+            throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + ".");
         }
         let methodParameters = this.populateParameters(functionDeclaration);
         let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
