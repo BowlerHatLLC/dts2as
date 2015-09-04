@@ -722,16 +722,26 @@ class TS2ASParser
         });
     }
     
-    private mergeInterfaceAndVariable(interfaceDefinition: as3.InterfaceDefinition, variableDeclaration: ts.VariableDeclaration)
+    private mergeInterfaceAndVariable(interfaceDefinition: as3.InterfaceDefinition, variableDefinition: as3.PackageVariableDefinition)
     {
-        let variableAccessLevel = this.getAccessLevel(variableDeclaration);
         let as3Class = new as3.ClassDefinition(interfaceDefinition.name,
-            interfaceDefinition.packageName, variableAccessLevel,
+            interfaceDefinition.packageName, variableDefinition.accessLevel,
             interfaceDefinition.sourceFile, interfaceDefinition.require,
             this._currentFileIsExternal);
            
         let index = this._definitions.indexOf(interfaceDefinition);
-        this._definitions[index] = as3Class;
+        if(index >= 0)
+        {
+            this._definitions[index] = as3Class;
+            return;
+        }
+        index = this._definitions.indexOf(variableDefinition);
+        if(index >= 0)
+        {
+            this._definitions[index] = as3Class;
+            return;
+        }
+        throw new Error("Cannot find existing definition to replace, with name " + as3Class.getFullyQualifiedName());
     }
     
     private populateTypeParameters(declaration: ts.Declaration): string[]
@@ -878,7 +888,17 @@ class TS2ASParser
                 return null;
             }
         }
-        return new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        
+        let existingDefinition = as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
+        if(existingDefinition instanceof as3.PackageVariableDefinition)
+        {
+            //this is a decomposed class where the variable name and the
+            //instance side have the same name
+            this.mergeInterfaceAndVariable(as3Interface, existingDefinition);
+            return null;
+        }
+        return as3Interface;
     }
     
     private populateInterface(interfaceDeclaration: ts.InterfaceDeclaration)
@@ -989,26 +1009,28 @@ class TS2ASParser
         {
             fullyQualifiedName = packageName + "." + variableName; 
         }
+        let accessLevel = this.getAccessLevel(variableDeclaration);
         let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
+        if(existingDefinition instanceof as3.StaticSideClassDefinition)
+        {
+            //this is a decomposed class where the variable name and the static
+            //side have the same name
+            existingDefinition.accessLevel = accessLevel;
+            return null;
+        }
+        let as3Variable = new as3.PackageVariableDefinition(variableName, packageName, accessLevel, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
         if(existingDefinition instanceof as3.InterfaceDefinition)
         {
             //this is a decomposed class where the variable name and the
             //instance side have the same name
-            this.mergeInterfaceAndVariable(existingDefinition, variableDeclaration);
-            return null;
-        }
-        else if(existingDefinition instanceof as3.StaticSideClassDefinition)
-        {
-            //this is a decomposed class where the variable name and the static
-            //side have the same name
-            existingDefinition.accessLevel = this.getAccessLevel(variableDeclaration);
+            this.mergeInterfaceAndVariable(existingDefinition, as3Variable);
             return null;
         }
         else if(existingDefinition !== null)
         {
             throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package variable.");
         }
-        return new as3.PackageVariableDefinition(variableName, packageName, this.getAccessLevel(variableDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        return as3Variable;
     }
     
     private populatePackageVariable(variableDeclaration: ts.VariableDeclaration)
