@@ -457,6 +457,11 @@ class TS2ASParser
                         //safe to skip declare keyword
                         return;
                     }
+                    if(node.kind === ts.SyntaxKind.ExportKeyword)
+                    {
+                        //safe to skip export keyword
+                        return;
+                    }
                     this.readPackageLevelDefinitions(node);
                 });
                 this._currentModuleNeedsRequire = false;
@@ -660,6 +665,11 @@ class TS2ASParser
                     if(node.kind === ts.SyntaxKind.DeclareKeyword)
                     {
                         //we already took care of the declare keyword
+                        return;
+                    }
+                    if(node.kind === ts.SyntaxKind.ExportKeyword)
+                    {
+                        //we already took care of the export keyword
                         return;
                     }
                     this.populatePackageLevelDefinitions(node);
