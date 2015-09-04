@@ -48,6 +48,7 @@ class TS2ASParser
         this._functionAliases = [];
         this._typeAliasMap = {};
         this._typeParameterMap = {};
+        this._importModuleMap = {};
         this._sourceFiles = [];
     }
     
@@ -56,7 +57,8 @@ class TS2ASParser
     private _definitions: as3.PackageLevelDefinition[];
     private _functionAliases: string[];
     private _typeAliasMap: any;
-    private _typeParameterMap:any;
+    private _typeParameterMap: any;
+    private _importModuleMap: any;
     private _currentSourceFile: ts.SourceFile;
     private _currentFileIsExternal: boolean;
     private _moduleStack: string[];
@@ -249,6 +251,11 @@ class TS2ASParser
                     fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Array];
                     break;
                 }
+                case ts.SyntaxKind.TypeQuery:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Function];
+                    break;
+                }
             }
         }
         else
@@ -297,6 +304,14 @@ class TS2ASParser
         if(typeInSource in this._typeAliasMap)
         {
             typeInSource = this._typeAliasMap[typeInSource];
+        }
+        for(let moduleAlias in this._importModuleMap)
+        {
+            if(typeInSource.indexOf(moduleAlias) === 0)
+            {
+                let alias = this._importModuleMap[moduleAlias];
+                typeInSource = alias + typeInSource.substr(moduleAlias.length);
+            }
         }
         var moduleStack = this._moduleStack.slice();
         while(moduleStack.length > 0)
@@ -414,6 +429,11 @@ class TS2ASParser
             {
                 ts.forEachChild(node, (node) =>
                 {
+                    if(node.kind === ts.SyntaxKind.ImportDeclaration)
+                    {
+                        //safe to ignore import declarations until later
+                        return;
+                    }
                     this.readPackageLevelDefinitions(node);
                 });
                 break;
@@ -596,8 +616,32 @@ class TS2ASParser
             {
                 ts.forEachChild(node, (node) =>
                 {
+                    if(node.kind === ts.SyntaxKind.ImportDeclaration)
+                    {
+                        let importDeclaration = <ts.ImportDeclaration> node;
+                        if(importDeclaration.importClause)
+                        {
+                            let moduleSpecifier = importDeclaration.moduleSpecifier;
+                            let moduleName = this.declarationNameToString(<ts.LiteralExpression> moduleSpecifier);
+                            let namedBindings = importDeclaration.importClause.namedBindings;
+                            if("name" in namedBindings)
+                            {
+                                let nsImport = <ts.NamespaceImport> namedBindings
+                                let moduleAlias = this.declarationNameToString(nsImport.name);
+                                this._importModuleMap[moduleAlias] = moduleName;
+                            }
+                            else if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+                            {
+                                console.warn("Warning: Unable to parse import declaration.");
+                                console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
+                            }
+                        }
+                        return;
+                    }
                     this.populatePackageLevelDefinitions(node);
                 });
+                //clear imported modules after we're done with this module
+                this._importModuleMap = {};
                 break;
             }
             case ts.SyntaxKind.ModuleDeclaration:
