@@ -8,6 +8,7 @@ Converts TypeScript definition files into ActionScript. The FlexJS transpiler ma
 dts2as hello.d.ts
 dts2as file1.d.ts file2.d.ts
 dts2as --outDir ./as3-files file.d.ts
+dts2as --exclude com.example.SomeType file.d.ts
 ```
 
 The following arguments are available:
@@ -23,6 +24,10 @@ The following arguments are available:
 * `-i SYMBOL` or `--include SYMBOL`
 
 	Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.
+
+* `-t VERSION` or `--target VERSION`
+
+	Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'
 
 * `-v` or `--version`
 
