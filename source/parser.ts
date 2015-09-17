@@ -1003,13 +1003,22 @@ class TS2ASParser
                         {
                             heritageClause.types.forEach((type: ts.TypeNode) =>
                             {
-                                let interfaceAS3Type = this.getAS3TypeFromTSTypeNode(type);
-                                let otherInterface = <as3.InterfaceDefinition> interfaceAS3Type;
-                                if(!otherInterface)
+                                let otherInterface = this.getAS3TypeFromTSTypeNode(type);
+                                if(otherInterface instanceof as3.InterfaceDefinition)
+                                {
+                                    existingInterface.interfaces.push(otherInterface);
+                                }
+                                else if(otherInterface !== null)
+                                {
+                                    if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !existingInterface.external)
+                                    {
+                                        console.warn("Warning: Interface " + fullyQualifiedInterfaceName + " extends non-interface " + otherInterface.getFullyQualifiedName() + ", but this is not allowed in ActionScript.");
+                                    }
+                                }
+                                else
                                 {
                                     throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.");
                                 }
-                                existingInterface.interfaces.push(otherInterface);
                             });
                             break;
                         }
