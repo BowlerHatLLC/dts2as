@@ -872,26 +872,44 @@ class TS2ASParser
                     case ts.SyntaxKind.ExtendsKeyword:
                     {
                         let superClassTSType = heritageClause.types[0];
-                        let superClassAS3Type = this.getAS3TypeFromTSTypeNode(superClassTSType);
-                        let superClass = <as3.ClassDefinition> superClassAS3Type;
-                        if(!superClass)
+                        let superClass = this.getAS3TypeFromTSTypeNode(superClassTSType);
+                        if(superClass instanceof as3.ClassDefinition)
+                        {
+                            as3Class.superClass = superClass;
+                        }
+                        else if(superClass !== null)
+                        {
+                            if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !superClass.external)
+                            {
+                                console.warn("Warning: Class " + fullyQualifiedClassName + " extends non-class " + superClass.getFullyQualifiedName() + ", but this is not allowed in ActionScript.");
+                            }
+                        }
+                        else
                         {
                             throw new Error("Super class " + this.getAS3FullyQualifiedNameFromTSTypeNode(superClassTSType) + " not found for " + fullyQualifiedClassName + " to extend.");
                         }
-                        as3Class.superClass = superClass;
                         break;
                     }
                     case ts.SyntaxKind.ImplementsKeyword:
                     {
                         heritageClause.types.forEach((type: ts.TypeNode) =>
                         {
-                            let interfaceAS3Type = this.getAS3TypeFromTSTypeNode(type);
-                            let as3Interface = <as3.InterfaceDefinition> interfaceAS3Type;
-                            if(!as3Interface)
+                            let as3Interface = this.getAS3TypeFromTSTypeNode(type);
+                            if(as3Interface instanceof as3.InterfaceDefinition)
+                            {
+                                as3Class.interfaces.push(as3Interface);
+                            }
+                            else if(as3Interface !== null)
+                            {
+                                if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !as3Interface.external)
+                                {
+                                    console.warn("Warning: Class " + fullyQualifiedClassName + " implements non-interface " + as3Interface.getFullyQualifiedName() + ", but this is not allowed in ActionScript.");
+                                }
+                            }
+                            else
                             {
                                 throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedClassName + " to implement.");
                             }
-                            as3Class.interfaces.push(as3Interface);
                         });
                         break;
                     }
