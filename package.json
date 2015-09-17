@@ -17,7 +17,8 @@
     "dts2as": "./bin/dts2as"
   },
   "scripts": {
-    "build": "tsc source/*.ts --module commonjs --target ES5 --outDir bin"
+    "build": "rm bin/*.js && tsc source/*.ts --module commonjs --target ES5 --outDir bin",
+    "prepublish": "npm run build"
   },
   "dependencies": {
     "minimist": "^1.1.3",
