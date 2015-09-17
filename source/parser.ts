@@ -831,6 +831,17 @@ class TS2ASParser
     {
         let className = this.declarationNameToString(classDeclaration.name);
         let packageName = this._moduleStack.join(".");
+        let fullyQualifiedClassName = className;
+        if(packageName.length > 0)
+        {
+            fullyQualifiedClassName = packageName + "." + className;
+        }
+        
+        let existingDefinition = as3.getDefinitionByName(fullyQualifiedClassName, this._definitions);
+        if(existingDefinition !== null)
+        {
+            throw new Error("Definition with name " + fullyQualifiedClassName + " already exists. Cannot create class.");
+        }
         return new as3.ClassDefinition(className, packageName, this.getAccessLevel(classDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
     
@@ -923,15 +934,32 @@ class TS2ASParser
                 return null;
             }
         }
-        let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
         
         let existingDefinition = as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
+        if(existingDefinition instanceof as3.InterfaceDefinition)
+        {
+            //this interface already exists!
+            //TypeScript merges duplicates, though, so we should too.
+            return null;
+        }
+        else if(existingDefinition instanceof as3.ClassDefinition)
+        {
+            //we've already combined a package variable and interface
+            //this is a duplicate interface that needs to be merged later
+            return null;
+        }
+        
+        let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
         if(existingDefinition instanceof as3.PackageVariableDefinition)
         {
             //this is a decomposed class where the variable name and the
             //instance side have the same name
             this.mergeInterfaceAndVariable(as3Interface, existingDefinition);
             return null;
+        }
+        else if(existingDefinition !== null)
+        {
+            throw new Error("Definition with name " + fullyQualifiedInterfaceName + " already exists. Cannot create interface.");
         }
         return as3Interface;
     }
@@ -1004,11 +1032,15 @@ class TS2ASParser
             fullyQualifiedName = packageName + "." + fullyQualifiedName;
         }
         let existingFunction = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
-        if(existingFunction)
+        if(existingFunction instanceof as3.PackageFunctionDefinition)
         {
             //this function already exists, so this is an overload and we can
             //ignore it, for now.
             return null;
+        }
+        else if(existingFunction !== null)
+        {
+            throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package function.");
         }
         return new as3.PackageFunctionDefinition(functionName, packageName, this.getAccessLevel(functionDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
     }
