@@ -1,6 +1,6 @@
 # dts2as
 
-Converts TypeScript definition files into ActionScript. The FlexJS transpiler may use the output as an external library to use JavaScript APIs in ActionScript.
+A command line tool that converts TypeScript definitions (d.ts files) to ActionScript classes and interfaces. A compiled SWC file may be used as an external library with the Apache FlexJS transpiler to expose JavaScript APIs to ActionScript.
 
 ## Usage
 
