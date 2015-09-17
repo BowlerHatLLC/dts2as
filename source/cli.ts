@@ -17,7 +17,7 @@ limitations under the License.
 /// <reference path="./parser.ts" />
 /// <reference path="./emitter.ts" />
 /// <reference path="./as3.ts" />
-/// <reference path="../node_modules/typescript/bin/typescript.d.ts" />
+/// <reference path="../node_modules/typescript/lib/typescript.d.ts" />
 
 import fs = require("fs");
 import path = require("path");
@@ -37,7 +37,6 @@ let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
 
 let params = minimist(process.argv.slice(2),
 {
-	number: ["debug"],
 	alias:
 	{
 		i: ["include"],

@@ -15,7 +15,7 @@ limitations under the License.
 */
 /// <reference path="./as3.ts" />
 /// <reference path="../typings/tsd.d.ts" />
-/// <reference path="../node_modules/typescript/bin/typescript.d.ts" />
+/// <reference path="../node_modules/typescript/lib/typescript.d.ts" />
 
 import path = require("path");
 import fs = require("fs");
@@ -140,7 +140,7 @@ class TS2ASParser
                 throw new Error("Unknown ts.ScriptTarget: " + this._scriptTarget);
             }
         }
-        let standardLibPath = path.join("node_modules", "typescript", "bin", standardLibFileName);
+        let standardLibPath = path.join("node_modules", "typescript", "lib", standardLibFileName);
         let sourceText = fs.readFileSync(standardLibPath, "utf8");
         let sourceFile = ts.createSourceFile(standardLibPath, sourceText, this._scriptTarget);
         this._definitions = [];
@@ -245,6 +245,11 @@ class TS2ASParser
                     fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Function];
                     break;
                 }
+                case ts.SyntaxKind.ConstructorType:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Function];
+                    break;
+                }
                 case ts.SyntaxKind.UnionType:
                 {
                     //TODO: find common base class
@@ -269,6 +274,11 @@ class TS2ASParser
                 case ts.SyntaxKind.TypeQuery:
                 {
                     fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Function];
+                    break;
+                }
+                case ts.SyntaxKind.TypePredicate:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
                     break;
                 }
             }
@@ -1049,6 +1059,12 @@ class TS2ASParser
             //this is a decomposed class where the variable name and the
             //instance side have the same name
             this.mergeInterfaceAndVariable(existingDefinition, as3Variable);
+            return null;
+        }
+        else if(existingDefinition instanceof as3.ClassDefinition)
+        {
+            //we've already combined a package variable and interface
+            //this is a duplicate variable
             return null;
         }
         else if(existingDefinition !== null)
