@@ -31,7 +31,8 @@ export enum AccessModifiers
     public,
     protected,
     private,
-    internal
+    internal,
+    AS3
 }
 
 export interface PackageLevelDefinition

@@ -416,6 +416,12 @@ class TS2ASParser
         
     private addMethodToAS3Type(as3Type: as3.TypeDefinition, methodToAdd: as3.MethodDefinition)
     {
+        if(as3Type.getFullyQualifiedName() === as3.BuiltIns[as3.BuiltIns.Object])
+        {
+            //methods of the Object class use the AS3 namespace
+            //subclasses can re-implement them without the override keyword
+            methodToAdd.accessLevel = as3.AccessModifiers[as3.AccessModifiers.AS3];
+        }
         //first, we need to check if this is an overload
         for(let i = 0, methodCount = as3Type.methods.length; i < methodCount; i++)
         {
