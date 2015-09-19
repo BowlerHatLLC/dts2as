@@ -380,10 +380,6 @@ class ASEmitter
         as3Method.parameters.forEach((parameter: as3.ParameterDefinition) =>
         {
             let parameterType = parameter.type;
-            if(parameterType.packageName)
-            {
-                console.warn(parameterType.getFullyQualifiedName() + " " + this.requiresImport(parameterType, as3Type));
-            }
             if(this.requiresImport(parameterType, as3Type))
             {
                 imports.push(parameterType.getFullyQualifiedName());
