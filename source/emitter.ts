@@ -373,11 +373,22 @@ class ASEmitter
     private addMethodImport(as3Method: as3.MethodDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
     {
         let methodType = as3Method.type;
-        if(!this.requiresImport(methodType, as3Type))
+        if(this.requiresImport(methodType, as3Type))
         {
-            return;
+            imports.push(methodType.getFullyQualifiedName());
         }
-        imports.push(methodType.getFullyQualifiedName());
+        as3Method.parameters.forEach((parameter: as3.ParameterDefinition) =>
+        {
+            let parameterType = parameter.type;
+            if(parameterType.packageName)
+            {
+                console.warn(parameterType.getFullyQualifiedName() + " " + this.requiresImport(parameterType, as3Type));
+            }
+            if(this.requiresImport(parameterType, as3Type))
+            {
+                imports.push(parameterType.getFullyQualifiedName());
+            } 
+        });
     }
     
     private emitMethod(as3Method: as3.MethodDefinition, scope: as3.PackageLevelDefinition): string
