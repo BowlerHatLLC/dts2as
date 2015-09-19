@@ -769,7 +769,7 @@ class TS2ASParser
             interfaceDefinition.packageName, variableDefinition.accessLevel,
             interfaceDefinition.sourceFile, interfaceDefinition.require,
             this._currentFileIsExternal);
-           
+        
         let index = this._definitions.indexOf(interfaceDefinition);
         if(index >= 0)
         {
@@ -942,7 +942,7 @@ class TS2ASParser
         {
             if(member.kind === ts.SyntaxKind.ConstructSignature)
             {
-                return new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+                return new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire);
             }
         }
         if(interfaceDeclaration.members.length === 1)
@@ -1197,7 +1197,7 @@ class TS2ASParser
                 //the static side of this decomposed class is a type literal
                 //so we haven't created the AS3 class for it yet. we need to
                 //do it on the fly.
-                let tempStaticSideClass = new as3.StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+                let tempStaticSideClass = new as3.StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleNeedsRequire);
                 let typeLiteral = <ts.TypeLiteralNode> variableDeclaration.type;
                 this.populateMembers(tempStaticSideClass, typeLiteral);
                 variableType = tempStaticSideClass;

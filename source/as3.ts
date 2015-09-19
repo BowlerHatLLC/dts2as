@@ -229,7 +229,13 @@ export class ClassDefinition extends TypeDefinition
     dynamic: boolean;
 }
 
-export class StaticSideClassDefinition extends ClassDefinition {}
+export class StaticSideClassDefinition extends ClassDefinition
+{
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: boolean)
+    {
+        super(name, packageName, accessLevel, sourceFile, require, true);
+    }
+}
 
 export function getDefinitionByName(name: string, types: PackageLevelDefinition[]): PackageLevelDefinition
 {
