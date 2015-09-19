@@ -1311,6 +1311,14 @@ class TS2ASParser
             {
                 throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(value.type) + " not found for parameter " + parameterName + ".");
             }
+            if(parameterType instanceof as3.InterfaceDefinition)
+            {
+                //TypeScript interfaces work differently than AS3 interfaces
+                //values that may be assigned to them don't need to be of a
+                //type that explicitly implements them. any object can be
+                //passed in as long as it has the right members. 
+                parameterType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+            }
             let parameterValue = null;
             
             var isOptional: boolean = false;
