@@ -263,3 +263,34 @@ export function getDefaultReturnValueForType(type: TypeDefinition): string
     }
     return KEYWORD_NULL;
 }
+
+export function requiresImport(target:PackageLevelDefinition, scope:PackageLevelDefinition): boolean
+{
+    let packageName = target.packageName;
+    if(!packageName)
+    {
+        return false;
+    }
+    let name = target.name;
+    if(packageName === scope.packageName)
+    {
+        return false;
+    }
+    return true;
+}
+
+export function requiresOverride(target:MethodDefinition, scope:ClassDefinition): boolean
+{
+    let methodName = target.name;
+    let superClass = scope.superClass;
+    let needsOverride = false;
+    while(needsOverride === false && superClass !== null)
+    {
+        needsOverride = superClass.methods.some((method) =>
+        {
+            return method.name === methodName;
+        });
+        superClass = superClass.superClass;
+    }
+    return needsOverride;
+}

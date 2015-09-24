@@ -49,7 +49,7 @@ class ASEmitter
         let classOutput = this.emitStartPackage(as3Class.packageName);
         let imports: string[] = [];
         
-        if(superClass && this.requiresImport(superClass, as3Class))
+        if(superClass && as3.requiresImport(superClass, as3Class))
         {
             imports.push(superClass.getFullyQualifiedName());
         }
@@ -57,7 +57,7 @@ class ASEmitter
         {
             interfaces.forEach((as3Interface) =>
             {
-                if(!this.requiresImport(as3Interface, as3Class))
+                if(!as3.requiresImport(as3Interface, as3Class))
                 {
                     return;
                 }
@@ -190,7 +190,7 @@ class ASEmitter
         needsExtraNewLine = false;
         as3Class.methods.forEach((method: as3.MethodDefinition) =>
         {
-            if(method.isStatic)
+            if(method.isStatic || as3.requiresOverride(method, as3Class))
             {
                 return;
             }
@@ -217,7 +217,7 @@ class ASEmitter
         {
             interfaces.forEach((otherInterface) =>
             {
-                if(!this.requiresImport(otherInterface, as3Interface))
+                if(!as3.requiresImport(otherInterface, as3Interface))
                 {
                     return;
                 }
@@ -363,21 +363,6 @@ class ASEmitter
         return target.getFullyQualifiedName();
     }
     
-    private requiresImport(target:as3.PackageLevelDefinition, scope:as3.PackageLevelDefinition): boolean
-    {
-        let packageName = target.packageName;
-        if(!packageName)
-        {
-            return false;
-        }
-        let name = target.name;
-        if(packageName === scope.packageName)
-        {
-            return false;
-        }
-        return true;
-    }
-    
     private addMemberImports(as3Type: as3.TypeDefinition, imports: string[])
     {
         as3Type.properties.forEach((as3Property) =>
@@ -393,7 +378,7 @@ class ASEmitter
     private addPropertyImport(as3Property: as3.PropertyDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
     {
         let propertyType = as3Property.type;
-        if(!this.requiresImport(propertyType, as3Type))
+        if(!as3.requiresImport(propertyType, as3Type))
         {
             return;
         }
@@ -403,14 +388,14 @@ class ASEmitter
     private addMethodImport(as3Method: as3.MethodDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
     {
         let methodType = as3Method.type;
-        if(this.requiresImport(methodType, as3Type))
+        if(as3.requiresImport(methodType, as3Type))
         {
             imports.push(methodType.getFullyQualifiedName());
         }
         as3Method.parameters.forEach((parameter: as3.ParameterDefinition) =>
         {
             let parameterType = parameter.type;
-            if(this.requiresImport(parameterType, as3Type))
+            if(as3.requiresImport(parameterType, as3Type))
             {
                 imports.push(parameterType.getFullyQualifiedName());
             } 
