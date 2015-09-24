@@ -312,6 +312,36 @@ class ASEmitter
     private getNameToEmit(target:as3.PackageLevelDefinition, scope:as3.PackageLevelDefinition): string
     {
         let name = target.name;
+        
+        let typeConflictsWithMember = false;
+        if(scope instanceof as3.InterfaceDefinition || scope instanceof as3.ClassDefinition)
+        {
+            typeConflictsWithMember = scope.properties.some((prop) => 
+            {
+                return prop.name === name;
+            });
+            if(typeConflictsWithMember === false)
+            {
+                typeConflictsWithMember = scope.methods.some((method) =>
+                {
+                    return method.name === name;
+                });
+            }
+        }
+        if(typeConflictsWithMember)
+        {
+            let fullyQualifiedName = target.getFullyQualifiedName();
+            //the AS3 compiler doesn't like giving a member a type that matches
+            //the name of any of the members.
+            if(name === fullyQualifiedName)
+            {
+                //if the type is in the top level package, we need to fall back
+                //to Object because there's no fully-qualified name to reference
+                return as3.BuiltIns[as3.BuiltIns.Object];
+            }
+            return fullyQualifiedName;
+        }
+        
         let packageName = target.packageName;
         if(!packageName)
         {
