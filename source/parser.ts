@@ -229,6 +229,23 @@ class TS2ASParser
                 methodToKeepParams[j] = paramToMerge;
             }
             let paramToKeep = methodToKeepParams[j];
+            if(paramToKeep.isRest)
+            {
+                //we already have a ...rest argument, and that must be the last
+                //one so, we can ignore the rest of the parameters to merge
+                break;
+            }
+            if(paramToMerge.isRest)
+            {
+                //the parameters to merge have a ...rest argument earlier than
+                //what we have already, so we need to remove any remaining
+                //arguments so that the ...rest is the last argument
+                
+                //we don't know if the name is relevant, so let's go generic
+                paramToMerge.name = "rest";
+                methodToKeepParams.length = j;
+                methodToKeepParams[j] = paramToMerge;
+            }
             if(paramToMerge.type !== paramToKeep.type)
             {
                 //the overload has a different type, so generalize to Object
