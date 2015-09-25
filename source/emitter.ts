@@ -174,7 +174,7 @@ class ASEmitter
         needsExtraNewLine = false;
         as3Class.properties.forEach((property: as3.PropertyDefinition) =>
         {
-            if(property.isStatic)
+            if(property.isStatic || as3.requiresOverride(property, as3Class))
             {
                 return;
             }

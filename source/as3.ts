@@ -279,17 +279,27 @@ export function requiresImport(target:PackageLevelDefinition, scope:PackageLevel
     return true;
 }
 
-export function requiresOverride(target:MethodDefinition, scope:ClassDefinition): boolean
+export function requiresOverride(target:MethodDefinition | PropertyDefinition, scope:ClassDefinition): boolean
 {
-    let methodName = target.name;
+    let memberName = target.name;
     let superClass = scope.superClass;
     let needsOverride = false;
     while(needsOverride === false && superClass !== null)
     {
-        needsOverride = superClass.methods.some((method) =>
+        if(target instanceof MethodDefinition)
         {
-            return method.name === methodName;
-        });
+            needsOverride = superClass.methods.some((method) =>
+            {
+                return method.name === memberName;
+            });
+        }
+        else if(target instanceof PropertyDefinition)
+        {
+            needsOverride = superClass.properties.some((property) =>
+            {
+                return property.name === memberName;
+            });
+        }
         superClass = superClass.superClass;
     }
     return needsOverride;
