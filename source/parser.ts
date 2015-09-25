@@ -140,7 +140,13 @@ class TS2ASParser
                 throw new Error("Unknown ts.ScriptTarget: " + this._scriptTarget);
             }
         }
-        let standardLibPath = path.join("node_modules", "typescript", "lib", standardLibFileName);
+        let standardLibPath = require.resolve("typescript");
+        standardLibPath = path.dirname(standardLibPath);
+        standardLibPath = path.resolve(standardLibPath, standardLibFileName);
+        if(!fs.existsSync(standardLibPath))
+        {
+            throw new Error("Cannot find standard library with path " + standardLibPath);
+        }
         let sourceText = fs.readFileSync(standardLibPath, "utf8");
         let sourceFile = ts.createSourceFile(standardLibPath, sourceText, this._scriptTarget);
         this._definitions = [];
