@@ -46,6 +46,7 @@ class ASEmitter
         let className = as3Class.name;
         let superClass = as3Class.superClass;
         let interfaces = as3Class.interfaces;
+        let constructorMethod = this.getConstructorMethod(as3Class);
         let classOutput = this.emitStartPackage(as3Class.packageName);
         let imports: string[] = [];
         
@@ -63,6 +64,10 @@ class ASEmitter
                 }
                 imports.push(as3Interface.getFullyQualifiedName());
             });
+        }
+        if(constructorMethod)
+        {
+            this.addParametersImports(constructorMethod, as3Class, imports);
         }
         this.addMemberImports(as3Class, imports);
         
@@ -135,17 +140,17 @@ class ASEmitter
         
         classOutput += "public function ";
         classOutput += className;
-        if(as3Class.constructorMethod)
+        if(constructorMethod)
         {
-            classOutput += this.emitParameters(as3Class.constructorMethod, as3Class);
+            classOutput += this.emitParameters(constructorMethod, as3Class);
             if(superClass)
             {
                 classOutput += " {";
-                let constructorMethod = superClass.constructorMethod;
-                if(constructorMethod)
+                let superConstructorMethod = this.getConstructorMethod(superClass);
+                if(superConstructorMethod)
                 {
                     classOutput += " super(";
-                    let params = constructorMethod.parameters;
+                    let params = superConstructorMethod.parameters;
                     for(let i = 0, paramCount = params.length; i < paramCount; i++)
                     {
                         let param = params[i];
@@ -392,7 +397,12 @@ class ASEmitter
         {
             imports.push(methodType.getFullyQualifiedName());
         }
-        as3Method.parameters.forEach((parameter: as3.ParameterDefinition) =>
+        this.addParametersImports(as3Method, as3Type, imports);
+    }
+    
+    private addParametersImports(as3Function: as3.FunctionDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
+    {
+        as3Function.parameters.forEach((parameter: as3.ParameterDefinition) =>
         {
             let parameterType = parameter.type;
             if(as3.requiresImport(parameterType, as3Type))
@@ -574,6 +584,21 @@ class ASEmitter
         }
         signatureOutput += ")";
         return signatureOutput;
+    }
+    
+    private getConstructorMethod(as3Class: as3.ClassDefinition): as3.ConstructorDefinition
+    {
+        let constructorMethod = as3Class.constructorMethod;
+        if(constructorMethod)
+        {
+            return constructorMethod;
+        }
+        let superClass = as3Class.superClass;
+        if(superClass)
+        {
+            return this.getConstructorMethod(superClass);
+        }
+        return null;
     }
 }
 
