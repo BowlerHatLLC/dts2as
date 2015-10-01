@@ -647,6 +647,149 @@ class TS2ASParser
         }
     }
     
+    private copyMembers(fromType: as3.TypeDefinition, toType: as3.TypeDefinition, makeStatic: boolean)
+    {
+        for(let property of fromType.properties)
+        {
+            let newProperty = new as3.PropertyDefinition(property.name, as3.AccessModifiers[as3.AccessModifiers.public], property.type, makeStatic);
+            toType.properties.push(newProperty);
+        }
+        for(let method of fromType.methods)
+        {
+            let newMethod = new as3.MethodDefinition(method.name, method.type, method.parameters.slice(), as3.AccessModifiers[as3.AccessModifiers.public], makeStatic);
+            toType.methods.push(newMethod);
+        }
+    }
+    
+    private extendsClass(interfaceDeclaration: ts.InterfaceDeclaration)
+    {
+        if(!interfaceDeclaration.heritageClauses)
+        {
+            return;
+        }
+        return interfaceDeclaration.heritageClauses.some((heritageClause: ts.HeritageClause) =>    
+        {
+            if(heritageClause.token !== ts.SyntaxKind.ExtendsKeyword)
+            {
+                return false;
+            }
+            return heritageClause.types.some((type: ts.TypeNode) =>
+            {
+                let otherInterface = this.getAS3TypeFromTSTypeNode(type);
+                return otherInterface instanceof as3.ClassDefinition;
+            });
+        });
+    }
+    
+    private promoteInterfacesToClasses(node: ts.Node)
+    {
+        switch(node.kind)
+        {
+            case ts.SyntaxKind.SourceFile:
+            {
+                ts.forEachChild(node, (node) =>
+                {
+                    this.promoteInterfacesToClasses(node);
+                });
+                break;
+            }
+            case ts.SyntaxKind.ModuleBlock:
+            {
+                ts.forEachChild(node, (node) =>
+                {
+                    if(node.kind === ts.SyntaxKind.ImportDeclaration)
+                    {
+                        let importDeclaration = <ts.ImportDeclaration> node;
+                        this.populateImport(importDeclaration);
+                        return;
+                    }
+                    this.promoteInterfacesToClasses(node);
+                });
+                //clear imported modules after we're done with this module
+                this._importModuleMap = {};
+                break;
+            }
+            case ts.SyntaxKind.ModuleDeclaration:
+            {
+                let moduleDeclaration = <ts.ModuleDeclaration> node;
+                let moduleName = moduleDeclaration.name;
+                this._moduleStack.push(this.declarationNameToString(moduleName));
+                ts.forEachChild(node, (node) =>
+                {
+                    this.promoteInterfacesToClasses(node);
+                });
+                this._moduleStack.pop();
+                break;
+            }
+            case ts.SyntaxKind.InterfaceDeclaration:
+            {
+                this.promoteInterface(<ts.InterfaceDeclaration> node);
+                break;
+            }
+        }
+    }
+    
+    private promoteInterface(interfaceDeclaration: ts.InterfaceDeclaration)
+    {
+        let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
+        let packageName = this._moduleStack.join(".");
+        let fullyQualifiedInterfaceName = interfaceName;
+        if(packageName.length > 0)
+        {
+            fullyQualifiedInterfaceName = packageName + "." + interfaceName;
+        }
+        if(this._functionAliases.indexOf(fullyQualifiedInterfaceName) >= 0)
+        {
+            //this is a function alias
+            return;
+        }
+        
+        //an interface may have been converted into a class,
+        //so that's why the superclass of InterfaceDefinition
+        //and ClassDefinition is used here.
+        let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
+        if(!existingInterface)
+        {
+            throw new Error("Interface not found: " + fullyQualifiedInterfaceName);
+        }
+        
+        if(existingInterface instanceof as3.InterfaceDefinition &&
+            this.extendsClass(interfaceDeclaration))
+        {
+            let as3Class = new as3.ClassDefinition(existingInterface.name, existingInterface.packageName, existingInterface.accessLevel, existingInterface.sourceFile, existingInterface.require, existingInterface.external);
+            as3Class.promotions = as3.Promotions.INTERFACE_EXTENDS_CLASS;
+            let index = this._definitions.indexOf(existingInterface);
+            if(index >= 0)
+            {
+                this._definitions[index] = as3Class;
+                return;
+            }
+            throw new Error("Cannot find existing definition to replace with class named " + as3Class.getFullyQualifiedName());
+        }
+    }
+    
+    private populateImport(importDeclaration: ts.ImportDeclaration)
+    {
+        if(!importDeclaration.importClause)
+        {
+            return;
+        }
+        let moduleSpecifier = importDeclaration.moduleSpecifier;
+        let moduleName = this.declarationNameToString(<ts.LiteralExpression> moduleSpecifier);
+        let namedBindings = importDeclaration.importClause.namedBindings;
+        if("name" in namedBindings)
+        {
+            let nsImport = <ts.NamespaceImport> namedBindings
+            let moduleAlias = this.declarationNameToString(nsImport.name);
+            this._importModuleMap[moduleAlias] = moduleName;
+        }
+        else if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+        {
+            console.warn("Warning: Unable to parse import declaration.");
+            console.warn(this._currentSourceFile.text.substring(importDeclaration.pos, importDeclaration.end));
+        }
+    }
+    
     private populatePackageLevelDefinitions(node: ts.Node)
     {
         let output = "";
@@ -655,6 +798,7 @@ class TS2ASParser
             case ts.SyntaxKind.SourceFile:
             {
                 this._currentSourceFile = <ts.SourceFile> node;
+                this.promoteInterfacesToClasses(node);
                 ts.forEachChild(node, (node) =>
                 {
                     if(node.kind === ts.SyntaxKind.EndOfFileToken)
@@ -678,23 +822,7 @@ class TS2ASParser
                     if(node.kind === ts.SyntaxKind.ImportDeclaration)
                     {
                         let importDeclaration = <ts.ImportDeclaration> node;
-                        if(importDeclaration.importClause)
-                        {
-                            let moduleSpecifier = importDeclaration.moduleSpecifier;
-                            let moduleName = this.declarationNameToString(<ts.LiteralExpression> moduleSpecifier);
-                            let namedBindings = importDeclaration.importClause.namedBindings;
-                            if("name" in namedBindings)
-                            {
-                                let nsImport = <ts.NamespaceImport> namedBindings
-                                let moduleAlias = this.declarationNameToString(nsImport.name);
-                                this._importModuleMap[moduleAlias] = moduleName;
-                            }
-                            else if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
-                            {
-                                console.warn("Warning: Unable to parse import declaration.");
-                                console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
-                            }
-                        }
+                        this.populateImport(importDeclaration);
                         return;
                     }
                     this.populatePackageLevelDefinitions(node);
@@ -792,6 +920,7 @@ class TS2ASParser
             interfaceDefinition.packageName, variableDefinition.accessLevel,
             interfaceDefinition.sourceFile, interfaceDefinition.require,
             this._currentFileIsExternal);
+        as3Class.promotions = as3.Promotions.DECOMPOSED_CLASS;
         
         let index = this._definitions.indexOf(interfaceDefinition);
         if(index >= 0)
@@ -1037,39 +1166,74 @@ class TS2ASParser
         
         let typeParameters = this.populateTypeParameters(interfaceDeclaration);
         
-        //if there's an interface and a var with the same name, it gets turned into a class
-        if(existingInterface instanceof as3.InterfaceDefinition)
+        //if an interface extends a class, the interface gets turned into a class
+        if(existingInterface instanceof as3.ClassDefinition &&
+            existingInterface.promotions === as3.Promotions.INTERFACE_EXTENDS_CLASS)
         {
             if(interfaceDeclaration.heritageClauses)
             {
                 interfaceDeclaration.heritageClauses.forEach((heritageClause: ts.HeritageClause) =>    
                 {
-                    switch(heritageClause.token)
+                    if(heritageClause.token !== ts.SyntaxKind.ExtendsKeyword)
                     {
-                        case ts.SyntaxKind.ExtendsKeyword:
-                        {
-                            heritageClause.types.forEach((type: ts.TypeNode) =>
-                            {
-                                let otherInterface = this.getAS3TypeFromTSTypeNode(type);
-                                if(otherInterface instanceof as3.InterfaceDefinition)
-                                {
-                                    existingInterface.interfaces.push(otherInterface);
-                                }
-                                else if(otherInterface !== null)
-                                {
-                                    if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !existingInterface.external)
-                                    {
-                                        console.warn("Warning: Interface " + fullyQualifiedInterfaceName + " extends non-interface " + otherInterface.getFullyQualifiedName() + ", but this is not allowed in ActionScript.");
-                                    }
-                                }
-                                else
-                                {
-                                    throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.");
-                                }
-                            });
-                            break;
-                        }
+                        return;
                     }
+                    heritageClause.types.forEach((type: ts.TypeNode) =>
+                    {
+                        let otherInterface = this.getAS3TypeFromTSTypeNode(type);
+                        if(otherInterface instanceof as3.InterfaceDefinition)
+                        {
+                            //interfaces are implemented instead of extended
+                            existingInterface.interfaces.push(otherInterface);
+                            this.copyMembers(otherInterface, existingInterface, false);
+                        }
+                        else if(otherInterface instanceof as3.ClassDefinition)
+                        {
+                            //a class becomes the super class
+                            if(otherInterface.getFullyQualifiedName() === as3.BuiltIns[as3.BuiltIns.Object])
+                            {
+                                //but no need to extend Object
+                                return;
+                            }
+                            existingInterface.superClass = otherInterface;
+                        }
+                        else
+                        {
+                            throw new Error("Class or interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to inherit.");
+                        }
+                    });
+                });
+            }
+        }
+        else if(existingInterface instanceof as3.InterfaceDefinition)
+        {
+            if(interfaceDeclaration.heritageClauses)
+            {
+                interfaceDeclaration.heritageClauses.forEach((heritageClause: ts.HeritageClause) =>    
+                {
+                    if(heritageClause.token !== ts.SyntaxKind.ExtendsKeyword)
+                    {
+                        return;
+                    }
+                    heritageClause.types.forEach((type: ts.TypeNode) =>
+                    {
+                        let otherInterface = this.getAS3TypeFromTSTypeNode(type);
+                        if(otherInterface instanceof as3.InterfaceDefinition)
+                        {
+                            existingInterface.interfaces.push(otherInterface);
+                        }
+                        else if(otherInterface !== null)
+                        {
+                            if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !existingInterface.external)
+                            {
+                                console.warn("Warning: Interface " + fullyQualifiedInterfaceName + " extends non-interface " + otherInterface.getFullyQualifiedName() + ", but this is not allowed in ActionScript.");
+                            }
+                        }
+                        else
+                        {
+                            throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.");
+                        }
+                    });
                 });
             }
         }
@@ -1231,16 +1395,7 @@ class TS2ASParser
                 //interface than the instance side. we need to copy over
                 //all the members from the static side to the instance side
                 //and make them static
-                for(let property of variableType.properties)
-                {
-                    let staticProperty = new as3.PropertyDefinition(property.name, as3.AccessModifiers[as3.AccessModifiers.public], property.type, true);
-                    as3PackageLevelDefinition.properties.push(staticProperty);
-                }
-                for(let method of variableType.methods)
-                {
-                    let staticMethod = new as3.MethodDefinition(method.name, method.type, method.parameters.slice(), as3.AccessModifiers[as3.AccessModifiers.public], true);
-                    as3PackageLevelDefinition.methods.push(staticMethod);
-                }
+                this.copyMembers(variableType, as3PackageLevelDefinition, true);
                 as3PackageLevelDefinition.constructorMethod = variableType.constructorMethod;
                 return;
             }
