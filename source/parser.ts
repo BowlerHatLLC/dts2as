@@ -1020,29 +1020,35 @@ class TS2ASParser
             fullyQualifiedInterfaceName = packageName + "." + interfaceName;
         }
         
-        //if the interface defines a constructor, it is the static side of a
-        //decomposed class
-        for(let member of interfaceDeclaration.members)
+        let hasConstructSignature = interfaceDeclaration.members.some((member) =>
         {
-            if(member.kind === ts.SyntaxKind.ConstructSignature)
+            return member.kind === ts.SyntaxKind.ConstructSignature;
+        });
+        let hasCallSignature = interfaceDeclaration.members.some((member) =>
+        {
+            return member.kind === ts.SyntaxKind.CallSignature;
+        });
+        let hasMembers = interfaceDeclaration.members.some((member) =>
+        {
+            return member.kind !== ts.SyntaxKind.ConstructSignature &&
+                member.kind !== ts.SyntaxKind.CallSignature;
+        });
+        if(hasCallSignature && !hasMembers)
+        {
+            this._functionAliases.push(fullyQualifiedInterfaceName);
+            if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
             {
-                let staticSideClass = new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire);
-                this.readMembers(staticSideClass, interfaceDeclaration);
-                return staticSideClass;
+                console.info("Creating function alias from " + fullyQualifiedInterfaceName + ".");
             }
+            return null;
         }
-        if(interfaceDeclaration.members.length === 1)
+        if(hasConstructSignature)
         {
-            let member = interfaceDeclaration.members[0];
-            if(member.kind === ts.SyntaxKind.CallSignature)
-            {
-                this._functionAliases.push(fullyQualifiedInterfaceName);
-                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
-                {
-                    console.info("Creating function alias from " + fullyQualifiedInterfaceName + ".");
-                }
-                return null;
-            }
+            //if the interface defines a constructor, it is the static side of a
+            //decomposed class
+            let staticSideClass = new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire);
+            this.readMembers(staticSideClass, interfaceDeclaration);
+            return staticSideClass;
         }
         
         let existingDefinition = as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
