@@ -72,7 +72,7 @@ class TS2ASParser
     private _currentSourceFile: ts.SourceFile;
     private _currentFileIsExternal: boolean;
     private _moduleStack: string[];
-    private _currentModuleNeedsRequire: boolean;
+    private _currentModuleRequire: string;
     private _variableStatementHasDeclareKeyword: boolean = false;
     private _variableStatementHasExport: boolean = false;
     private _scriptTarget: ts.ScriptTarget;
@@ -187,7 +187,7 @@ class TS2ASParser
             //void is a special type that is defined by the language, and it
             //doesn't appear in the standard library. we need to add it
             //manually.
-            this._definitions.push(new as3.InterfaceDefinition("void", null, null, null, false, true));
+            this._definitions.push(new as3.InterfaceDefinition("void", null, null, null, null, true));
         }
         this.readPackageLevelDefinitions(sourceFile);
         if(sourceFile.hasNoDefaultLib)
@@ -398,7 +398,7 @@ class TS2ASParser
     private declarationNameToString(name: ts.DeclarationName): string
     {
         let result = this._currentSourceFile.text.substring(ts["skipTrivia"](this._currentSourceFile.text, name.pos), name.end);
-        if(result.indexOf("\"") === 0)
+        if(result.indexOf("\"") === 0 || result.indexOf("'") === 0)
         {
             //modules may be named as a string that needs to be required
             result = result.substr(1, result.length - 2);
@@ -487,6 +487,11 @@ class TS2ASParser
                         //safe to ignore import declarations until later
                         return;
                     }
+                    if(node.kind === ts.SyntaxKind.ExportAssignment)
+                    {
+                        //safe to ignore export assignments until later
+                        return;
+                    }
                     this.readPackageLevelDefinitions(node);
                 });
                 break;
@@ -496,7 +501,10 @@ class TS2ASParser
                 let moduleDeclaration = <ts.ModuleDeclaration> node;
                 let moduleName = moduleDeclaration.name;
                 this._moduleStack.push(this.declarationNameToString(moduleName));
-                this._currentModuleNeedsRequire = moduleName.kind === ts.SyntaxKind.StringLiteral;
+                if(moduleName.kind === ts.SyntaxKind.StringLiteral)
+                {
+                    this._currentModuleRequire = this.declarationNameToString(moduleName);
+                }
                 ts.forEachChild(node, (node) =>
                 {
                     if(node.kind === ts.SyntaxKind.Identifier ||
@@ -517,7 +525,7 @@ class TS2ASParser
                     }
                     this.readPackageLevelDefinitions(node);
                 });
-                this._currentModuleNeedsRequire = false;
+                this._currentModuleRequire = null;
                 this._moduleStack.pop();
                 break;
             }
@@ -690,6 +698,31 @@ class TS2ASParser
         });
     }
     
+    private assignExport(exportAssignment: ts.ExportAssignment)
+    {
+        let assignedIdentifier = null;
+        ts.forEachChild(exportAssignment, (node) =>
+        {
+            if(node.kind === ts.SyntaxKind.Identifier)
+            {
+                assignedIdentifier = this.declarationNameToString(<ts.Identifier> node);
+            }
+        });
+        if(!assignedIdentifier)
+        {
+            return;
+        }
+        let exportedDefinition = as3.getDefinitionByName(assignedIdentifier, this._definitions);
+        if(exportedDefinition)
+        {
+            exportedDefinition.require = this._currentModuleRequire;
+        }
+        else if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+        {
+            console.warn("Warning: Unable to export " + assignedIdentifier + " in module " + this._currentModuleRequire + ".");
+        }
+    }
+    
     private populateImport(importDeclaration: ts.ImportDeclaration)
     {
         if(!importDeclaration.importClause)
@@ -745,6 +778,12 @@ class TS2ASParser
                         this.populateImport(importDeclaration);
                         return;
                     }
+                    if(node.kind === ts.SyntaxKind.ExportAssignment)
+                    {
+                        let exportAssignment = <ts.ExportAssignment> node;
+                        this.assignExport(exportAssignment);
+                        return;
+                    }
                     this.populatePackageLevelDefinitions(node);
                 });
                 //clear imported modules after we're done with this module
@@ -756,6 +795,10 @@ class TS2ASParser
                 let moduleDeclaration = <ts.ModuleDeclaration> node;
                 let moduleName = moduleDeclaration.name;
                 this._moduleStack.push(this.declarationNameToString(moduleName));
+                if(moduleName.kind === ts.SyntaxKind.StringLiteral)
+                {
+                    this._currentModuleRequire = this.declarationNameToString(moduleName);
+                }
                 ts.forEachChild(node, (node) =>
                 {
                     if(node.kind === ts.SyntaxKind.Identifier ||
@@ -776,6 +819,7 @@ class TS2ASParser
                     }
                     this.populatePackageLevelDefinitions(node);
                 });
+                this._currentModuleRequire = null;
                 this._moduleStack.pop();
                 break;
             }
@@ -928,7 +972,7 @@ class TS2ASParser
         {
             throw new Error("Definition with name " + fullyQualifiedClassName + " already exists. Cannot create class.");
         }
-        let as3Class = new as3.ClassDefinition(className, packageName, this.getAccessLevel(classDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        let as3Class = new as3.ClassDefinition(className, packageName, this.getAccessLevel(classDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
         this.readMembers(as3Class, classDeclaration);
         return as3Class;
     }
@@ -1046,7 +1090,7 @@ class TS2ASParser
         {
             //if the interface defines a constructor, it is the static side of a
             //decomposed class
-            let staticSideClass = new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire);
+            let staticSideClass = new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire);
             this.readMembers(staticSideClass, interfaceDeclaration);
             return staticSideClass;
         }
@@ -1067,7 +1111,7 @@ class TS2ASParser
             return null;
         }
         
-        let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
         this.readMembers(as3Interface, interfaceDeclaration);
         if(existingDefinition instanceof as3.PackageVariableDefinition)
         {
@@ -1175,7 +1219,7 @@ class TS2ASParser
         {
             throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package function.");
         }
-        return new as3.PackageFunctionDefinition(functionName, packageName, this.getAccessLevel(functionDeclaration), this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        return new as3.PackageFunctionDefinition(functionName, packageName, this.getAccessLevel(functionDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
     }
     
     private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
@@ -1218,7 +1262,7 @@ class TS2ASParser
             existingDefinition.accessLevel = accessLevel;
             return null;
         }
-        let as3Variable = new as3.PackageVariableDefinition(variableName, packageName, accessLevel, this._currentSourceFile.fileName, this._currentModuleNeedsRequire, this._currentFileIsExternal);
+        let as3Variable = new as3.PackageVariableDefinition(variableName, packageName, accessLevel, this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
         if(existingDefinition instanceof as3.InterfaceDefinition)
         {
             //this is a decomposed class where the variable name and the
@@ -1298,7 +1342,7 @@ class TS2ASParser
                 //the static side of this decomposed class is a type literal
                 //so we haven't created the AS3 class for it yet. we need to
                 //do it on the fly.
-                let tempStaticSideClass = new as3.StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleNeedsRequire);
+                let tempStaticSideClass = new as3.StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleRequire);
                 let typeLiteral = <ts.TypeLiteralNode> variableDeclaration.type;
                 this.readMembers(tempStaticSideClass, typeLiteral);
                 this.populateMembers(tempStaticSideClass, typeLiteral);

@@ -538,9 +538,10 @@ class ASEmitter
     
     private emitRequireMetadata(as3Type: as3.PackageLevelDefinition): string
     {
-        if(as3Type.require)
+        let require = as3Type.require;
+        if(require)
         {
-            return "[Require(\"" + as3Type.packageName + "\")]" + NEW_LINE;
+            return "[Require(\"" + require + "\")]" + NEW_LINE;
         }
         return ""
     }
