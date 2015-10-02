@@ -34,12 +34,6 @@ export enum AccessModifiers
     internal,
     AS3
 }
-export enum Promotions
-{
-    DECOMPOSED_CLASS,
-    INTERFACE_EXTENDS_CLASS,
-    NONE
-}
 
 export interface PackageLevelDefinition
 {
@@ -227,14 +221,12 @@ export class ClassDefinition extends TypeDefinition
         this.interfaces = [];
         this.constructorMethod = null;
         this.dynamic = false;
-        this.promotions = Promotions.NONE;
     }
     
     superClass: ClassDefinition;
     interfaces: InterfaceDefinition[];
     constructorMethod: ConstructorDefinition;
     dynamic: boolean;
-    promotions: Promotions;
 }
 
 export class StaticSideClassDefinition extends ClassDefinition
