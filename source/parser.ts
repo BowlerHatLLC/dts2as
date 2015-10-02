@@ -60,11 +60,6 @@ class TS2ASParser
     constructor(scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5)
     {
         this._scriptTarget = scriptTarget;
-        this._functionAliases = [];
-        this._typeAliasMap = {};
-        this._typeParameterMap = {};
-        this._importModuleMap = {};
-        this._sourceFiles = [];
     }
     
     private _hasNoDefaultLib: boolean;
@@ -81,10 +76,17 @@ class TS2ASParser
     private _variableStatementHasDeclareKeyword: boolean = false;
     private _variableStatementHasExport: boolean = false;
     private _scriptTarget: ts.ScriptTarget;
+    private _promoted: { [key: string]: as3.ClassDefinition[] };
     debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
     parse(fileName: string): as3.PackageLevelDefinition[]
     {
+        this._functionAliases = [];
+        this._typeAliasMap = {};
+        this._typeParameterMap = {};
+        this._importModuleMap = {};
+        this._sourceFiles = [];
+        this._promoted = {};
         this.findSourceFiles(fileName);
         let referencedFileIsStandardLib = this._sourceFiles.some((sourceFile) =>
         {
@@ -115,6 +117,7 @@ class TS2ASParser
         {
             this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
             this.populatePackageLevelDefinitions(sourceFile);
+            this.promoteInterfaces();
         });
         return this._definitions;
     }
@@ -153,6 +156,7 @@ class TS2ASParser
         this._currentFileIsExternal = true;
         this.readSourceFile(sourceFile);
         this.populatePackageLevelDefinitions(sourceFile);
+        this.promoteInterfaces();
     }
     
     private findSourceFiles(fileName: string)
@@ -1121,6 +1125,10 @@ class TS2ASParser
                             //ignore when an interface extends Object because
                             //everything is an Object already
                         }
+                        else if(otherInterface instanceof as3.ClassDefinition)
+                        {
+                            this._promoted[fullyQualifiedInterfaceName] = [otherInterface];
+                        }
                         else if(otherInterface !== null)
                         {
                             if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !existingInterface.external)
@@ -1570,6 +1578,47 @@ class TS2ASParser
         }
         
         this.cleanupTypeParameters(typeParameters);
+    }
+    
+    private promoteInterfaces():void
+    {
+        this._definitions.forEach((as3Definition, index) =>
+        {
+            //this interface extended a class that was promoted from another
+            //interface, so we need to promote this interface to a class too
+            if(as3Definition instanceof as3.InterfaceDefinition)
+            {
+                let fullyQualifiedInterfaceName = as3Definition.getFullyQualifiedName();
+                if(!(fullyQualifiedInterfaceName in this._promoted))
+                {
+                    return;
+                }
+                let superClasses = <as3.ClassDefinition[]> this._promoted[fullyQualifiedInterfaceName];
+                if(superClasses.length > 1)
+                {
+                    throw new Error("Interface with name " + fullyQualifiedInterfaceName + " could not be promoted to a class because it would have more than one super class.");
+                }
+                let superClass = superClasses[0];
+                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+                {
+                    console.info("Promoting interface " + fullyQualifiedInterfaceName + " to class.");
+                }
+                let as3Class = new as3.ClassDefinition(as3Definition.name, as3Definition.packageName,
+                    as3.AccessModifiers[as3.AccessModifiers.public], as3Definition.sourceFile,
+                    as3Definition.require, as3Definition.external);
+                as3Class.superClass = superClass;
+                this.copyMembers(as3Definition, as3Class, false);
+                as3Class.properties.forEach((as3Property) =>
+                {
+                    as3Property.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+                });
+                as3Class.methods.forEach((as3Method) =>
+                {
+                    as3Method.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+                });
+                this._definitions[index] = as3Class;
+            }
+        });
     }
     
 }
