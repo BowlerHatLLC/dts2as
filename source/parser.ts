@@ -1582,43 +1582,64 @@ class TS2ASParser
     
     private promoteInterfaces():void
     {
-        this._definitions.forEach((as3Definition, index) =>
+        let currentlyPromoted = this._promoted;
+        while(Object.keys(currentlyPromoted).length > 0)
         {
-            //this interface extended a class that was promoted from another
-            //interface, so we need to promote this interface to a class too
-            if(as3Definition instanceof as3.InterfaceDefinition)
+            this._promoted = {}
+            this._definitions.forEach((as3Definition, index) =>
             {
-                let fullyQualifiedInterfaceName = as3Definition.getFullyQualifiedName();
-                if(!(fullyQualifiedInterfaceName in this._promoted))
+                //this interface extended a class that was promoted from another
+                //interface, so we need to promote this interface to a class too
+                if(as3Definition instanceof as3.InterfaceDefinition)
                 {
-                    return;
+                    let fullyQualifiedInterfaceName = as3Definition.getFullyQualifiedName();
+                    if(!(fullyQualifiedInterfaceName in currentlyPromoted))
+                    {
+                        //if this interface is not being promoted, it may be
+                        //extending another interface that is, and then it needs to
+                        //be promoted too.
+                        let needsPromotion = as3Definition.interfaces.some((otherInterface) =>
+                        {
+                            return otherInterface.getFullyQualifiedName() in currentlyPromoted;
+                        });
+                        if(needsPromotion)
+                        {
+                            this._promoted[fullyQualifiedInterfaceName] = [];
+                        }
+                        return;
+                    }
+                    let superClasses = <as3.ClassDefinition[]> currentlyPromoted[fullyQualifiedInterfaceName];
+                    if(superClasses.length > 1)
+                    {
+                        throw new Error("Interface with name " + fullyQualifiedInterfaceName + " could not be promoted to a class because it would have more than one super class.");
+                    }
+                    if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+                    {
+                        console.info("Promoting interface " + fullyQualifiedInterfaceName + " to class.");
+                    }
+                    let superClass = null;
+                    if(superClasses.length === 1)
+                    {
+                        superClass = superClasses[0];
+                    }
+                    let as3Class = new as3.ClassDefinition(as3Definition.name, as3Definition.packageName,
+                        as3.AccessModifiers[as3.AccessModifiers.public], as3Definition.sourceFile,
+                        as3Definition.require, as3Definition.external);
+                    as3Class.superClass = superClass;
+                    this.copyMembers(as3Definition, as3Class, false);
+                    as3Class.properties.forEach((as3Property) =>
+                    {
+                        as3Property.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+                    });
+                    as3Class.methods.forEach((as3Method) =>
+                    {
+                        as3Method.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+                    });
+                    this._definitions[index] = as3Class;
                 }
-                let superClasses = <as3.ClassDefinition[]> this._promoted[fullyQualifiedInterfaceName];
-                if(superClasses.length > 1)
-                {
-                    throw new Error("Interface with name " + fullyQualifiedInterfaceName + " could not be promoted to a class because it would have more than one super class.");
-                }
-                let superClass = superClasses[0];
-                if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
-                {
-                    console.info("Promoting interface " + fullyQualifiedInterfaceName + " to class.");
-                }
-                let as3Class = new as3.ClassDefinition(as3Definition.name, as3Definition.packageName,
-                    as3.AccessModifiers[as3.AccessModifiers.public], as3Definition.sourceFile,
-                    as3Definition.require, as3Definition.external);
-                as3Class.superClass = superClass;
-                this.copyMembers(as3Definition, as3Class, false);
-                as3Class.properties.forEach((as3Property) =>
-                {
-                    as3Property.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
-                });
-                as3Class.methods.forEach((as3Method) =>
-                {
-                    as3Method.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
-                });
-                this._definitions[index] = as3Class;
-            }
-        });
+            });
+            currentlyPromoted = this._promoted;
+        }
     }
     
 }
