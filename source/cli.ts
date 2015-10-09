@@ -26,7 +26,7 @@ import TS2ASParser = require("./parser");
 import AS3Emitter = require("./emitter");
 import as3 = require("./as3");
 import ts = require("typescript");
-let mkdirp = require("../node_modules/mkdirp");
+import mkdirp = require("mkdirp");
 
 let outputPath;
 let fileNames: string[];
