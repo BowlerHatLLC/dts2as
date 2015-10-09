@@ -2,6 +2,14 @@
 
 A command line tool that converts TypeScript definitions (d.ts files) to ActionScript classes and interfaces. A compiled SWC file may be used as an external library with the Apache FlexJS transpiler to expose JavaScript APIs to ActionScript.
 
+## Installation
+
+Requires [Node.js](https://nodejs.org/).
+
+```
+npm install -g dts2as
+```
+
 ## Usage
 
 ```
