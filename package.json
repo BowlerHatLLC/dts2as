@@ -18,6 +18,7 @@
   },
   "scripts": {
     "build": "rm bin/*.js && tsc source/*.ts --module commonjs --target ES5 --outDir bin",
+    "test": "tsc --module commonjs --target ES5 --outDir spec/bin spec/parser/*.ts && jasmine",
     "prepublish": "npm run build"
   },
   "dependencies": {
@@ -26,6 +27,7 @@
     "typescript": "^1.5.3"
   },
   "devDependencies": {
+    "jasmine": "^2.3.2",
     "typescript": "^1.6.2"
   }
 }
