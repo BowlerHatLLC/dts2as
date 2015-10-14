@@ -1554,6 +1554,11 @@ class TS2ASParser
                 }
             }
             
+            if(isRest)
+            {
+                parameterType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Array], this._definitions);
+            }
+            
             as3Parameters.push(new as3.ParameterDefinition(parameterName, parameterType, parameterValue, isRest));
         }
         return as3Parameters;
