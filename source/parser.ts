@@ -118,6 +118,7 @@ class TS2ASParser
             this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
             this.populatePackageLevelDefinitions(sourceFile);
             this.promoteInterfaces();
+            this.cleanupStaticSideDefinitions();
         });
         return this._definitions;
     }
@@ -1695,6 +1696,14 @@ class TS2ASParser
             });
             currentlyPromoted = this._promoted;
         }
+    }
+    
+    private cleanupStaticSideDefinitions():void
+    {
+        this._definitions = this._definitions.filter((definition: as3.PackageLevelDefinition) =>
+        {
+            return !(definition instanceof as3.StaticSideClassDefinition);
+        });
     }
     
 }
