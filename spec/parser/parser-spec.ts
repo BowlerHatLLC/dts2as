@@ -470,13 +470,40 @@ describe("A decomposed class", () =>
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
     });
-    it("may be a variable followed by intreface with same name", () =>
+    it("may be a variable followed by an interface with same name", () =>
     {
         let symbols = parser.parse("spec/fixtures/variable-interface-decomposed-class.d.ts");
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableInterfaceDecomposedClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+    });
+    it("may be a variable typed as an interface with same name", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/variable-typed-as-interface-decomposed-class.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableTypedAsInterfaceDecomposedClass", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.constructor).toBe(as3.ClassDefinition);
+        expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.methods.length).toBe(1);
+        let method = as3Class.methods[0];
+        expect(method).not.toBeNull();
+        expect(method.name).toBe("method1");
+        expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(method.isStatic).toBe(true);
+    });
+    it("may be an interface that extends another decomposed class", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/interface-extends-decomposed-class.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceExtendsDecomposedClass", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.constructor).toBe(as3.ClassDefinition);
+        expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        let superClass = as3Class.superClass;
+        expect(superClass).not.toBeNull();
+        expect(superClass.getFullyQualifiedName()).toBe("DecomposedClass");
+        expect(superClass.constructor).toBe(as3.ClassDefinition);
+        expect(superClass.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
     });
     it("may have a property", () =>
     {
