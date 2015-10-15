@@ -1,0 +1,1 @@
+declare function functionWithOptionalParameter(param1?: string)

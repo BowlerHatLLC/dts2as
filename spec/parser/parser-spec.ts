@@ -22,65 +22,147 @@ import as3 = require("../../source/as3");
 import TS2ASParser = require("../../source/parser");
 import ts = require("typescript");
 
-describe("Definitions", () =>
+describe("A TypeScript definition", () =>
 {
     let parser: TS2ASParser;
-    beforeEach(() =>
+    beforeAll(() =>
     {
         parser = new TS2ASParser(ts.ScriptTarget.ES5);
     });
-    it("Declare a class", () =>
+    it("may declare a class", () =>
     {
         let symbols = parser.parse("spec/fixtures/declare-class.d.ts");
         let as3Class = as3.getDefinitionByName("DeclareClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.require).toBe(null);
     });
-    it("Export a class", () =>
+    it("may export a class", () =>
     {
         let symbols = parser.parse("spec/fixtures/export-class.d.ts");
         let as3Class = as3.getDefinitionByName("ExportClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.require).toBe(null);
     });
-    it("Export a class in a module", () =>
+    it("may export a class in a module", () =>
     {
         let symbols = parser.parse("spec/fixtures/class-in-module.d.ts");
         let as3Class = as3.getDefinitionByName("test.ClassInModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.require).toBe(null);
     });
-    it("Export a class in a module with a dot", () =>
+    it("may export a class in a module with a dot in the name", () =>
     {
         let symbols = parser.parse("spec/fixtures/class-in-module-with-dot.d.ts");
         let as3Class = as3.getDefinitionByName("com.example.ClassInNestedModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.require).toBe(null);
     });
-    it("Export a class in a nested module", () =>
+    it("may export a class in a nested module", () =>
     {
         let symbols = parser.parse("spec/fixtures/class-in-nested-module.d.ts");
         let as3Class = as3.getDefinitionByName("com.example.ClassInNestedModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
         expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.require).toBe(null);
+    });
+    it("may export a class in a string module", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/class-in-string-module.d.ts");
+        let as3Class = as3.getDefinitionByName("test.ClassInStringModule", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.constructor).toBe(as3.ClassDefinition);
+        expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Class.require).toBe("test");
+    });
+    it("may declare an interface", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/declare-interface.d.ts");
+        let as3Interface = as3.getDefinitionByName("DeclareInterface", symbols);
+        expect(as3Interface).not.toBeNull();
+        expect(as3Interface.constructor).toBe(as3.InterfaceDefinition);
+        expect(as3Interface.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Interface.require).toBe(null);
+    });
+    it("may export an interface", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/export-interface.d.ts");
+        let as3Interface = as3.getDefinitionByName("ExportInterface", symbols);
+        expect(as3Interface).not.toBeNull();
+        expect(as3Interface.constructor).toBe(as3.InterfaceDefinition);
+        expect(as3Interface.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Interface.require).toBe(null);
+    });
+    it("may declare a function", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/declare-function.d.ts");
+        let as3Function = as3.getDefinitionByName("declareFunction", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.require).toBe(null);
+    });
+    it("may export a function", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/export-function.d.ts");
+        let as3Function = as3.getDefinitionByName("exportFunction", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.require).toBe(null);
+    });
+    it("may declare a variable", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/declare-variable.d.ts");
+        let as3Variable = as3.getDefinitionByName("declareVariable", symbols);
+        expect(as3Variable).not.toBeNull();
+        expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+        expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Variable.require).toBe(null);
+    });
+    it("may export a variable", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/export-variable.d.ts");
+        let as3Variable = as3.getDefinitionByName("exportVariable", symbols);
+        expect(as3Variable).not.toBeNull();
+        expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+        expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Variable.require).toBe(null);
+    });
+    it("may declare an inner class", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/inner-class.d.ts");
+        let as3OuterClass = as3.getDefinitionByName("OuterClass", symbols);
+        expect(as3OuterClass).not.toBeNull();
+        expect(as3OuterClass.constructor).toBe(as3.ClassDefinition);
+        expect(as3OuterClass.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3OuterClass.require).toBe(null);
+        let as3InnerClass = as3.getDefinitionByName("OuterClass.InnerClass", symbols);
+        expect(as3InnerClass).not.toBeNull();
+        expect(as3InnerClass.constructor).toBe(as3.ClassDefinition);
+        expect(as3InnerClass.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3InnerClass.require).toBe(null);
     });
 });
 
-describe("Members", () =>
+describe("A class", () =>
 {
     let parser: TS2ASParser;
-    beforeEach(() =>
+    beforeAll(() =>
     {
         parser = new TS2ASParser(ts.ScriptTarget.ES5);
     });
-    it("Property on a class", () =>
+    it("may have a property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/member-property.d.ts");
+        let symbols = parser.parse("spec/fixtures/class-member-property.d.ts");
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithProperty", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(1);
@@ -92,9 +174,9 @@ describe("Members", () =>
         let as3PropertyType = as3.getDefinitionByName("String", symbols);
         expect(property.type).toBe(as3PropertyType);
     });
-    it("Static property on a class", () =>
+    it("may have a static property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/static-property.d.ts");
+        let symbols = parser.parse("spec/fixtures/class-static-property.d.ts");
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticProperty", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(1);
@@ -106,9 +188,9 @@ describe("Members", () =>
         let as3PropertyType = as3.getDefinitionByName("String", symbols);
         expect(property.type).toBe(as3PropertyType);
     });
-    it("Method on a class", () =>
+    it("may have a method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/member-method.d.ts");
+        let symbols = parser.parse("spec/fixtures/class-member-method.d.ts");
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithMethod", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(1);
@@ -120,10 +202,328 @@ describe("Members", () =>
         let as3MethodType = as3.getDefinitionByName("Number", symbols);
         expect(method.type).toBe(as3MethodType);
     });
-    it("Static method on a class", () =>
+    it("may have a static method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/static-method.d.ts");
+        let symbols = parser.parse("spec/fixtures/class-static-method.d.ts");
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticMethod", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.methods.length).toBe(1);
+        let method = as3Class.methods[0];
+        expect(method).not.toBeNull();
+        expect(method.name).toBe("method1");
+        expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(method.isStatic).toBe(true);
+        let as3MethodType = as3.getDefinitionByName("Number", symbols);
+        expect(method.type).toBe(as3MethodType);
+    });
+});
+
+describe("An interface", () =>
+{
+    let parser: TS2ASParser;
+    beforeAll(() =>
+    {
+        parser = new TS2ASParser(ts.ScriptTarget.ES5);
+    });
+    it("may have a property", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/interface-member-property.d.ts");
+        let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName("InterfaceWithProperty", symbols);
+        expect(as3Interface).not.toBeNull();
+        expect(as3Interface.properties.length).toBe(1);
+        let property = as3Interface.properties[0];
+        expect(property).not.toBeNull();
+        expect(property.name).toBe("property1");
+        expect(property.accessLevel).toBeNull();
+        expect(property.isStatic).toBe(false);
+        let as3PropertyType = as3.getDefinitionByName("String", symbols);
+        expect(property.type).toBe(as3PropertyType);
+    });
+    it("may have a method", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/interface-member-method.d.ts");
+        let as3Interface = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceWithMethod", symbols);
+        expect(as3Interface).not.toBeNull();
+        expect(as3Interface.methods.length).toBe(1);
+        let method = as3Interface.methods[0];
+        expect(method).not.toBeNull();
+        expect(method.name).toBe("method1");
+        expect(method.accessLevel).toBeNull();
+        expect(method.isStatic).toBe(false);
+        let as3MethodType = as3.getDefinitionByName("Number", symbols);
+        expect(method.type).toBe(as3MethodType);
+    });
+});
+
+describe("A function", () =>
+{
+    let parser: TS2ASParser;
+    beforeAll(() =>
+    {
+        parser = new TS2ASParser(ts.ScriptTarget.ES5);
+    });
+    it("may have a parameter", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/function-parameter.d.ts");
+        let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithParameter", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.type).not.toBeNull();
+        expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+        let params = as3Function.parameters;
+        expect(params).not.toBeNull();
+        expect(params.length).toBe(1);
+        let param1 = params[0];
+        expect(param1).not.toBeNull();
+        expect(param1.name).toBe("param1");
+        expect(param1.type).not.toBeNull();
+        expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+        expect(param1.value).toBeNull();
+        expect(param1.isRest).toBe(false);
+    });
+    it("may have a default parameter", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/function-parameter-default.d.ts");
+        let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithDefaultParameter", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.type).not.toBeNull();
+        expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+        let params = as3Function.parameters;
+        expect(params).not.toBeNull();
+        expect(params.length).toBe(1);
+        let param1 = params[0];
+        expect(param1).not.toBeNull();
+        expect(param1.name).toBe("param1");
+        expect(param1.type).not.toBeNull();
+        expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+        expect(param1.value).toBe("\"hello\"");
+        expect(param1.isRest).toBe(false);
+    });
+    it("may have a rest parameter", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/function-parameter-rest.d.ts");
+        let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithRestParameter", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.type).not.toBeNull();
+        expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+        let params = as3Function.parameters;
+        expect(params).not.toBeNull();
+        expect(params.length).toBe(1);
+        let param1 = params[0];
+        expect(param1).not.toBeNull();
+        expect(param1.name).toBe("param1");
+        expect(param1.type).not.toBeNull();
+        expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
+        expect(param1.value).toBeNull();
+        expect(param1.isRest).toBe(true);
+    });
+    it("may have an optional parameter", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/function-parameter-optional.d.ts");
+        let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOptionalParameter", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.type).not.toBeNull();
+        expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+        let params = as3Function.parameters;
+        expect(params).not.toBeNull();
+        expect(params.length).toBe(1);
+        let param1 = params[0];
+        expect(param1).not.toBeNull();
+        expect(param1.name).toBe("param1");
+        expect(param1.type).not.toBeNull();
+        expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+        expect(param1.value).toBe("undefined");
+        expect(param1.isRest).toBe(false);
+    });
+    it("may have a return value", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/function-return.d.ts");
+        let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithReturn", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.type).not.toBeNull();
+        expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+        let params = as3Function.parameters;
+        expect(params).not.toBeNull();
+        expect(params.length).toBe(0);
+    });
+    it("may have multiple parameters", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/function-multiple-parameters.d.ts");
+        let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithMultipleParameters", symbols);
+        expect(as3Function).not.toBeNull();
+        expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+        expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(as3Function.type).not.toBeNull();
+        expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+        let params = as3Function.parameters;
+        expect(params).not.toBeNull();
+        expect(params.length).toBe(5);
+        
+        let param1 = params[0];
+        expect(param1).not.toBeNull();
+        expect(param1.name).toBe("param1");
+        expect(param1.type).not.toBeNull();
+        expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+        expect(param1.value).toBeNull();
+        expect(param1.isRest).toBe(false);
+        
+        let param2 = params[1];
+        expect(param2).not.toBeNull();
+        expect(param2.name).toBe("param2");
+        expect(param2.type).not.toBeNull();
+        expect(param2.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+        expect(param2.value).toBeNull();
+        expect(param2.isRest).toBe(false);
+        
+        let param3 = params[2];
+        expect(param3).not.toBeNull();
+        expect(param3.name).toBe("param3");
+        expect(param3.type).not.toBeNull();
+        expect(param3.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Boolean]);
+        expect(param3.value).toBe("false");
+        expect(param3.isRest).toBe(false);
+        
+        let param4 = params[3];
+        expect(param4).not.toBeNull();
+        expect(param4.name).toBe("param4");
+        expect(param4.type).not.toBeNull();
+        expect(param4.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+        expect(param4.value).toBe("undefined");
+        expect(param4.isRest).toBe(false);
+        
+        let param5 = params[4];
+        expect(param5).not.toBeNull();
+        expect(param5.name).toBe("param5");
+        expect(param5.type).not.toBeNull();
+        expect(param5.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
+        expect(param5.value).toBeNull();
+        expect(param5.isRest).toBe(true);
+    });
+});
+
+describe("A variable", () =>
+{
+    let parser: TS2ASParser;
+    beforeAll(() =>
+    {
+        parser = new TS2ASParser(ts.ScriptTarget.ES5);
+    });
+    describe("when typed as a union type in TypeScript", () =>
+    {
+        it("is typed as Object in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-union-type.d.ts");
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("unionType", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+        });
+    });
+    describe("when typed as the any type in TypeScript", () =>
+    {
+        it("is typed as Object in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-any-type.d.ts");
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("anyType", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+        });
+    });
+});
+
+describe("A decomposed class", () =>
+{
+    let parser: TS2ASParser;
+    beforeAll(() =>
+    {
+        parser = new TS2ASParser(ts.ScriptTarget.ES5);
+    });
+    it("may be an interface followed by variable with same name", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/interface-variable-decomposed-class.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceVariableDecomposedClass", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.constructor).toBe(as3.ClassDefinition);
+        expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+    });
+    it("may be an interface followed by multiple variables with same name", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/interface-duplicate-variable-decomposed-class.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceVariableDecomposedClass", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.constructor).toBe(as3.ClassDefinition);
+        expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+    });
+    it("may be a variable followed by intreface with same name", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/variable-interface-decomposed-class.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableInterfaceDecomposedClass", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.constructor).toBe(as3.ClassDefinition);
+        expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+    });
+    it("may have a property", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/decomposed-class-member-property.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithProperty", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.properties.length).toBe(1);
+        let property = as3Class.properties[0];
+        expect(property).not.toBeNull();
+        expect(property.name).toBe("property1");
+        expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(property.isStatic).toBe(false);
+        let as3PropertyType = as3.getDefinitionByName("String", symbols);
+        expect(property.type).toBe(as3PropertyType);
+    });
+    it("may have a static property", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/decomposed-class-static-property.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithStaticProperty", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.properties.length).toBe(1);
+        let property = as3Class.properties[0];
+        expect(property).not.toBeNull();
+        expect(property.name).toBe("property1");
+        expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(property.isStatic).toBe(true);
+        let as3PropertyType = as3.getDefinitionByName("String", symbols);
+        expect(property.type).toBe(as3PropertyType);
+    });
+    it("may have a method", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/decomposed-class-member-method.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithMethod", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.methods.length).toBe(1);
+        let method = as3Class.methods[0];
+        expect(method).not.toBeNull();
+        expect(method.name).toBe("method1");
+        expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(method.isStatic).toBe(false);
+        let as3MethodType = as3.getDefinitionByName("Number", symbols);
+        expect(method.type).toBe(as3MethodType);
+    });
+    it("may have a static method", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/decomposed-class-static-method.d.ts");
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithStaticMethod", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(1);
         let method = as3Class.methods[0];

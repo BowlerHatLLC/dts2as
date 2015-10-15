@@ -1,0 +1,1 @@
+declare function functionWithParameter(param1: number)

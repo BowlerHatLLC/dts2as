@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "rm bin/*.js && tsc source/*.ts --module commonjs --target ES5 --outDir bin",
-    "test": "tsc --module commonjs --target ES5 --outDir spec/bin spec/parser/*.ts && jasmine",
+    "test": "tsc --module commonjs --target ES5 --outDir spec/bin spec/parser/*.ts && tsc --module commonjs --target ES5 --outDir spec/bin spec/as3/*.ts && jasmine",
     "prepublish": "npm run build && npm test"
   },
   "dependencies": {

@@ -1,0 +1,1 @@
+declare function functionWithDefaultParameter(param1: string = "hello")
