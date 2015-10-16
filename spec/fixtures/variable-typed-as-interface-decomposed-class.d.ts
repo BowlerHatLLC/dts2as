@@ -1,0 +1,6 @@
+interface VariableTypedAsInterfaceDecomposedClass
+{
+	method1()
+}
+
+declare var VariableTypedAsInterfaceDecomposedClass: VariableTypedAsInterfaceDecomposedClass;
