@@ -22,6 +22,14 @@ import fs = require("fs");
 import as3 = require("./as3");
 import ts = require("typescript");
 
+class StaticSideClassDefinition extends as3.ClassDefinition
+{
+    constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: string)
+    {
+        super(name, packageName, accessLevel, sourceFile, require, true);
+    }
+}
+
 enum TypeScriptBuiltIns
 {
     any,
@@ -602,7 +610,7 @@ class TS2ASParser
             case ts.SyntaxKind.InterfaceDeclaration:
             {
                 let as3Interface = this.readInterface(<ts.InterfaceDeclaration> node);
-                if(as3Interface instanceof as3.StaticSideClassDefinition)
+                if(as3Interface instanceof StaticSideClassDefinition)
                 {
                     if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Interface.external)
                     {
@@ -1091,7 +1099,7 @@ class TS2ASParser
         {
             //if the interface defines a constructor, it is the static side of a
             //decomposed class
-            let staticSideClass = new as3.StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire);
+            let staticSideClass = new StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire);
             this.readMembers(staticSideClass, interfaceDeclaration);
             return staticSideClass;
         }
@@ -1256,7 +1264,7 @@ class TS2ASParser
         }
         let accessLevel = this.getAccessLevel(variableDeclaration);
         let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
-        if(existingDefinition instanceof as3.StaticSideClassDefinition)
+        if(existingDefinition instanceof StaticSideClassDefinition)
         {
             //this is a decomposed class where the variable name and the static
             //side have the same name
@@ -1308,7 +1316,7 @@ class TS2ASParser
             as3PackageVariable.type = variableType;
             return;
         }
-        if(as3PackageLevelDefinition instanceof as3.StaticSideClassDefinition)
+        if(as3PackageLevelDefinition instanceof StaticSideClassDefinition)
         {
             //this is a decomposed class where the variable name and the static
             //side have the same name. we need to make everything static;
@@ -1343,13 +1351,13 @@ class TS2ASParser
                 //the static side of this decomposed class is a type literal
                 //so we haven't created the AS3 class for it yet. we need to
                 //do it on the fly.
-                let tempStaticSideClass = new as3.StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleRequire);
+                let tempStaticSideClass = new StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleRequire);
                 let typeLiteral = <ts.TypeLiteralNode> variableDeclaration.type;
                 this.readMembers(tempStaticSideClass, typeLiteral);
                 this.populateMembers(tempStaticSideClass, typeLiteral);
                 variableType = tempStaticSideClass;
             }
-            if(variableType instanceof as3.StaticSideClassDefinition)
+            if(variableType instanceof StaticSideClassDefinition)
             {
                 //the static side of this decomposed class is a different
                 //interface than the instance side. we need to copy over
@@ -1702,7 +1710,7 @@ class TS2ASParser
     {
         this._definitions = this._definitions.filter((definition: as3.PackageLevelDefinition) =>
         {
-            return !(definition instanceof as3.StaticSideClassDefinition);
+            return !(definition instanceof StaticSideClassDefinition);
         });
     }
     
