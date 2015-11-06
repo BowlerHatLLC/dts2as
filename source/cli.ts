@@ -15,7 +15,7 @@ limitations under the License.
 */
 /// <reference path="../typings/tsd.d.ts" />
 /// <reference path="./parser.ts" />
-/// <reference path="./emitter.ts" />
+/// <reference path="./as-stub-emitter.ts" />
 /// <reference path="./as3.ts" />
 /// <reference path="../node_modules/typescript/lib/typescript.d.ts" />
 
@@ -23,12 +23,13 @@ import fs = require("fs");
 import path = require("path");
 import minimist = require("minimist");
 import TS2ASParser = require("./parser");
-import AS3Emitter = require("./emitter");
+import ASStubEmitter = require("./as-stub-emitter");
+import JSExternsEmitter = require("./js-externs-emitter");
 import as3 = require("./as3");
 import ts = require("typescript");
 import mkdirp = require("mkdirp");
 
-let outputPath;
+let sourceOutputPath: string;
 let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
@@ -73,7 +74,7 @@ for(let key in params)
 		}
 		case "outDir":
 		{
-			outputPath = params[key];
+			sourceOutputPath = path.join(params[key]);
 			break;
 		}
 		case "target":
@@ -170,10 +171,16 @@ function canEmit(symbol: as3.PackageLevelDefinition): boolean
 	return true;
 }
 
+let externsOutput = "";
 fileNames.forEach(fileName =>
 {
 	let packageLevelSymbols = parser.parse(fileName);
-	let emitter = new AS3Emitter(packageLevelSymbols);
+	let externsEmitter = new JSExternsEmitter(packageLevelSymbols);
+	if(externsOutput.length === 0)
+	{
+		externsOutput += externsEmitter.emitFileHeader();
+	}
+	let sourceEmitter = new ASStubEmitter(packageLevelSymbols);
 	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
 	{
 		if(!canEmit(as3Type))
@@ -193,29 +200,39 @@ fileNames.forEach(fileName =>
 		if("superClass" in as3Type)
 		{
 			let as3Class = <as3.ClassDefinition> as3Type;
-			writeAS3File(as3Class, emitter.emitClass(as3Class));
+			writeAS3File(as3Class, sourceEmitter.emitClass(as3Class));
+			externsOutput += externsEmitter.emitClass(as3Class);
 		}
 		else if("interfaces" in as3Type)
 		{
 			let as3Interface = <as3.InterfaceDefinition> as3Type;
-			writeAS3File(as3Interface, emitter.emitInterface(as3Interface));
+			writeAS3File(as3Interface, sourceEmitter.emitInterface(as3Interface));
+			externsOutput += externsEmitter.emitInterface(as3Interface);
 		}
 		else if("parameters" in as3Type)
 		{
 			let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
-			writeAS3File(as3PackageFunction, emitter.emitPackageFunction(as3PackageFunction));
+			writeAS3File(as3PackageFunction, sourceEmitter.emitPackageFunction(as3PackageFunction));
+			externsOutput += externsEmitter.emitPackageFunction(as3PackageFunction);
 		}
 		else
 		{
 			let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
-			writeAS3File(as3PackageVariable, emitter.emitPackageVariable(as3PackageVariable));
+			writeAS3File(as3PackageVariable, sourceEmitter.emitPackageVariable(as3PackageVariable));
+			externsOutput += externsEmitter.emitPackageVariable(as3PackageVariable);
 		}
 	});
 });
+let externsOutputPath = sourceOutputPath;
+if(!externsOutputPath)
+{
+	externsOutputPath = path.dirname(fileNames[0]);
+}
+fs.writeFileSync(path.join(sourceOutputPath, "externs.js"), externsOutput);
 
 function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 {
-	let as3OutputPath = outputPath;
+	let as3OutputPath = sourceOutputPath;
 	if(!as3OutputPath)
 	{
 		as3OutputPath = path.dirname(symbol.sourceFile);
@@ -265,7 +282,7 @@ function printUsage()
 	console.info("          dts2as --exclude com.example.SomeType file.d.ts");
 	console.info();
 	console.info("Options:");
-	console.info(" --outDir DIRECTORY                 Generate ActionScript files in a specific output directory.");
+	console.info(" --outDir DIRECTORY                 Generate ActionScript and externs files in a specific output directory.");
 	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
 	console.info(" -t VERSION, --target VERSION       Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
