@@ -69,7 +69,7 @@ class JSExternsEmitter
         }
         if(constructorMethod)
         {
-            this.emitParameterDocs(constructorMethod, as3Class);
+            classOutput += this.emitParameterDocs(constructorMethod, as3Class);
         }
 		classOutput += " */" + NEW_LINE;
         classOutput += className;
