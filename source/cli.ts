@@ -14,22 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /// <reference path="../typings/tsd.d.ts" />
-/// <reference path="./parser.ts" />
-/// <reference path="./as-stub-emitter.ts" />
-/// <reference path="./as3.ts" />
 /// <reference path="../node_modules/typescript/lib/typescript.d.ts" />
 
 import fs = require("fs");
 import path = require("path");
+import child_process = require("child_process");
 import minimist = require("minimist");
 import TS2ASParser = require("./parser");
 import ASStubEmitter = require("./as-stub-emitter");
 import JSExternsEmitter = require("./js-externs-emitter");
+import flexjsUtils = require("./flexjs-utils");
 import as3 = require("./as3");
 import ts = require("typescript");
 import mkdirp = require("mkdirp");
+import rimraf = require("rimraf");
 
-let sourceOutputPath: string;
+let sourceOutputPathIsTemp = false;
+let sourceOutputPath: string = null;
+let swcOutputPath: string = null;
+let flexHome: string = null;
 let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
@@ -57,7 +60,7 @@ for(let key in params)
 				if(!fs.existsSync(fileName))
 				{
 					console.error("File not found: " + fileName);
-					process.exit();
+					process.exit(1);
 				}
 			});
 			break;
@@ -70,11 +73,30 @@ for(let key in params)
 		case "version":
 		{
 			printVersion();
-			process.exit();
+			process.exit(0);
+		}
+		case "outSWC":
+		{
+			swcOutputPath = path.join(params[key]);
+			break;
 		}
 		case "outDir":
 		{
 			sourceOutputPath = path.join(params[key]);
+			break;
+		}
+		case "flexHome":
+		{
+			let path = params[key];
+			if(flexjsUtils.isValidApacheFlexJSPath(path))
+			{
+				flexHome = path;
+			}
+			else
+			{
+				console.error("Path to Apache FlexJS SDK is not valid: " + path);
+				process.exit(1);
+			}
 			break;
 		}
 		case "target":
@@ -148,7 +170,31 @@ for(let key in params)
 if(fileNames.length === 0)
 {
 	printUsage();
-	process.exit();
+	process.exit(1);
+}
+if(flexHome === null)
+{
+	flexHome = flexjsUtils.findFlexHome();
+}
+if(swcOutputPath !== null)
+{
+	if(flexHome === null)
+	{
+		console.error("--outSWC option requires Apache FlexJS. Please specify the --flexHome option or set the FLEX_HOME environment variable.");
+		process.exit(1);
+	}
+	else
+	{
+		console.info("Apache FlexJS: " + flexHome);
+	}
+}
+if(sourceOutputPath === null)
+{
+	if(swcOutputPath !== null)
+	{
+		sourceOutputPathIsTemp = true;
+	}
+	sourceOutputPath = path.join(process.cwd(), "dts2as_generated");
 }
 
 let parser = new TS2ASParser(scriptTarget);
@@ -230,6 +276,49 @@ if(!externsOutputPath)
 }
 fs.writeFileSync(path.join(sourceOutputPath, "externs.js"), externsOutput);
 
+if(swcOutputPath !== null)
+{
+	let swcName = path.basename(swcOutputPath, ".swc");
+	let externsName = swcName + ".js";
+	let compcPath = flexjsUtils.findBinCompc(flexHome);
+	if(compcPath === null)
+	{
+		console.error("Could not find bin/compc in Apache FlexJS directory.");
+		process.exit(1);
+	}
+	var result = child_process.spawnSync(compcPath,
+	[
+		"--external-library-path",
+		path.join(flexHome, "js", "libs", "js.swc"),
+		"--output",
+		swcOutputPath,
+		"--source-path",
+		sourceOutputPath,
+		"--include-sources",
+		sourceOutputPath,
+		"--include-file",
+		path.join("externs", externsName),
+		path.join(externsOutputPath, "externs.js")
+	],
+	{
+		encoding: "utf8"
+	});
+	if(result.status === 0)
+	{
+		console.info("Created SWC file: " + swcOutputPath);
+	}
+	else
+	{
+		console.error(result.stderr);
+		console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.")
+	}
+}
+
+if(sourceOutputPathIsTemp)
+{
+	rimraf.sync(sourceOutputPath);
+}
+
 function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 {
 	let as3OutputPath = sourceOutputPath;
@@ -278,11 +367,14 @@ function printUsage()
 	console.info();
 	console.info("Examples: dts2as hello.d.ts");
 	console.info("          dts2as file1.d.ts file2.d.ts");
-	console.info("          dts2as --outDir ./as3-files file.d.ts");
+	console.info("          dts2as --outSWC hello.swc hello.d.ts");
+	console.info("          dts2as --outDir ./as3_generated file.d.ts");
 	console.info("          dts2as --exclude com.example.SomeType file.d.ts");
 	console.info();
 	console.info("Options:");
+	console.info(" --outSWC FILE                      Generate a compiled SWC file. Requires either FLEX_HOME environment variable or --flexHome option.");
 	console.info(" --outDir DIRECTORY                 Generate ActionScript and externs files in a specific output directory.");
+	console.info(" --flexHome DIRECTORY               Specify the directory where Apache FlexJS is located. Defaults to FLEX_HOME environment variable, if available.");
 	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
 	console.info(" -t VERSION, --target VERSION       Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
