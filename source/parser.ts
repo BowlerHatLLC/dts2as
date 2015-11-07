@@ -70,7 +70,6 @@ class TS2ASParser
         this._scriptTarget = scriptTarget;
     }
     
-    private _hasNoDefaultLib: boolean;
     private _sourceFiles: ts.SourceFile[];
     private _definitions: as3.PackageLevelDefinition[];
     private _functionAliases: string[];
@@ -87,7 +86,7 @@ class TS2ASParser
     private _promoted: { [key: string]: as3.ClassDefinition[] };
     debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
-    parse(fileName: string): as3.PackageLevelDefinition[]
+    parse(fileName: string): TS2ASParser.ParserResult
     {
         this._functionAliases = [];
         this._typeAliasMap = {};
@@ -128,7 +127,7 @@ class TS2ASParser
             this.promoteInterfaces();
             this.cleanupStaticSideDefinitions();
         });
-        return this._definitions;
+        return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
     }
     
     private readStandardLibrary()
@@ -1724,6 +1723,13 @@ module TS2ASParser
         WARN = 1,
         INFO = 2
     }
+    
+    export interface ParserResult
+    {
+        definitions: as3.PackageLevelDefinition[];
+        hasNoDefaultLib: boolean;
+    }
 }
+
 
 export = TS2ASParser;

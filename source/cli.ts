@@ -30,14 +30,16 @@ import mkdirp = require("mkdirp");
 import rimraf = require("rimraf");
 
 let sourceOutputPathIsTemp = false;
-let sourceOutputPath: string = null;
+let outputDirectory: string = null;
 let swcOutputPath: string = null;
+let externsOutputPath: string = null;
 let flexHome: string = null;
 let fileNames: string[];
 let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
 let includedSymbols: string[];
 let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
+let sourcePaths: string[] = [];
 
 let params = minimist(process.argv.slice(2),
 {
@@ -82,7 +84,7 @@ for(let key in params)
 		}
 		case "outDir":
 		{
-			sourceOutputPath = path.join(params[key]);
+			outputDirectory = path.join(params[key]);
 			break;
 		}
 		case "flexHome":
@@ -185,16 +187,19 @@ if(swcOutputPath !== null)
 	}
 	else
 	{
-		console.info("Apache FlexJS: " + flexHome);
+        if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+        {
+			console.info("Apache FlexJS: " + flexHome);
+		}
 	}
 }
-if(sourceOutputPath === null)
+if(outputDirectory === null)
 {
 	if(swcOutputPath !== null)
 	{
 		sourceOutputPathIsTemp = true;
 	}
-	sourceOutputPath = path.join(process.cwd(), "dts2as_generated");
+	outputDirectory = path.join(process.cwd(), "dts2as_generated");
 }
 
 let parser = new TS2ASParser(scriptTarget);
@@ -220,7 +225,8 @@ function canEmit(symbol: as3.PackageLevelDefinition): boolean
 let externsOutput = "";
 fileNames.forEach(fileName =>
 {
-	let packageLevelSymbols = parser.parse(fileName);
+	let result = parser.parse(fileName);
+	let packageLevelSymbols = result.definitions;
 	let externsEmitter = new JSExternsEmitter(packageLevelSymbols);
 	if(externsOutput.length === 0)
 	{
@@ -269,13 +275,25 @@ fileNames.forEach(fileName =>
 		}
 	});
 });
-let externsOutputPath = sourceOutputPath;
-if(!externsOutputPath)
+if(swcOutputPath !== null)
 {
-	externsOutputPath = path.dirname(fileNames[0]);
+	let swcName = path.basename(swcOutputPath, ".swc");
+	let externsName = swcName + ".js";
+	//if we're creating a SWC, the externs must have the same file name
+	externsOutputPath = path.join(outputDirectory, externsName);
 }
-fs.writeFileSync(path.join(sourceOutputPath, "externs.js"), externsOutput);
+else
+{
+	//otherwise, just use a generic name
+	externsOutputPath = path.join(outputDirectory, "externs.js");
+}
+fs.writeFileSync(externsOutputPath, externsOutput);
+if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+{
+	console.info("Created JavaScript externs file: " + externsOutputPath);
+}
 
+let compilerError = false;
 if(swcOutputPath !== null)
 {
 	let swcName = path.basename(swcOutputPath, ".swc");
@@ -286,29 +304,36 @@ if(swcOutputPath !== null)
 		console.error("Could not find bin/compc in Apache FlexJS directory.");
 		process.exit(1);
 	}
-	var result = child_process.spawnSync(compcPath,
+	let compcArgs =
 	[
 		"--external-library-path",
 		path.join(flexHome, "js", "libs", "js.swc"),
 		"--output",
 		swcOutputPath,
-		"--source-path",
-		sourceOutputPath,
-		"--include-sources",
-		sourceOutputPath,
 		"--include-file",
 		path.join("externs", externsName),
-		path.join(externsOutputPath, "externs.js")
-	],
+		externsOutputPath
+	];
+	for(let sourcePath of sourcePaths)
+	{
+		sourcePath = path.join(outputDirectory, sourcePath);
+		compcArgs.push("--source-path", sourcePath,
+			"--include-sources", sourcePath);
+	}
+	var result = child_process.spawnSync(compcPath, compcArgs,
 	{
 		encoding: "utf8"
 	});
 	if(result.status === 0)
 	{
-		console.info("Created SWC file: " + swcOutputPath);
+		if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+		{
+			console.info("Created SWC file: " + swcOutputPath);
+		}
 	}
 	else
 	{
+		compilerError = true;
 		console.error(result.stderr);
 		console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.")
 	}
@@ -316,20 +341,44 @@ if(swcOutputPath !== null)
 
 if(sourceOutputPathIsTemp)
 {
-	rimraf.sync(sourceOutputPath);
+	//only --outSWC was specified, so delete the source files
+	rimraf.sync(outputDirectory);
+}
+
+if(compilerError)
+{
+	process.exit(1);
 }
 
 function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 {
-	let as3OutputPath = sourceOutputPath;
-	if(!as3OutputPath)
-	{
-		as3OutputPath = path.dirname(symbol.sourceFile);
-	}
 	let packageParts = symbol.packageName.split(".");
-	packageParts.unshift(as3OutputPath);
 	packageParts.push(symbol.name + ".as");
-	return path.join.apply(null, packageParts);
+	let pathToClass = path.join.apply(null, packageParts);
+	for(let i = 0, count = sourcePaths.length; i < count; i++)
+	{
+		let sourcePath = sourcePaths[i];
+		let as3OutputPath = path.join(outputDirectory, sourcePath, pathToClass);
+		//we're trying to avoid name conflicts because file systems aren't case
+		//sensitive, but the ActionScript language is case sensitive and each
+		//package-level symbol needs to be in a different file.
+		//as a workaround, we create multiple directories when a conflict is found.
+		if(!fs.existsSync(as3OutputPath))
+		{
+			return as3OutputPath;
+		}
+	}
+	let newSourcePath = "src";
+	let sourcePathCount = sourcePaths.length + 1;
+	if(sourcePathCount > 1)
+	{
+		newSourcePath += sourcePathCount;
+	}
+	sourcePaths.push(newSourcePath);
+	let directoryPath = path.join(outputDirectory, newSourcePath);
+	//avoid conflicts with files that already exist in the new src* directory
+	rimraf.sync(directoryPath);
+	return path.join(directoryPath, pathToClass);
 }
 
 function deleteAS3File(symbol: as3.PackageLevelDefinition)
@@ -344,14 +393,13 @@ function deleteAS3File(symbol: as3.PackageLevelDefinition)
 function writeAS3File(symbol: as3.PackageLevelDefinition, code: string)
 {
 	let outputFilePath = getAS3FilePath(symbol);
-	if(fs.existsSync(outputFilePath))
-	{
-		console.warn("Warning: Multiple ActionScript symbols share the same output file path. Skipping symbol: " + symbol.getFullyQualifiedName());
-		return;
-	}
 	let outputDirPath = path.dirname(outputFilePath);
 	mkdirp.sync(outputDirPath);
 	fs.writeFileSync(outputFilePath, code);
+	if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+	{
+		console.info("Created ActionScript file: " + outputFilePath);
+	}
 }
 
 function printVersion()
