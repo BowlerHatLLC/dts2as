@@ -128,18 +128,20 @@ export class PackageFunctionDefinition extends MethodDefinition implements Packa
 
 export class PropertyDefinition
 {
-    constructor(name: string, accessLevel: string, type: TypeDefinition = null, isStatic: boolean = false)
+    constructor(name: string, accessLevel: string, type: TypeDefinition = null, isStatic: boolean = false, isConstant: boolean = false)
     {
         this.name = name;
         this.accessLevel = accessLevel;
         this.type = type;
         this.isStatic = isStatic;
+        this.isConstant = isConstant;
     }
     
     name: string;
     type: TypeDefinition;
     accessLevel: string;
     isStatic: boolean;
+    isConstant: boolean;
 }
 
 export class PackageVariableDefinition extends PropertyDefinition implements PackageLevelDefinition
