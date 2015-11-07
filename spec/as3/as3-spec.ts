@@ -85,7 +85,7 @@ describe("The default return value", () =>
         let standardLibPath = require.resolve("typescript");
         standardLibPath = path.dirname(standardLibPath);
         standardLibPath = path.resolve(standardLibPath, "lib.core.d.ts");
-        symbols = parser.parse(standardLibPath);
+        symbols = parser.parse(standardLibPath).definitions;
     });
     describe("for Number", () =>
     {
