@@ -308,6 +308,11 @@ class TS2ASParser
                     fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Array];
                     break;
                 }
+                case ts.SyntaxKind.TupleType:
+                {
+                    fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Array];
+                    break;
+                }
                 case ts.SyntaxKind.TypeQuery:
                 {
                     fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Function];
@@ -344,8 +349,15 @@ class TS2ASParser
         //strip [] section of array
         let endArrayIndex = typeInSource.lastIndexOf("]");
         if(endArrayIndex === typeInSource.length - 1)
-        {
-            typeInSource = typeInSource.substr(0, endArrayIndex - 1);
+        { 
+            if(typeInSource.indexOf("[") === 0)
+            {
+                typeInSource = typeInSource.substr(1, endArrayIndex - 1);
+            }
+            else
+            {
+                typeInSource = typeInSource.substr(0, endArrayIndex - 1);
+            }
         }
         return typeInSource;
     }
