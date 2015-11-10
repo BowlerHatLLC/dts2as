@@ -435,14 +435,98 @@ describe("A variable", () =>
     {
         it("is typed as Object in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-any-type.d.ts").definitions;
-            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("anyType", symbols);
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("anyPrimitive", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
             expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
             let as3Type = as3Variable.type;
             expect(as3Type).not.toBeNull();
             expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+        });
+    });
+    describe("when typed as the boolean type in TypeScript", () =>
+    {
+        it("is typed as Boolean in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("booleanPrimitive", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Boolean]);
+        });
+    });
+    describe("when typed as the number type in TypeScript", () =>
+    {
+        it("is typed as Number in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("numberPrimitive", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+        });
+    });
+    describe("when typed as the string type in TypeScript", () =>
+    {
+        it("is typed as String in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("stringPrimitive", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+        });
+    });
+    describe("when typed as the string[] type in TypeScript", () =>
+    {
+        it("is typed as Array in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("arrayPrimitiveAdjacentBrackets", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
+        });
+    });
+    describe("when typed as the Array.<string> type in TypeScript", () =>
+    {
+        it("is typed as Array in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("arrayPrimitiveGeneric", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
+        });
+    });
+    describe("when typed as the [string] type in TypeScript", () =>
+    {
+        it("is typed as Array in ActionScript", () =>
+        {
+            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("arrayPrimitiveSplitBrackets", symbols);
+            expect(as3Variable).not.toBeNull();
+            expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+            expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+            let as3Type = as3Variable.type;
+            expect(as3Type).not.toBeNull();
+            expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
         });
     });
 });
