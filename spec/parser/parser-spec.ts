@@ -216,6 +216,52 @@ describe("A class", () =>
         let as3MethodType = as3.getDefinitionByName("Number", symbols);
         expect(method.type).toBe(as3MethodType);
     });
+    it("may have a static property and a member property with the same name", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/class-member-static-property-same-name.d.ts").definitions;
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticAndMemberPropertyWithSameName", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.properties.length).toBe(2);
+        
+        let as3PropertyType = as3.getDefinitionByName("String", symbols);
+        
+        let property = as3Class.properties[0];
+        expect(property).not.toBeNull();
+        expect(property.name).toBe("property1");
+        expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(property.isStatic).toBe(false);
+        expect(property.type).toBe(as3PropertyType);
+        
+        property = as3Class.properties[1];
+        expect(property).not.toBeNull();
+        expect(property.name).toBe("property1");
+        expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(property.isStatic).toBe(true);
+        expect(property.type).toBe(as3PropertyType);
+    });
+    it("may have a static method and a member method with the same name", () =>
+    {
+        let symbols = parser.parse("spec/fixtures/class-member-static-method-same-name.d.ts").definitions;
+        let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticAndMemberMethodWithSameName", symbols);
+        expect(as3Class).not.toBeNull();
+        expect(as3Class.methods.length).toBe(2);
+        
+        let as3MethodType = as3.getDefinitionByName("String", symbols);
+        
+        let method = as3Class.methods[0];
+        expect(method).not.toBeNull();
+        expect(method.name).toBe("method1");
+        expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(method.isStatic).toBe(false);
+        expect(method.type).toBe(as3MethodType);
+        
+        method = as3Class.methods[1];
+        expect(method).not.toBeNull();
+        expect(method.name).toBe("method1");
+        expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+        expect(method.isStatic).toBe(true);
+        expect(method.type).toBe(as3MethodType);
+    });
 });
 
 describe("An interface", () =>

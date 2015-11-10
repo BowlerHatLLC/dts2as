@@ -469,7 +469,8 @@ class TS2ASParser
         for(let i = 0, methodCount = as3Type.methods.length; i < methodCount; i++)
         {
             let existingMethod = as3Type.methods[i];
-            if(existingMethod.name !== methodToAdd.name)
+            if(existingMethod.name !== methodToAdd.name ||
+                existingMethod.isStatic !== methodToAdd.isStatic)
             {
                 continue;
             }
@@ -1492,10 +1493,12 @@ class TS2ASParser
     private populateProperty(propertyDeclaration: ts.PropertyDeclaration, as3Type: as3.TypeDefinition)
     {
         let propertyName = this.declarationNameToString(propertyDeclaration.name);
-        let as3Property = null;
+        let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
+        let as3Property: as3.PropertyDefinition = null;
         as3Type.properties.some((otherProperty) =>
         {
-            if(otherProperty.name === propertyName)
+            if(otherProperty.name === propertyName &&
+                otherProperty.isStatic === isStatic)
             {
                 as3Property = otherProperty;
                 return true;
@@ -1615,10 +1618,12 @@ class TS2ASParser
         let typeParameters = this.populateTypeParameters(functionDeclaration);
         
         let methodName = this.declarationNameToString(functionDeclaration.name);
+        let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
         let as3Method: as3.MethodDefinition = null;
         as3Type.methods.some((otherMethod) =>
         {
-            if(otherMethod.name === methodName)
+            if(otherMethod.name === methodName &&
+                otherMethod.isStatic === isStatic)
             {
                 as3Method = otherMethod;
                 return true;
