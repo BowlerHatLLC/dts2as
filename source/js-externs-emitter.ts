@@ -111,6 +111,10 @@ class JSExternsEmitter
             classOutput += this.emitParameterDocs(constructorMethod, as3Class);
         }
 		classOutput += " */" + NEW_LINE;
+        if(className === as3Class.name)
+        {
+            classOutput += "var ";
+        }
         classOutput += className;
 		classOutput += " = function";
         if(constructorMethod)
@@ -185,6 +189,10 @@ class JSExternsEmitter
             });
         }
 		interfaceOutput += " */" + NEW_LINE;
+        if(interfaceName === as3Interface.name)
+        {
+            interfaceOutput += "var ";
+        }
         interfaceOutput += interfaceName;
         interfaceOutput += " = function() {};";
         interfaceOutput += NEW_LINE;
