@@ -385,10 +385,6 @@ class JSExternsEmitter
             for(let i = 0, count = parameters.length; i < count; i++)
             {
                 let parameter = parameters[i];
-                if(parameter.isRest)
-                {
-                    break;
-                }
                 if(i > 0)
                 {
                     signatureOutput += ", ";
