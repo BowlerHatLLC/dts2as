@@ -282,15 +282,18 @@ class JSExternsEmitter
         }
 		methodOutput += " */" + NEW_LINE;
 		methodOutput += scopeFullyQualifiedName;
-        if(isStatic)
-        {
-            methodOutput += ".";
+        if("methods" in scope)
+		{
+            if(isStatic)
+            {
+                methodOutput += ".";
+            }
+            else
+            {
+                methodOutput += ".prototype.";
+            }
+            methodOutput += methodName;
         }
-        else
-        {
-            methodOutput += ".prototype.";
-        }
-        methodOutput += methodName;
         methodOutput += " = function";
         methodOutput += this.emitParameters(as3Method, scope);
         methodOutput += " {};";
