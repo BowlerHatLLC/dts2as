@@ -232,6 +232,7 @@ fileNames.forEach(fileName =>
 	{
 		externsOutput += externsEmitter.emitFileHeader();
 	}
+	externsOutput += externsEmitter.emitPackages();
 	let sourceEmitter = new ASStubEmitter(packageLevelSymbols);
 	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
 	{
