@@ -124,3 +124,65 @@ describe("The default return value", () =>
         });
     });
 });
+
+describe("The common base class", () =>
+{
+    let symbols: as3.PackageLevelDefinition[];
+    beforeAll(() =>
+    {
+        let parser = new TS2ASParser(ts.ScriptTarget.ES5);
+        let standardLibPath = require.resolve("typescript");
+        standardLibPath = path.dirname(standardLibPath);
+        standardLibPath = path.resolve(standardLibPath, "lib.core.d.ts");
+        symbols = parser.parse(standardLibPath).definitions;
+    });
+    describe("for a class and itself", () =>
+    {
+        it("is the same class class", () =>
+        {
+            let class1 = new as3.ClassDefinition("SomeClass", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            let result = as3.getCommonBaseClass(class1, class1);
+            expect(result).toBe(class1);
+        });
+    });
+    describe("for a class and its super class", () =>
+    {
+        it("is the super class", () =>
+        {
+            let class1 = new as3.ClassDefinition("SuperClass", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            let class2 = new as3.ClassDefinition("SubClass", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            class2.superClass = class1;
+            let result = as3.getCommonBaseClass(class1, class2);
+            expect(result).toBe(class1);
+            result = as3.getCommonBaseClass(class2, class1);
+            expect(result).toBe(class1);
+        });
+    });
+    describe("for two classes with the same super class", () =>
+    {
+        it("is the super class", () =>
+        {
+            let class1 = new as3.ClassDefinition("SuperClass", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            let class2 = new as3.ClassDefinition("SubClass1", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            class2.superClass = class1;
+            let class3 = new as3.ClassDefinition("SubClass2", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            class3.superClass = class1;
+            let result = as3.getCommonBaseClass(class2, class3);
+            expect(result).toBe(class1);
+            result = as3.getCommonBaseClass(class3, class2);
+            expect(result).toBe(class1);
+        });
+    });
+    describe("for two unrelated classes", () =>
+    {
+        it("is null", () =>
+        {
+            let class1 = new as3.ClassDefinition("SomeClass", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            let class2 = new as3.ClassDefinition("AnotherClass", "com.example", as3.AccessModifiers[as3.AccessModifiers.public], null, null, false);
+            let result = as3.getCommonBaseClass(class1, class2);
+            expect(result).toBeNull();
+            result = as3.getCommonBaseClass(class2, class1);
+            expect(result).toBeNull();
+        });
+    });
+});
