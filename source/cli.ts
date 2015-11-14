@@ -422,7 +422,7 @@ function printUsage()
 	console.info();
 	console.info("Options:");
 	console.info(" --outSWC FILE                      Generate a compiled SWC file. Requires either FLEX_HOME environment variable or --flexHome option.");
-	console.info(" --outDir DIRECTORY                 Generate ActionScript and externs files in a specific output directory.");
+	console.info(" --outDir DIRECTORY                 Generate ActionScript and externs files in a specific output directory. Defaults to './dts2as_generated'.");
 	console.info(" --flexHome DIRECTORY               Specify the directory where Apache FlexJS is located. Defaults to FLEX_HOME environment variable, if available.");
 	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
