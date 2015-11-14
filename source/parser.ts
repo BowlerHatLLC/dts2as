@@ -260,10 +260,24 @@ class TS2ASParser
                 methodToKeepParams.length = j;
                 methodToKeepParams[j] = paramToMerge;
             }
-            if(paramToMerge.type !== paramToKeep.type)
+            let paramToMergeType = paramToMerge.type;
+            let paramToKeepType = paramToKeep.type;
+            if(paramToMergeType !== paramToKeepType)
             {
-                //the overload has a different type, so generalize to Object
-                paramToKeep.type = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+                //the overload has a different type, so generalize to a common
+                //super class, if possible
+                let commonType: as3.TypeDefinition;
+                if(paramToMergeType instanceof as3.ClassDefinition &&
+                    paramToKeepType instanceof as3.ClassDefinition)
+                {
+                    commonType = as3.getCommonBaseClass(paramToMergeType, paramToKeepType);
+                }
+                if(!commonType)
+                {
+                    //fall back to Object if there is no common base class
+                    commonType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+                }
+                paramToKeep.type = commonType;
             }
         }
     }
@@ -289,7 +303,12 @@ class TS2ASParser
                 }
                 case ts.SyntaxKind.UnionType:
                 {
-                    //TODO: find common base class
+                    let unionType = <ts.UnionTypeNode> type;
+                    let commonBaseClass = this.getCommonBaseClassFromUnionOrIntersectionType(unionType);
+                    if(commonBaseClass)
+                    {
+                        return commonBaseClass;
+                    }
                     fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Object];
                     break;
                 }
@@ -413,6 +432,31 @@ class TS2ASParser
     {
         let typeName = this.getAS3FullyQualifiedNameFromTSTypeNode(type);
         return <as3.TypeDefinition> as3.getDefinitionByName(typeName, this._definitions);
+    }
+    
+    private getCommonBaseClassFromUnionOrIntersectionType(unionType: ts.UnionOrIntersectionTypeNode): as3.TypeDefinition
+    {
+        let types = unionType.types;
+        let baseClass = this.getAS3TypeFromTSTypeNode(types[0]);
+        let unionTypeText = this._currentSourceFile.text.substring(ts["skipTrivia"](this._currentSourceFile.text, unionType.pos), unionType.end);
+        if(!(baseClass instanceof as3.ClassDefinition))
+        {
+            return <as3.ClassDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+        }
+        for(let i = 1, count = types.length; i < count; i++)
+        {
+            let otherClass = this.getAS3TypeFromTSTypeNode(types[i]);
+            if(!(otherClass instanceof as3.ClassDefinition))
+            {
+                return <as3.ClassDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+            }
+            baseClass = as3.getCommonBaseClass(<as3.ClassDefinition> baseClass, <as3.ClassDefinition> otherClass);
+            if(!baseClass)
+            {
+                return <as3.ClassDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+            }
+        }
+        return baseClass;
     }
     
     private declarationNameToString(name: ts.DeclarationName): string
@@ -1260,7 +1304,7 @@ class TS2ASParser
         }
         
         let functionParameters = this.populateParameters(functionDeclaration);
-        as3PackageFunction.type = this.getAS3TypeFromTSTypeNode(functionDeclaration.type)
+        as3PackageFunction.type = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
         as3PackageFunction.parameters = functionParameters;
         as3PackageFunction.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
     }

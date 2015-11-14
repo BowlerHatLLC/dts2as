@@ -298,3 +298,27 @@ export function requiresOverride(target:MethodDefinition | PropertyDefinition, s
     }
     return needsOverride;
 }
+
+export function getCommonBaseClass(class1: ClassDefinition, class2: ClassDefinition): ClassDefinition
+{
+	let savedClass2 = class2;
+	do
+	{
+        let class1Name = class1.getFullyQualifiedName();
+		do
+		{
+            let class2Name = class2.getFullyQualifiedName();
+            if(class1Name === class2Name)
+			{
+				return class1;
+			}
+			class2 = class2.superClass;
+		}
+		while(class2)
+		class2 = savedClass2;
+		class1 = class1.superClass;
+	}
+	while(class1)
+    //no common base class, so it's best to default to Object
+	return null;
+}
