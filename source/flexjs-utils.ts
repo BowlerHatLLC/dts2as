@@ -57,7 +57,7 @@ export function findBinCompc(flexHome: string)
 	let executableName = "compc";
 	if(os.platform() === "win32")
 	{
-		name += ".bat";
+		executableName += ".bat";
 	}
 	let executablePath = path.join(flexHome, "bin", executableName);
 	if(!fs.existsSync(executablePath))
