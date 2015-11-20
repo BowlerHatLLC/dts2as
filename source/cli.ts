@@ -80,11 +80,24 @@ for(let key in params)
 		case "outSWC":
 		{
 			swcOutputPath = path.join(params[key]);
+			if(!path.isAbsolute(swcOutputPath))
+			{
+				//due to a node issue where it can't run child processes on
+				//windows where the process path has spaces and arguments do
+				//too, we need to run compc with a weird working directory.
+				//an absolute path is needed for that workaround.
+				swcOutputPath = path.resolve(process.cwd(), swcOutputPath);
+			}
 			break;
 		}
 		case "outDir":
 		{
 			outputDirectory = path.join(params[key]);
+			if(!path.isAbsolute(outputDirectory))
+			{
+				//see note above on outSWC argument
+				outputDirectory = path.resolve(process.cwd(), outputDirectory);
+			}
 			break;
 		}
 		case "flexHome":
@@ -321,8 +334,15 @@ if(swcOutputPath !== null)
 		compcArgs.push("--source-path", sourcePath,
 			"--include-sources", sourcePath);
 	}
-	var result = child_process.spawnSync(compcPath, compcArgs,
+	//we need to use ./compc to avoid launching a different version of compc
+	//that might be added to the PATH environment variable.
+	let compcCommand = "." + path.sep + path.basename(compcPath);
+	let result = child_process.spawnSync(compcCommand, compcArgs,
 	{
+		//node on windows can't seem to run executables with spaces in the path
+		//and also accept arguments with spaces. changing the working directory
+		//is a workaround to avoid spaces in the executable path.
+		cwd: path.dirname(compcPath),
 		encoding: "utf8"
 	});
 	if(result.status === 0)
