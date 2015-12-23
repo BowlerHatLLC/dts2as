@@ -391,7 +391,7 @@ else
     dependencySourcePaths.forEach((sourcePath: string) =>
     {
         sourcePath = path.join(outputDirectory, sourcePath);
-        //rimraf.sync(sourcePath);
+        rimraf.sync(sourcePath);
     });
 }
 
