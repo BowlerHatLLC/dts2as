@@ -127,6 +127,7 @@ class TS2ASParser
             this.promoteInterfaces();
             this.cleanupStaticSideDefinitions();
         });
+        this.cleanupBuiltInTypes();
         return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
     }
     
@@ -1766,7 +1767,16 @@ class TS2ASParser
         }
     }
     
-    private cleanupStaticSideDefinitions():void
+    private cleanupBuiltInTypes()
+    {
+        //built-in types like void should not be emitted
+        this._definitions = this._definitions.filter((definition: as3.PackageLevelDefinition) =>
+        {
+            return definition.sourceFile !== null;
+        });
+    }
+    
+    private cleanupStaticSideDefinitions()
     {
         this._definitions = this._definitions.filter((definition: as3.PackageLevelDefinition) =>
         {
