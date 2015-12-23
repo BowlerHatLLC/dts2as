@@ -86,7 +86,7 @@ class TS2ASParser
     private _promoted: { [key: string]: as3.ClassDefinition[] };
     debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
     
-    parse(fileName: string): TS2ASParser.ParserResult
+    parse(fileNames: string[]): TS2ASParser.ParserResult
     {
         this._functionAliases = [];
         this._typeAliasMap = {};
@@ -94,7 +94,10 @@ class TS2ASParser
         this._importModuleMap = {};
         this._sourceFiles = [];
         this._promoted = {};
-        this.findSourceFiles(fileName);
+        fileNames.forEach((fileName: string) =>
+        {
+            this.findSourceFiles(fileName);
+        });
         let referencedFileIsStandardLib = this._sourceFiles.some((sourceFile) =>
         {
             return sourceFile.hasNoDefaultLib;
@@ -131,7 +134,7 @@ class TS2ASParser
         return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
     }
     
-    private readStandardLibrary()
+    private findStandardLibrary()
     {
         let standardLibFileName: string;
         switch(this._scriptTarget)
@@ -155,6 +158,12 @@ class TS2ASParser
         let standardLibPath = require.resolve("typescript");
         standardLibPath = path.dirname(standardLibPath);
         standardLibPath = path.resolve(standardLibPath, standardLibFileName);
+        return standardLibPath;
+    }
+    
+    private readStandardLibrary()
+    {
+        let standardLibPath = this.findStandardLibrary();
         if(!fs.existsSync(standardLibPath))
         {
             throw new Error("Cannot find standard library with path " + standardLibPath);
@@ -168,18 +177,29 @@ class TS2ASParser
         this.promoteInterfaces();
     }
     
+    private sourceFileExists(fileName: string)
+    {
+        return this._sourceFiles.some((otherSourceFile) =>
+        {
+            return otherSourceFile.fileName === fileName;
+        });
+    }
+    
     private findSourceFiles(fileName: string)
     {
+        fileName = path.resolve(fileName);
         let sourceText = fs.readFileSync(fileName, "utf8");
         let sourceFile = ts.createSourceFile(fileName, sourceText, this._scriptTarget);
+        if(this.sourceFileExists(fileName))
+        {
+            return;
+        }
+        //add referenced files first, and everything will end up in the
+        //correct order
         sourceFile.referencedFiles.forEach((fileReference) =>
         {
-            var fileName = path.resolve(path.dirname(sourceFile.fileName), fileReference.fileName);
-            let sourceFileExists = this._sourceFiles.some((sourceFile) =>
-            {
-                return sourceFile.fileName === fileName;
-            });
-            if(sourceFileExists)
+            let fileName = path.resolve(path.dirname(sourceFile.fileName), fileReference.fileName);
+            if(this.sourceFileExists(fileName))
             {
                 return;
             }
