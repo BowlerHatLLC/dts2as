@@ -32,6 +32,7 @@ import rimraf = require("rimraf");
 let sourceOutputPathIsTemp = false;
 let outputDirectory: string = null;
 let swcOutputPath: string = null;
+let depsSWCOutputPath: string = null;
 let externsOutputPath: string = null;
 let flexHome: string = null;
 let fileNames: string[];
@@ -39,7 +40,6 @@ let debugLevel: TS2ASParser.DebugLevel;
 let excludedSymbols: string[];
 let includedSymbols: string[];
 let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
-let sourcePaths: string[] = [];
 
 let params = minimist(process.argv.slice(2),
 {
@@ -191,8 +191,17 @@ if(flexHome === null)
 {
 	flexHome = flexjsUtils.findFlexHome();
 }
+if(outputDirectory === null)
+{
+	if(swcOutputPath !== null)
+	{
+		sourceOutputPathIsTemp = true;
+	}
+	outputDirectory = path.join(process.cwd(), "dts2as_generated");
+}
 if(swcOutputPath !== null)
 {
+    depsSWCOutputPath = path.join(outputDirectory, "deps.swc");
 	if(flexHome === null)
 	{
 		console.error("--outSWC option requires Apache FlexJS. Please specify the --flexHome option or set the FLEX_HOME environment variable.");
@@ -206,24 +215,12 @@ if(swcOutputPath !== null)
 		}
 	}
 }
-if(outputDirectory === null)
-{
-	if(swcOutputPath !== null)
-	{
-		sourceOutputPathIsTemp = true;
-	}
-	outputDirectory = path.join(process.cwd(), "dts2as_generated");
-}
 
 let parser = new TS2ASParser(scriptTarget);
 parser.debugLevel = debugLevel;
 
 function canEmit(symbol: as3.PackageLevelDefinition): boolean
 {
-	if(symbol.external)
-	{
-		return false;
-	}
 	if(excludedSymbols && excludedSymbols.indexOf(symbol.getFullyQualifiedName()) >= 0)
 	{
 		return false;
@@ -235,59 +232,77 @@ function canEmit(symbol: as3.PackageLevelDefinition): boolean
 	return true;
 }
 
+let outputSourcePaths: string[] = [];
+let dependencySourcePaths: string[] = [];
 let externsOutput = "";
-fileNames.forEach(fileName =>
+let result = parser.parse(fileNames);
+let packageLevelSymbols = result.definitions;
+let externsEmitter = new JSExternsEmitter(packageLevelSymbols);
+if(externsOutput.length === 0)
 {
-	let result = parser.parse(fileName);
-	let packageLevelSymbols = result.definitions;
-	let externsEmitter = new JSExternsEmitter(packageLevelSymbols);
-	if(externsOutput.length === 0)
-	{
-		externsOutput += externsEmitter.emitFileHeader();
-	}
-	externsOutput += externsEmitter.emitPackages();
-	let sourceEmitter = new ASStubEmitter(packageLevelSymbols);
-	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
-	{
-		if(!canEmit(as3Type))
-		{
-			return;
-		}
-		//delete all output files first, if they exist, to detect duplicates
-		//so that we can display a warning
-		deleteAS3File(as3Type);
-	});
-	packageLevelSymbols.forEach(function(as3Type:as3.PackageLevelDefinition)
-	{
-		if(!canEmit(as3Type))
-		{
-			return;
-		}
-		if("superClass" in as3Type)
-		{
-			let as3Class = <as3.ClassDefinition> as3Type;
-			writeAS3File(as3Class, sourceEmitter.emitClass(as3Class));
-			externsOutput += externsEmitter.emitClass(as3Class);
-		}
-		else if("interfaces" in as3Type)
-		{
-			let as3Interface = <as3.InterfaceDefinition> as3Type;
-			writeAS3File(as3Interface, sourceEmitter.emitInterface(as3Interface));
-			externsOutput += externsEmitter.emitInterface(as3Interface);
-		}
-		else if("parameters" in as3Type)
-		{
-			let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
-			writeAS3File(as3PackageFunction, sourceEmitter.emitPackageFunction(as3PackageFunction));
-			externsOutput += externsEmitter.emitPackageFunction(as3PackageFunction);
-		}
-		else
-		{
-			let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
-			writeAS3File(as3PackageVariable, sourceEmitter.emitPackageVariable(as3PackageVariable));
-			externsOutput += externsEmitter.emitPackageVariable(as3PackageVariable);
-		}
-	});
+    externsOutput += externsEmitter.emitFileHeader();
+}
+externsOutput += externsEmitter.emitPackages();
+let sourceEmitter = new ASStubEmitter(packageLevelSymbols);
+packageLevelSymbols.forEach((as3Type:as3.PackageLevelDefinition) =>
+{
+    if(!canEmit(as3Type))
+    {
+        return;
+    }
+    let sourcePaths = outputSourcePaths;
+    let directoryPrefix = "src";
+    let outputExterns = true; 
+    if(as3Type.external)
+    {
+        if(swcOutputPath === null)
+        {
+            //if we're not creating a SWC file, we don't need to emit 
+            //the dependencies
+            return;
+        }
+        //dependencies are kept separate so that they can be deleted later
+        sourcePaths = dependencySourcePaths;
+        directoryPrefix = "deps_src";
+        //dependencies don't need externs
+        outputExterns = false;
+    }
+    if("superClass" in as3Type)
+    {
+        let as3Class = <as3.ClassDefinition> as3Type;
+        writeAS3File(as3Class, sourcePaths, directoryPrefix, sourceEmitter.emitClass(as3Class));
+        if(outputExterns)
+        {
+            externsOutput += externsEmitter.emitClass(as3Class);
+        }
+    }
+    else if("interfaces" in as3Type)
+    {
+        let as3Interface = <as3.InterfaceDefinition> as3Type;
+        writeAS3File(as3Interface, sourcePaths, directoryPrefix, sourceEmitter.emitInterface(as3Interface));
+        if(outputExterns)
+        {
+            externsOutput += externsEmitter.emitInterface(as3Interface);
+        }
+    }
+    else if("parameters" in as3Type)
+    {
+        let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
+        writeAS3File(as3PackageFunction, sourcePaths, directoryPrefix, sourceEmitter.emitPackageFunction(as3PackageFunction));
+        if(outputExterns)
+        {
+            externsOutput += externsEmitter.emitPackageFunction(as3PackageFunction);
+        }
+    }
+    else
+    {
+        let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
+        writeAS3File(as3PackageVariable, sourcePaths, directoryPrefix, sourceEmitter.emitPackageVariable(as3PackageVariable));
+        if(outputExterns)
+        {
+            externsOutput += externsEmitter.emitPackageVariable(as3PackageVariable);
+        }
+    }
 });
 if(swcOutputPath !== null)
 {
@@ -307,10 +322,87 @@ if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
 	console.info("Created JavaScript externs file: " + externsOutputPath);
 }
 
-let compilerError = false;
+let compilerError = null;
 if(swcOutputPath !== null)
 {
-	let swcName = path.basename(swcOutputPath, ".swc");
+    //if the SWC files already exist, delete them to avoid confusion
+    if(fs.existsSync(swcOutputPath))
+    {
+        fs.unlinkSync(swcOutputPath);
+    }
+    if(fs.existsSync(depsSWCOutputPath))
+    {
+        fs.unlinkSync(depsSWCOutputPath);
+    }
+    if(dependencySourcePaths.length > 0)
+    {
+        let result = compileSWC(dependencySourcePaths, null, depsSWCOutputPath);
+        if(result.status !== 0)
+        {
+            compilerError = result.stderr;
+        }
+        else
+        {
+            if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+            {
+                console.info("Created SWC file for dependencies: " + depsSWCOutputPath);
+            }
+            let result = compileSWC(outputSourcePaths, externsOutputPath, swcOutputPath);
+            if(result.status !== 0)
+            {
+                compilerError = result.stderr;
+            }
+        }
+    }
+    else
+    {
+        //no dependencies to compile, so set to null
+        depsSWCOutputPath = null;
+        
+        let result = compileSWC(outputSourcePaths, externsOutputPath, swcOutputPath);
+        if(result.status !== 0)
+        {
+            compilerError = result.stderr;
+        }
+    }
+    if(compilerError)
+    {
+        console.error(compilerError);
+        console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.");
+    }
+    else if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+    {
+        console.info("Created SWC file: " + swcOutputPath);
+    }
+}
+
+if(sourceOutputPathIsTemp)
+{
+	//only --outSWC was specified, so delete the source files
+	rimraf.sync(outputDirectory);
+}
+else
+{
+    //dependencies are temporary and should be deleted
+    if(depsSWCOutputPath !== null && fs.existsSync(depsSWCOutputPath))
+    {
+        fs.unlinkSync(depsSWCOutputPath);
+    }
+    dependencySourcePaths.forEach((sourcePath: string) =>
+    {
+        sourcePath = path.join(outputDirectory, sourcePath);
+        //rimraf.sync(sourcePath);
+    });
+}
+
+if(compilerError)
+{
+	process.exit(1);
+}
+
+function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
+{
+    let swcName = path.basename(swcPath, ".swc");
 	let externsName = swcName + ".js";
 	let compcPath = flexjsUtils.findBinCompc(flexHome);
 	if(compcPath === null)
@@ -323,11 +415,18 @@ if(swcOutputPath !== null)
 		"--external-library-path",
 		path.join(flexHome, "js", "libs", "js.swc"),
 		"--output",
-		swcOutputPath,
-		"--include-file",
-		path.join("externs", externsName),
-		externsOutputPath
+		swcPath
 	];
+    if(depsSWCOutputPath !== null && swcPath !== depsSWCOutputPath)
+    {
+        compcArgs.splice(2, 0, "--external-library-path+=" + depsSWCOutputPath);
+    }
+    if(externsPath !== null)
+    {
+        compcArgs.push("--include-file");
+        compcArgs.push(path.join("externs", externsName));
+        compcArgs.push(externsPath);
+    }
 	for(let sourcePath of sourcePaths)
 	{
 		sourcePath = path.join(outputDirectory, sourcePath);
@@ -345,33 +444,10 @@ if(swcOutputPath !== null)
 		cwd: path.dirname(compcPath),
 		encoding: "utf8"
 	});
-	if(result.status === 0)
-	{
-		if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
-		{
-			console.info("Created SWC file: " + swcOutputPath);
-		}
-	}
-	else
-	{
-		compilerError = true;
-		console.error(result.stderr);
-		console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.")
-	}
+    return result;
 }
 
-if(sourceOutputPathIsTemp)
-{
-	//only --outSWC was specified, so delete the source files
-	rimraf.sync(outputDirectory);
-}
-
-if(compilerError)
-{
-	process.exit(1);
-}
-
-function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
+function getAS3FilePath(symbol: as3.PackageLevelDefinition, sourcePaths: string[], directoryPrefix: string): string
 {
 	let packageParts = symbol.packageName.split(".");
 	packageParts.push(symbol.name + ".as");
@@ -389,7 +465,7 @@ function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 			return as3OutputPath;
 		}
 	}
-	let newSourcePath = "src";
+	let newSourcePath = directoryPrefix;
 	let sourcePathCount = sourcePaths.length + 1;
 	if(sourcePathCount > 1)
 	{
@@ -401,19 +477,10 @@ function getAS3FilePath(symbol: as3.PackageLevelDefinition): string
 	rimraf.sync(directoryPath);
 	return path.join(directoryPath, pathToClass);
 }
-
-function deleteAS3File(symbol: as3.PackageLevelDefinition)
-{
-	let outputFilePath = getAS3FilePath(symbol);
-	if(fs.existsSync(outputFilePath))
-	{
-		fs.unlinkSync(outputFilePath);
-	}
-}
 	
-function writeAS3File(symbol: as3.PackageLevelDefinition, code: string)
+function writeAS3File(symbol: as3.PackageLevelDefinition, sourcePaths: string[], directoryPrefix: string, code: string)
 {
-	let outputFilePath = getAS3FilePath(symbol);
+	let outputFilePath = getAS3FilePath(symbol, sourcePaths, directoryPrefix);
 	let outputDirPath = path.dirname(outputFilePath);
 	mkdirp.sync(outputDirPath);
 	fs.writeFileSync(outputFilePath, code);
