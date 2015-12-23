@@ -120,7 +120,11 @@ class TS2ASParser
         }
         this._sourceFiles.forEach((sourceFile, index) =>
         {
-            this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
+            this._currentFileIsExternal = !fileNames.some((fileName) =>
+            {
+                fileName = path.resolve(fileName); 
+                return fileName === sourceFile.fileName;
+            });
             this.readSourceFile(sourceFile);
         });
         this._sourceFiles.forEach((sourceFile, index) =>
