@@ -85,7 +85,7 @@ describe("The default return value", () =>
         let standardLibPath = require.resolve("typescript");
         standardLibPath = path.dirname(standardLibPath);
         standardLibPath = path.resolve(standardLibPath, "lib.core.d.ts");
-        symbols = parser.parse(standardLibPath).definitions;
+        symbols = parser.parse([standardLibPath]).definitions;
     });
     describe("for Number", () =>
     {
@@ -134,7 +134,7 @@ describe("The common base class", () =>
         let standardLibPath = require.resolve("typescript");
         standardLibPath = path.dirname(standardLibPath);
         standardLibPath = path.resolve(standardLibPath, "lib.core.d.ts");
-        symbols = parser.parse(standardLibPath).definitions;
+        symbols = parser.parse([standardLibPath]).definitions;
     });
     describe("for a class and itself", () =>
     {

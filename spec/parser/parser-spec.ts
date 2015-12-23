@@ -31,7 +31,7 @@ describe("A TypeScript definition", () =>
     });
     it("may declare a class", () =>
     {
-        let symbols = parser.parse("spec/fixtures/declare-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/declare-class.d.ts"]).definitions;
         let as3Class = as3.getDefinitionByName("DeclareClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -40,7 +40,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a class", () =>
     {
-        let symbols = parser.parse("spec/fixtures/export-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/export-class.d.ts"]).definitions;
         let as3Class = as3.getDefinitionByName("ExportClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -49,7 +49,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a class in a module", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-in-module.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-in-module.d.ts"]).definitions;
         let as3Class = as3.getDefinitionByName("test.ClassInModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -58,7 +58,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a class in a module with a dot in the name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-in-module-with-dot.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-in-module-with-dot.d.ts"]).definitions;
         let as3Class = as3.getDefinitionByName("com.example.ClassInNestedModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -67,7 +67,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a class in a nested module", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-in-nested-module.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-in-nested-module.d.ts"]).definitions;
         let as3Class = as3.getDefinitionByName("com.example.ClassInNestedModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -76,7 +76,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a class in a string module", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-in-string-module.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-in-string-module.d.ts"]).definitions;
         let as3Class = as3.getDefinitionByName("test.ClassInStringModule", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -85,7 +85,7 @@ describe("A TypeScript definition", () =>
     });
     it("may declare an interface", () =>
     {
-        let symbols = parser.parse("spec/fixtures/declare-interface.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/declare-interface.d.ts"]).definitions;
         let as3Interface = as3.getDefinitionByName("DeclareInterface", symbols);
         expect(as3Interface).not.toBeNull();
         expect(as3Interface.constructor).toBe(as3.InterfaceDefinition);
@@ -94,7 +94,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export an interface", () =>
     {
-        let symbols = parser.parse("spec/fixtures/export-interface.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/export-interface.d.ts"]).definitions;
         let as3Interface = as3.getDefinitionByName("ExportInterface", symbols);
         expect(as3Interface).not.toBeNull();
         expect(as3Interface.constructor).toBe(as3.InterfaceDefinition);
@@ -103,7 +103,7 @@ describe("A TypeScript definition", () =>
     });
     it("may declare a function", () =>
     {
-        let symbols = parser.parse("spec/fixtures/declare-function.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/declare-function.d.ts"]).definitions;
         let as3Function = as3.getDefinitionByName("declareFunction", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -112,7 +112,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a function", () =>
     {
-        let symbols = parser.parse("spec/fixtures/export-function.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/export-function.d.ts"]).definitions;
         let as3Function = as3.getDefinitionByName("exportFunction", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -121,7 +121,7 @@ describe("A TypeScript definition", () =>
     });
     it("may declare a variable", () =>
     {
-        let symbols = parser.parse("spec/fixtures/declare-variable.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/declare-variable.d.ts"]).definitions;
         let as3Variable = as3.getDefinitionByName("declareVariable", symbols);
         expect(as3Variable).not.toBeNull();
         expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -130,7 +130,7 @@ describe("A TypeScript definition", () =>
     });
     it("may export a variable", () =>
     {
-        let symbols = parser.parse("spec/fixtures/export-variable.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/export-variable.d.ts"]).definitions;
         let as3Variable = as3.getDefinitionByName("exportVariable", symbols);
         expect(as3Variable).not.toBeNull();
         expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -139,7 +139,7 @@ describe("A TypeScript definition", () =>
     });
     it("may declare an inner class", () =>
     {
-        let symbols = parser.parse("spec/fixtures/inner-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/inner-class.d.ts"]).definitions;
         let as3OuterClass = as3.getDefinitionByName("OuterClass", symbols);
         expect(as3OuterClass).not.toBeNull();
         expect(as3OuterClass.constructor).toBe(as3.ClassDefinition);
@@ -162,7 +162,7 @@ describe("A class", () =>
     });
     it("may have a property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-member-property.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-member-property.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithProperty", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(1);
@@ -176,7 +176,7 @@ describe("A class", () =>
     });
     it("may have a static property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-static-property.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-static-property.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticProperty", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(1);
@@ -190,7 +190,7 @@ describe("A class", () =>
     });
     it("may have a method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-member-method.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-member-method.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithMethod", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(1);
@@ -204,7 +204,7 @@ describe("A class", () =>
     });
     it("may have a static method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-static-method.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-static-method.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticMethod", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(1);
@@ -218,7 +218,7 @@ describe("A class", () =>
     });
     it("may have a static property and a member property with the same name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-member-static-property-same-name.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-member-static-property-same-name.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticAndMemberPropertyWithSameName", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(2);
@@ -241,7 +241,7 @@ describe("A class", () =>
     });
     it("may have a static method and a member method with the same name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/class-member-static-method-same-name.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/class-member-static-method-same-name.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticAndMemberMethodWithSameName", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(2);
@@ -273,7 +273,7 @@ describe("An interface", () =>
     });
     it("may have a property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/interface-member-property.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/interface-member-property.d.ts"]).definitions;
         let as3Interface = <as3.InterfaceDefinition> as3.getDefinitionByName("InterfaceWithProperty", symbols);
         expect(as3Interface).not.toBeNull();
         expect(as3Interface.properties.length).toBe(1);
@@ -287,7 +287,7 @@ describe("An interface", () =>
     });
     it("may have a method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/interface-member-method.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/interface-member-method.d.ts"]).definitions;
         let as3Interface = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceWithMethod", symbols);
         expect(as3Interface).not.toBeNull();
         expect(as3Interface.methods.length).toBe(1);
@@ -310,7 +310,7 @@ describe("A function", () =>
     });
     it("may have a parameter", () =>
     {
-        let symbols = parser.parse("spec/fixtures/function-parameter.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/function-parameter.d.ts"]).definitions;
         let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithParameter", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -330,7 +330,7 @@ describe("A function", () =>
     });
     it("may have a default parameter", () =>
     {
-        let symbols = parser.parse("spec/fixtures/function-parameter-default.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/function-parameter-default.d.ts"]).definitions;
         let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithDefaultParameter", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -350,7 +350,7 @@ describe("A function", () =>
     });
     it("may have a rest parameter", () =>
     {
-        let symbols = parser.parse("spec/fixtures/function-parameter-rest.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/function-parameter-rest.d.ts"]).definitions;
         let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithRestParameter", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -370,7 +370,7 @@ describe("A function", () =>
     });
     it("may have an optional parameter", () =>
     {
-        let symbols = parser.parse("spec/fixtures/function-parameter-optional.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/function-parameter-optional.d.ts"]).definitions;
         let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOptionalParameter", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -390,7 +390,7 @@ describe("A function", () =>
     });
     it("may have a return value", () =>
     {
-        let symbols = parser.parse("spec/fixtures/function-return.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/function-return.d.ts"]).definitions;
         let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithReturn", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -403,7 +403,7 @@ describe("A function", () =>
     });
     it("may have multiple parameters", () =>
     {
-        let symbols = parser.parse("spec/fixtures/function-multiple-parameters.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/function-multiple-parameters.d.ts"]).definitions;
         let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithMultipleParameters", symbols);
         expect(as3Function).not.toBeNull();
         expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
@@ -467,7 +467,7 @@ describe("A variable", () =>
     {
         it("is typed as Object in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-union-type.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-union-type.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("unionType", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -481,7 +481,7 @@ describe("A variable", () =>
     {
         it("is typed as Object in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("anyPrimitive", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -495,7 +495,7 @@ describe("A variable", () =>
     {
         it("is typed as Boolean in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("booleanPrimitive", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -509,7 +509,7 @@ describe("A variable", () =>
     {
         it("is typed as Number in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("numberPrimitive", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -523,7 +523,7 @@ describe("A variable", () =>
     {
         it("is typed as String in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("stringPrimitive", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -537,7 +537,7 @@ describe("A variable", () =>
     {
         it("is typed as Array in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("arrayPrimitiveAdjacentBrackets", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -551,7 +551,7 @@ describe("A variable", () =>
     {
         it("is typed as Array in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("arrayPrimitiveGeneric", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -565,7 +565,7 @@ describe("A variable", () =>
     {
         it("is typed as Array in ActionScript", () =>
         {
-            let symbols = parser.parse("spec/fixtures/variable-primitives.d.ts").definitions;
+            let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
             let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("arrayPrimitiveSplitBrackets", symbols);
             expect(as3Variable).not.toBeNull();
             expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
@@ -586,7 +586,7 @@ describe("A decomposed class", () =>
     });
     it("may be an interface followed by variable with same name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/interface-variable-decomposed-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/interface-variable-decomposed-class.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceVariableDecomposedClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -594,7 +594,7 @@ describe("A decomposed class", () =>
     });
     it("may be an interface followed by multiple variables with same name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/interface-duplicate-variable-decomposed-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/interface-duplicate-variable-decomposed-class.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceVariableDecomposedClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -602,7 +602,7 @@ describe("A decomposed class", () =>
     });
     it("may be a variable followed by an interface with same name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/variable-interface-decomposed-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/variable-interface-decomposed-class.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableInterfaceDecomposedClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -610,7 +610,7 @@ describe("A decomposed class", () =>
     });
     it("may be a variable typed as an interface with same name", () =>
     {
-        let symbols = parser.parse("spec/fixtures/variable-typed-as-interface-decomposed-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/variable-typed-as-interface-decomposed-class.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableTypedAsInterfaceDecomposedClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -624,7 +624,7 @@ describe("A decomposed class", () =>
     });
     it("may be an interface that extends another decomposed class", () =>
     {
-        let symbols = parser.parse("spec/fixtures/interface-extends-decomposed-class.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/interface-extends-decomposed-class.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceExtendsDecomposedClass", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.constructor).toBe(as3.ClassDefinition);
@@ -637,7 +637,7 @@ describe("A decomposed class", () =>
     });
     it("may have a property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/decomposed-class-member-property.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/decomposed-class-member-property.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithProperty", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(1);
@@ -651,7 +651,7 @@ describe("A decomposed class", () =>
     });
     it("may have a static property", () =>
     {
-        let symbols = parser.parse("spec/fixtures/decomposed-class-static-property.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/decomposed-class-static-property.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithStaticProperty", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.properties.length).toBe(1);
@@ -665,7 +665,7 @@ describe("A decomposed class", () =>
     });
     it("may have a method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/decomposed-class-member-method.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/decomposed-class-member-method.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithMethod", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(1);
@@ -679,7 +679,7 @@ describe("A decomposed class", () =>
     });
     it("may have a static method", () =>
     {
-        let symbols = parser.parse("spec/fixtures/decomposed-class-static-method.d.ts").definitions;
+        let symbols = parser.parse(["spec/fixtures/decomposed-class-static-method.d.ts"]).definitions;
         let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DecomposedClassWithStaticMethod", symbols);
         expect(as3Class).not.toBeNull();
         expect(as3Class.methods.length).toBe(1);
