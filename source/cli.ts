@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -201,7 +201,7 @@ if(outputDirectory === null)
 }
 if(swcOutputPath !== null)
 {
-    depsSWCOutputPath = path.join(outputDirectory, "deps.swc");
+	depsSWCOutputPath = path.join(outputDirectory, "deps.swc");
 	if(flexHome === null)
 	{
 		console.error("--outSWC option requires Apache FlexJS. Please specify the --flexHome option or set the FLEX_HOME environment variable.");
@@ -209,8 +209,8 @@ if(swcOutputPath !== null)
 	}
 	else
 	{
-        if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
-        {
+		if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+		{
 			console.info("Apache FlexJS: " + flexHome);
 		}
 	}
@@ -240,69 +240,69 @@ let packageLevelSymbols = result.definitions;
 let externsEmitter = new JSExternsEmitter(packageLevelSymbols);
 if(externsOutput.length === 0)
 {
-    externsOutput += externsEmitter.emitFileHeader();
+	externsOutput += externsEmitter.emitFileHeader();
 }
 externsOutput += externsEmitter.emitPackages();
 let sourceEmitter = new ASStubEmitter(packageLevelSymbols);
 packageLevelSymbols.forEach((as3Type:as3.PackageLevelDefinition) =>
 {
-    if(!canEmit(as3Type))
-    {
-        return;
-    }
-    let sourcePaths = outputSourcePaths;
-    let directoryPrefix = "src";
-    let outputExterns = true; 
-    if(as3Type.external)
-    {
-        if(swcOutputPath === null)
-        {
-            //if we're not creating a SWC file, we don't need to emit 
-            //the dependencies
-            return;
-        }
-        //dependencies are kept separate so that they can be deleted later
-        sourcePaths = dependencySourcePaths;
-        directoryPrefix = "deps_src";
-        //dependencies don't need externs
-        outputExterns = false;
-    }
-    if("superClass" in as3Type)
-    {
-        let as3Class = <as3.ClassDefinition> as3Type;
-        writeAS3File(as3Class, sourcePaths, directoryPrefix, sourceEmitter.emitClass(as3Class));
-        if(outputExterns)
-        {
-            externsOutput += externsEmitter.emitClass(as3Class);
-        }
-    }
-    else if("interfaces" in as3Type)
-    {
-        let as3Interface = <as3.InterfaceDefinition> as3Type;
-        writeAS3File(as3Interface, sourcePaths, directoryPrefix, sourceEmitter.emitInterface(as3Interface));
-        if(outputExterns)
-        {
-            externsOutput += externsEmitter.emitInterface(as3Interface);
-        }
-    }
-    else if("parameters" in as3Type)
-    {
-        let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
-        writeAS3File(as3PackageFunction, sourcePaths, directoryPrefix, sourceEmitter.emitPackageFunction(as3PackageFunction));
-        if(outputExterns)
-        {
-            externsOutput += externsEmitter.emitPackageFunction(as3PackageFunction);
-        }
-    }
-    else
-    {
-        let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
-        writeAS3File(as3PackageVariable, sourcePaths, directoryPrefix, sourceEmitter.emitPackageVariable(as3PackageVariable));
-        if(outputExterns)
-        {
-            externsOutput += externsEmitter.emitPackageVariable(as3PackageVariable);
-        }
-    }
+	if(!canEmit(as3Type))
+	{
+		return;
+	}
+	let sourcePaths = outputSourcePaths;
+	let directoryPrefix = "src";
+	let outputExterns = true; 
+	if(as3Type.external)
+	{
+		if(swcOutputPath === null)
+		{
+			//if we're not creating a SWC file, we don't need to emit 
+			//the dependencies
+			return;
+		}
+		//dependencies are kept separate so that they can be deleted later
+		sourcePaths = dependencySourcePaths;
+		directoryPrefix = "deps_src";
+		//dependencies don't need externs
+		outputExterns = false;
+	}
+	if("superClass" in as3Type)
+	{
+		let as3Class = <as3.ClassDefinition> as3Type;
+		writeAS3File(as3Class, sourcePaths, directoryPrefix, sourceEmitter.emitClass(as3Class));
+		if(outputExterns)
+		{
+			externsOutput += externsEmitter.emitClass(as3Class);
+		}
+	}
+	else if("interfaces" in as3Type)
+	{
+		let as3Interface = <as3.InterfaceDefinition> as3Type;
+		writeAS3File(as3Interface, sourcePaths, directoryPrefix, sourceEmitter.emitInterface(as3Interface));
+		if(outputExterns)
+		{
+			externsOutput += externsEmitter.emitInterface(as3Interface);
+		}
+	}
+	else if("parameters" in as3Type)
+	{
+		let as3PackageFunction = <as3.PackageFunctionDefinition> as3Type;
+		writeAS3File(as3PackageFunction, sourcePaths, directoryPrefix, sourceEmitter.emitPackageFunction(as3PackageFunction));
+		if(outputExterns)
+		{
+			externsOutput += externsEmitter.emitPackageFunction(as3PackageFunction);
+		}
+	}
+	else
+	{
+		let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
+		writeAS3File(as3PackageVariable, sourcePaths, directoryPrefix, sourceEmitter.emitPackageVariable(as3PackageVariable));
+		if(outputExterns)
+		{
+			externsOutput += externsEmitter.emitPackageVariable(as3PackageVariable);
+		}
+	}
 });
 if(swcOutputPath !== null)
 {
@@ -325,55 +325,55 @@ if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
 let compilerError = null;
 if(swcOutputPath !== null)
 {
-    //if the SWC files already exist, delete them to avoid confusion
-    if(fs.existsSync(swcOutputPath))
-    {
-        fs.unlinkSync(swcOutputPath);
-    }
-    if(fs.existsSync(depsSWCOutputPath))
-    {
-        fs.unlinkSync(depsSWCOutputPath);
-    }
-    if(dependencySourcePaths.length > 0)
-    {
-        let result = compileSWC(dependencySourcePaths, null, depsSWCOutputPath);
-        if(result.status !== 0)
-        {
-            compilerError = result.stderr;
-        }
-        else
-        {
-            if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
-            {
-                console.info("Created SWC file for dependencies: " + depsSWCOutputPath);
-            }
-            let result = compileSWC(outputSourcePaths, externsOutputPath, swcOutputPath);
-            if(result.status !== 0)
-            {
-                compilerError = result.stderr;
-            }
-        }
-    }
-    else
-    {
-        //no dependencies to compile, so set to null
-        depsSWCOutputPath = null;
-        
-        let result = compileSWC(outputSourcePaths, externsOutputPath, swcOutputPath);
-        if(result.status !== 0)
-        {
-            compilerError = result.stderr;
-        }
-    }
-    if(compilerError)
-    {
-        console.error(compilerError);
-        console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.");
-    }
-    else if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
-    {
-        console.info("Created SWC file: " + swcOutputPath);
-    }
+	//if the SWC files already exist, delete them to avoid confusion
+	if(fs.existsSync(swcOutputPath))
+	{
+		fs.unlinkSync(swcOutputPath);
+	}
+	if(fs.existsSync(depsSWCOutputPath))
+	{
+		fs.unlinkSync(depsSWCOutputPath);
+	}
+	if(dependencySourcePaths.length > 0)
+	{
+		let result = compileSWC(dependencySourcePaths, null, depsSWCOutputPath);
+		if(result.status !== 0)
+		{
+			compilerError = result.stderr;
+		}
+		else
+		{
+			if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+			{
+				console.info("Created SWC file for dependencies: " + depsSWCOutputPath);
+			}
+			let result = compileSWC(outputSourcePaths, externsOutputPath, swcOutputPath);
+			if(result.status !== 0)
+			{
+				compilerError = result.stderr;
+			}
+		}
+	}
+	else
+	{
+		//no dependencies to compile, so set to null
+		depsSWCOutputPath = null;
+		
+		let result = compileSWC(outputSourcePaths, externsOutputPath, swcOutputPath);
+		if(result.status !== 0)
+		{
+			compilerError = result.stderr;
+		}
+	}
+	if(compilerError)
+	{
+		console.error(compilerError);
+		console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.");
+	}
+	else if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+	{
+		console.info("Created SWC file: " + swcOutputPath);
+	}
 }
 
 if(sourceOutputPathIsTemp)
@@ -383,16 +383,16 @@ if(sourceOutputPathIsTemp)
 }
 else
 {
-    //dependencies are temporary and should be deleted
-    if(depsSWCOutputPath !== null && fs.existsSync(depsSWCOutputPath))
-    {
-        fs.unlinkSync(depsSWCOutputPath);
-    }
-    dependencySourcePaths.forEach((sourcePath: string) =>
-    {
-        sourcePath = path.join(outputDirectory, sourcePath);
-        rimraf.sync(sourcePath);
-    });
+	//dependencies are temporary and should be deleted
+	if(depsSWCOutputPath !== null && fs.existsSync(depsSWCOutputPath))
+	{
+		fs.unlinkSync(depsSWCOutputPath);
+	}
+	dependencySourcePaths.forEach((sourcePath: string) =>
+	{
+		sourcePath = path.join(outputDirectory, sourcePath);
+		rimraf.sync(sourcePath);
+	});
 }
 
 if(compilerError)
@@ -402,7 +402,7 @@ if(compilerError)
 
 function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 {
-    let swcName = path.basename(swcPath, ".swc");
+	let swcName = path.basename(swcPath, ".swc");
 	let externsName = swcName + ".js";
 	let compcPath = flexjsUtils.findBinCompc(flexHome);
 	if(compcPath === null)
@@ -417,16 +417,16 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 		"--output",
 		swcPath
 	];
-    if(depsSWCOutputPath !== null && swcPath !== depsSWCOutputPath)
-    {
-        compcArgs.splice(2, 0, "--external-library-path+=" + depsSWCOutputPath);
-    }
-    if(externsPath !== null)
-    {
-        compcArgs.push("--include-file");
-        compcArgs.push(path.join("externs", externsName));
-        compcArgs.push(externsPath);
-    }
+	if(depsSWCOutputPath !== null && swcPath !== depsSWCOutputPath)
+	{
+		compcArgs.splice(2, 0, "--external-library-path+=" + depsSWCOutputPath);
+	}
+	if(externsPath !== null)
+	{
+		compcArgs.push("--include-file");
+		compcArgs.push(path.join("externs", externsName));
+		compcArgs.push(externsPath);
+	}
 	for(let sourcePath of sourcePaths)
 	{
 		sourcePath = path.join(outputDirectory, sourcePath);
@@ -444,7 +444,7 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 		cwd: path.dirname(compcPath),
 		encoding: "utf8"
 	});
-    return result;
+	return result;
 }
 
 function getAS3FilePath(symbol: as3.PackageLevelDefinition, sourcePaths: string[], directoryPrefix: string): string
@@ -502,17 +502,17 @@ function printUsage()
 	console.info("Syntax:   dts2as [options] [file ...]");
 	console.info();
 	console.info("Examples: dts2as hello.d.ts");
-	console.info("          dts2as file1.d.ts file2.d.ts");
-	console.info("          dts2as --outSWC hello.swc hello.d.ts");
-	console.info("          dts2as --outDir ./as3_generated file.d.ts");
-	console.info("          dts2as --exclude com.example.SomeType file.d.ts");
+	console.info("        dts2as file1.d.ts file2.d.ts");
+	console.info("        dts2as --outSWC hello.swc hello.d.ts");
+	console.info("        dts2as --outDir ./as3_generated file.d.ts");
+	console.info("        dts2as --exclude com.example.SomeType file.d.ts");
 	console.info();
 	console.info("Options:");
 	console.info(" --outSWC FILE                      Generate a compiled SWC file. Requires either FLEX_HOME environment variable or --flexHome option.");
-	console.info(" --outDir DIRECTORY                 Generate ActionScript and externs files in a specific output directory. Defaults to './dts2as_generated'.");
-	console.info(" --flexHome DIRECTORY               Specify the directory where Apache FlexJS is located. Defaults to FLEX_HOME environment variable, if available.");
-	console.info(" -e SYMBOL, --exclude SYMBOL        Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
-	console.info(" -i SYMBOL, --include SYMBOL        Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
-	console.info(" -t VERSION, --target VERSION       Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
+	console.info(" --outDir DIRECTORY                Generate ActionScript and externs files in a specific output directory. Defaults to './dts2as_generated'.");
+	console.info(" --flexHome DIRECTORY            Specify the directory where Apache FlexJS is located. Defaults to FLEX_HOME environment variable, if available.");
+	console.info(" -e SYMBOL, --exclude SYMBOL      Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
+	console.info(" -i SYMBOL, --include SYMBOL      Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
+	console.info(" -t VERSION, --target VERSION    Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
 	console.info(" -v, --version                      Print the version of dts2as.");
 }
