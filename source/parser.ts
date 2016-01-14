@@ -887,7 +887,7 @@ class TS2ASParser
 				this._moduleStack.push(this.declarationNameToString(moduleName));
 				if(moduleName.kind === ts.SyntaxKind.StringLiteral)
 				{
-					this._currentModuleRequire = this.declarationNameToString(moduleName);
+					this._currentModuleRequire = this._moduleStack[this._moduleStack.length - 1];
 				}
 				ts.forEachChild(node, (node) =>
 				{
@@ -909,8 +909,15 @@ class TS2ASParser
 					}
 					this.populatePackageLevelDefinitions(node);
 				});
-				this._currentModuleRequire = null;
 				this._moduleStack.pop();
+				if(this._moduleStack.length > 0)
+				{
+					this._currentModuleRequire = this._moduleStack[this._moduleStack.length - 1];
+				}
+				else
+				{
+					this._currentModuleRequire = null;
+				}
 				break;
 			}
 			case ts.SyntaxKind.FunctionDeclaration:
