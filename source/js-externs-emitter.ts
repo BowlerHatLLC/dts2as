@@ -289,20 +289,29 @@ class JSExternsEmitter
 			methodOutput += " * @return {" + this.getNameToEmit(methodType, scope) + "}" + NEW_LINE;
 		}
 		methodOutput += " */" + NEW_LINE;
-		methodOutput += scopeFullyQualifiedName;
-		if("methods" in scope)
+		if(as3Method instanceof as3.PackageFunctionDefinition &&
+			!as3Method.packageName)
 		{
-			if(isStatic)
-			{
-				methodOutput += ".";
-			}
-			else
-			{
-				methodOutput += ".prototype.";
-			}
-			methodOutput += methodName;
+			methodOutput += "function ";
+			methodOutput += scopeFullyQualifiedName;
 		}
-		methodOutput += " = function";
+		else
+		{
+			methodOutput += scopeFullyQualifiedName;
+			if("methods" in scope)
+			{
+				if(isStatic)
+				{
+					methodOutput += ".";
+				}
+				else
+				{
+					methodOutput += ".prototype.";
+				}
+				methodOutput += methodName;
+			}
+			methodOutput += " = function";
+		}
 		methodOutput += this.emitParameters(as3Method, scope);
 		methodOutput += " {};";
 		return methodOutput;
