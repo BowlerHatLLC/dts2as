@@ -293,26 +293,30 @@ class TS2ASParser
 				parametersToKeep.length = j;
 				parametersToKeep[j] = paramToMerge;
 			}
-			let paramToMergeType = paramToMerge.type;
-			let paramToKeepType = paramToKeep.type;
-			if(paramToMergeType !== paramToKeepType)
-			{
-				//the overload has a different type, so generalize to a common
-				//super class, if possible
-				let commonType: as3.TypeDefinition;
-				if(paramToMergeType instanceof as3.ClassDefinition &&
-					paramToKeepType instanceof as3.ClassDefinition)
-				{
-					commonType = as3.getCommonBaseClass(paramToMergeType, paramToKeepType);
-				}
-				if(!commonType)
-				{
-					//fall back to Object if there is no common base class
-					commonType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
-				}
-				paramToKeep.type = commonType;
-			}
+			paramToKeep.type = this.mergeTypes(paramToKeep.type, paramToMerge.type);
 		}
+	}
+	
+	private mergeTypes(type1: as3.TypeDefinition, type2: as3.TypeDefinition): as3.TypeDefinition
+	{
+		if(type1 === type2)
+		{
+			return type1;
+		}
+		//the overload has a different type, so generalize to a common
+		//super class, if possible
+		let commonType: as3.TypeDefinition;
+		if(type1 instanceof as3.ClassDefinition &&
+			type2 instanceof as3.ClassDefinition)
+		{
+			commonType = as3.getCommonBaseClass(type1, type2);
+		}
+		if(!commonType)
+		{
+			//fall back to Object if there is no common base class
+			commonType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
+		}
+		return commonType;
 	}
 	
 	//checks the kind property of the TypeNode to see if a type can be
@@ -1361,7 +1365,17 @@ class TS2ASParser
 		}
 		
 		let functionParameters = this.populateParameters(functionDeclaration);
-		as3PackageFunction.type = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
+		let returnType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
+		let existingReturnType = as3PackageFunction.type;
+		if(existingReturnType !== null)
+		{
+			//this is an overload, so find the common base type
+			as3PackageFunction.type = this.mergeTypes(existingReturnType, returnType);
+		} 
+		else
+		{
+			as3PackageFunction.type = returnType;
+		}
 		this.mergeFunctionParameters(as3PackageFunction.parameters, functionParameters);
 		as3PackageFunction.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 	}
@@ -1744,7 +1758,16 @@ class TS2ASParser
 		}
 		let methodParameters = this.populateParameters(functionDeclaration);
 		this.mergeFunctionParameters(as3Method.parameters, methodParameters);
-		as3Method.type = methodType;
+		let existingReturnType = as3Method.type;
+		if(existingReturnType !== null)
+		{
+			//this is an overload, so find the common base type
+			as3Method.type = this.mergeTypes(existingReturnType, methodType);
+		} 
+		else
+		{
+			as3Method.type = methodType;
+		}
 		
 		if(as3Type.getFullyQualifiedName() === as3.BuiltIns[as3.BuiltIns.Object])
 		{

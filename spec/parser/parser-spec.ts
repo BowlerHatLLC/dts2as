@@ -413,6 +413,17 @@ describe("A function", () =>
 			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
 			expect(param1.isRest).toBe(false);
 		});
+		it("must type a return value as Object in ActionScript if the types have no common base type", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/function-overload-incompatible-return-type.d.ts"]).definitions;
+			let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOverload", symbols);
+			expect(as3Function).not.toBeNull();
+			expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+			expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let type = as3Function.type;
+			expect(type).not.toBeNull();
+			expect(type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		});
 	});
 	it("may have a return value", () =>
 	{
@@ -639,6 +650,24 @@ describe("A method", () =>
 			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
 			expect(param1.value).toBeNull();
 			expect(param1.isRest).toBe(false);
+		});
+		it("must type a return value as Object in ActionScript if the types have no common base type", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/method-overload-incompatible-return-type.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("MethodOverload", symbols);
+			expect(as3Class).not.toBeNull();
+			expect(as3Class.constructor).toBe(as3.ClassDefinition);
+			expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let methods = as3Class.methods;
+			expect(methods.length).toBe(1);
+			let method = methods[0];
+			expect(method).not.toBeNull();
+			expect(method.name).toBe("method1");
+			expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			expect(method.isStatic).toBe(false);
+			let type = method.type;
+			expect(type).not.toBeNull();
+			expect(type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
 		});
 	});
 });
