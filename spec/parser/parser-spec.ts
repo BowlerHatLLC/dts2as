@@ -392,6 +392,28 @@ describe("A function", () =>
 		expect(param1.value).toBe("undefined");
 		expect(param1.isRest).toBe(false);
 	});
+	describe("that has overloads", () =>
+	{
+		it("must type a parameter as Object in ActionScript if the types have no common base type", () =>
+		{	
+			let symbols = parser.parse(["spec/fixtures/function-overload-incompatible-parameter-type.d.ts"]).definitions;
+			let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOverload", symbols);
+			expect(as3Function).not.toBeNull();
+			expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+			expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			expect(as3Function.type).not.toBeNull();
+			expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+			let params = as3Function.parameters;
+			expect(params).not.toBeNull();
+			expect(params.length).toBe(1);
+			let param1 = params[0];
+			expect(param1).not.toBeNull();
+			expect(param1.name).toBe("param1");
+			expect(param1.type).not.toBeNull();
+			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+			expect(param1.isRest).toBe(false);
+		});
+	});
 	it("may have a return value", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/function-return.d.ts"]).definitions;
@@ -578,6 +600,80 @@ describe("A variable", () =>
 			let as3Type = as3Variable.type;
 			expect(as3Type).not.toBeNull();
 			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
+		});
+	});
+});
+
+describe("A method", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+	});
+	describe("that has overloads", () =>
+	{
+		it("must type a parameter as Object in ActionScript if the types have no common base type", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/method-overload-incompatible-parameter-type.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("MethodOverload", symbols);
+			expect(as3Class).not.toBeNull();
+			expect(as3Class.constructor).toBe(as3.ClassDefinition);
+			expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let methods = as3Class.methods;
+			expect(methods.length).toBe(1);
+			let method = methods[0];
+			expect(method).not.toBeNull();
+			expect(method.name).toBe("method1");
+			expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			expect(method.isStatic).toBe(false);
+			expect(method.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+			let params = method.parameters;
+			expect(params).not.toBeNull();
+			expect(params.length).toBe(1);
+			let param1 = params[0];
+			expect(param1).not.toBeNull();
+			expect(param1.name).toBe("param1");
+			expect(param1.type).not.toBeNull();
+			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+			expect(param1.value).toBeNull();
+			expect(param1.isRest).toBe(false);
+		});
+	});
+});
+
+describe("A constructor", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+	});
+	describe("that has overloads", () =>
+	{
+		it("must type a parameter as Object in ActionScript if the types have no common base type", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/constructor-overload-incompatible-parameter-type.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ConstructorOverload", symbols);
+			expect(as3Class).not.toBeNull();
+			expect(as3Class.constructor).toBe(as3.ClassDefinition);
+			expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let constructor = as3Class.constructorMethod;
+			expect(constructor).not.toBeNull();
+			expect(constructor.name).toBe(as3Class.name);
+			expect(constructor.type).toBe(null);
+			let params = constructor.parameters;
+			expect(params).not.toBeNull();
+			expect(params.length).toBe(1);
+			let param1 = params[0];
+			expect(param1).not.toBeNull();
+			expect(param1.name).toBe("param1");
+			expect(param1.type).not.toBeNull();
+			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+			expect(param1.value).toBeNull();
+			expect(param1.isRest).toBe(false);
 		});
 	});
 });

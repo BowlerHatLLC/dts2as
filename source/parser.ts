@@ -265,19 +265,17 @@ class TS2ASParser
 		return as3.getDefinitionByName(fullyQualifiedName, this._definitions) !== null;
 	}
 	
-	private mergeFunctions(methodToKeep: as3.FunctionDefinition, methodToMerge: as3.FunctionDefinition)
+	private mergeFunctionParameters(parametersToKeep: as3.ParameterDefinition[], parametersToMerge: as3.ParameterDefinition[])
 	{
-		let methodToMergeParams = methodToMerge.parameters;
-		let methodToKeepParams = methodToKeep.parameters;
-		let methodToKeepParamsCount = methodToKeepParams.length;
-		for(let j = 0, paramCount = methodToMergeParams.length; j < paramCount; j++)
+		let methodToKeepParamsCount = parametersToKeep.length;
+		for(let j = 0, paramCount = parametersToMerge.length; j < paramCount; j++)
 		{
-			let paramToMerge = methodToMergeParams[j];
+			let paramToMerge = parametersToMerge[j];
 			if(methodToKeepParamsCount <= j)
 			{
-				methodToKeepParams[j] = paramToMerge;
+				parametersToKeep[j] = paramToMerge;
 			}
-			let paramToKeep = methodToKeepParams[j];
+			let paramToKeep = parametersToKeep[j];
 			if(paramToKeep.isRest)
 			{
 				//we already have a ...rest argument, and that must be the last
@@ -292,8 +290,8 @@ class TS2ASParser
 				
 				//we don't know if the name is relevant, so let's go generic
 				paramToMerge.name = "rest";
-				methodToKeepParams.length = j;
-				methodToKeepParams[j] = paramToMerge;
+				parametersToKeep.length = j;
+				parametersToKeep[j] = paramToMerge;
 			}
 			let paramToMergeType = paramToMerge.type;
 			let paramToKeepType = paramToKeep.type;
@@ -534,7 +532,8 @@ class TS2ASParser
 	{
 		if(as3Class.constructorMethod)
 		{
-			this.mergeFunctions(as3Class.constructorMethod, constructorMethodToAdd);
+			this.mergeFunctionParameters(as3Class.constructorMethod.parameters,
+				constructorMethodToAdd.parameters);
 		}
 		else
 		{
@@ -553,7 +552,7 @@ class TS2ASParser
 			{
 				continue;
 			}
-			this.mergeFunctions(existingMethod, methodToAdd);
+			//we'll ignore overloads for now
 			return;
 		}
 		//otherwise, add the new method
@@ -1363,7 +1362,7 @@ class TS2ASParser
 		
 		let functionParameters = this.populateParameters(functionDeclaration);
 		as3PackageFunction.type = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
-		as3PackageFunction.parameters = functionParameters;
+		this.mergeFunctionParameters(as3PackageFunction.parameters, functionParameters);
 		as3PackageFunction.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 	}
 	
@@ -1704,7 +1703,7 @@ class TS2ASParser
 			throw new Error("Constructor not found on class " + as3Class.getFullyQualifiedName() + ".");
 		}
 		let constructorParameters = this.populateParameters(constructorDeclaration);
-		as3Constructor.parameters = constructorParameters;
+		this.mergeFunctionParameters(as3Constructor.parameters, constructorParameters);
 	}
 	
 	private readMethod(functionDeclaration: ts.FunctionDeclaration, as3Type: as3.TypeDefinition): as3.MethodDefinition
@@ -1744,7 +1743,7 @@ class TS2ASParser
 			throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + ".");
 		}
 		let methodParameters = this.populateParameters(functionDeclaration);
-		as3Method.parameters = methodParameters;
+		this.mergeFunctionParameters(as3Method.parameters, methodParameters);
 		as3Method.type = methodType;
 		
 		if(as3Type.getFullyQualifiedName() === as3.BuiltIns[as3.BuiltIns.Object])
