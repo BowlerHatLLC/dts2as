@@ -15,7 +15,6 @@ limitations under the License.
 */
 /// <reference path="./as3.ts" />
 /// <reference path="../typings/tsd.d.ts" />
-/// <reference path="../node_modules/typescript/lib/typescript.d.ts" />
 
 import path = require("path");
 import fs = require("fs");
@@ -29,6 +28,16 @@ class StaticSideClassDefinition extends as3.ClassDefinition
 		super(name, packageName, accessLevel, sourceFile, require, true);
 	}
 }
+
+class ParserPropertyDefinition extends as3.PropertyDefinition
+{
+	forceStatic: boolean = false;
+} 
+
+class ParserMethodDefinition extends as3.MethodDefinition
+{
+	forceStatic: boolean = false;
+} 
 
 enum TypeScriptBuiltIns
 {
@@ -133,6 +142,7 @@ class TS2ASParser
 			this.populatePackageLevelDefinitions(sourceFile);
 			this.promoteInterfaces();
 			this.cleanupStaticSideDefinitions();
+			this.cleanupMembersWithForceStaticFlag();
 		});
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
@@ -753,7 +763,8 @@ class TS2ASParser
 			{
 				accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 			}
-			let newProperty = new as3.PropertyDefinition(property.name, accessLevel, property.type, makeStatic);
+			let newProperty = new ParserPropertyDefinition(property.name, accessLevel, property.type, property.isStatic, property.isConstant);
+			newProperty.forceStatic = makeStatic;
 			toType.properties.push(newProperty);
 		}
 		for(let method of fromType.methods)
@@ -763,7 +774,8 @@ class TS2ASParser
 			{
 				accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 			}
-			let newMethod = new as3.MethodDefinition(method.name, method.type, method.parameters.slice(), accessLevel, makeStatic);
+			let newMethod = new ParserMethodDefinition(method.name, method.type, method.parameters.slice(), accessLevel, method.isStatic);
+			newMethod.forceStatic = makeStatic;
 			toType.methods.push(newMethod);
 		}
 	}
@@ -807,9 +819,23 @@ class TS2ASParser
 		{
 			exportedDefinition.require = this._currentModuleRequire;
 		}
-		else if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+		else
 		{
-			console.warn("Warning: Unable to export " + assignedIdentifier + " in module " + this._currentModuleRequire + ".");
+			let currentStack = this._moduleStack.join(".")
+			let innerModule = assignedIdentifier;
+			if(currentStack.length > 0)
+			{
+				innerModule = currentStack + "." + innerModule; 
+			}
+			this._definitions.forEach((definition) =>
+			{
+				let packageName = definition.packageName;
+				if(packageName !== null &&
+					packageName.indexOf(innerModule) === 0)
+				{
+					definition.packageName = packageName.replace(innerModule, currentStack);
+				}
+			});
 		}
 	}
 	
@@ -967,7 +993,7 @@ class TS2ASParser
 		}
 	}
 	
-	private readMembers(typeDefinition: as3.TypeDefinition, declaration: {members: ts.NodeArray<ts.Node>})
+	private readMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode)
 	{
 		declaration.members.forEach((member: ts.Declaration) =>
 		{
@@ -975,7 +1001,7 @@ class TS2ASParser
 		});
 	}
 	
-	private populateMembers(typeDefinition: as3.TypeDefinition, declaration: {members: ts.NodeArray<ts.Node>})
+	private populateMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode)
 	{
 		declaration.members.forEach((member: ts.Declaration) =>
 		{
@@ -1410,11 +1436,11 @@ class TS2ASParser
 			//side have the same name. we need to make everything static;
 			for(let property of as3PackageLevelDefinition.properties)
 			{
-				property.isStatic = true;
+				(<ParserPropertyDefinition> property).forceStatic = true;
 			}
 			for(let method of as3PackageLevelDefinition.methods)
 			{
-				method.isStatic = true;
+				(<ParserMethodDefinition> method).forceStatic = true;
 			}
 			return;
 		}
@@ -1426,11 +1452,11 @@ class TS2ASParser
 			{
 				for(let property of as3PackageLevelDefinition.properties)
 				{
-					property.isStatic = true;
+					(<ParserPropertyDefinition> property).forceStatic = true;
 				}
 				for(let method of as3PackageLevelDefinition.methods)
 				{
-					method.isStatic = true;
+					(<ParserMethodDefinition> method).forceStatic = true;
 				}
 				return;
 			}
@@ -1563,7 +1589,7 @@ class TS2ASParser
 	{
 		let propertyName = this.declarationNameToString(propertyDeclaration.name);
 		let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
-		return new as3.PropertyDefinition(propertyName, null, null, isStatic);
+		return new ParserPropertyDefinition(propertyName, null, null, isStatic);
 	}
 	
 	private populateProperty(propertyDeclaration: ts.PropertyDeclaration, as3Type: as3.TypeDefinition)
@@ -1686,7 +1712,7 @@ class TS2ASParser
 		let methodName = this.declarationNameToString(functionDeclaration.name);
 		let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
 		let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
-		return new as3.MethodDefinition(methodName, null, null, accessLevel, isStatic);
+		return new ParserMethodDefinition(methodName, null, null, accessLevel, isStatic);
 	}
 	
 	private populateMethod(functionDeclaration: ts.FunctionDeclaration, as3Type: as3.TypeDefinition)
@@ -1708,7 +1734,8 @@ class TS2ASParser
 		});
 		if(!as3Method)
 		{
-			throw new Error("Method " + methodName + " not found on type " + as3Type.getFullyQualifiedName() + ".");
+			let staticMessage = isStatic ? "Static" : "Non-static";
+			throw new Error(staticMessage + " method " + methodName + "() not found on type " + as3Type.getFullyQualifiedName() + ".");
 		}
 		
 		let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
@@ -1812,6 +1839,30 @@ class TS2ASParser
 		this._definitions = this._definitions.filter((definition: as3.PackageLevelDefinition) =>
 		{
 			return !(definition instanceof StaticSideClassDefinition);
+		});
+	}
+	
+	private cleanupMembersWithForceStaticFlag()
+	{
+		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
+		{
+			 if(definition instanceof as3.ClassDefinition)
+			 {
+				 definition.properties.forEach((property: ParserPropertyDefinition) =>
+				 {
+					 if(property.forceStatic)
+					 {
+						 property.isStatic = true;
+					 }
+				 });
+				 definition.methods.forEach((method: ParserMethodDefinition) =>
+				 {
+					 if(method.forceStatic)
+					 {
+						 method.isStatic = true;
+					 }
+				 })
+			 }
 		});
 	}
 	

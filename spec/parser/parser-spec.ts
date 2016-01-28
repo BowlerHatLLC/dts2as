@@ -28,6 +28,7 @@ describe("A TypeScript definition", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
 	it("may declare a class", () =>
 	{
@@ -159,6 +160,7 @@ describe("A class", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
 	it("may have a property", () =>
 	{
@@ -270,6 +272,7 @@ describe("An interface", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
 	it("may have a property", () =>
 	{
@@ -307,6 +310,7 @@ describe("A function", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
 	{
@@ -462,6 +466,7 @@ describe("A variable", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
 	describe("when typed as a union type in TypeScript", () =>
 	{
@@ -583,6 +588,7 @@ describe("A decomposed class", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
 	it("may be an interface followed by variable with same name", () =>
 	{
@@ -690,5 +696,48 @@ describe("A decomposed class", () =>
 		expect(method.isStatic).toBe(true);
 		let as3MethodType = as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
+	});
+	it("may be a variable followed by an interface with same name that has a method", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/variable-interface-decomposed-class-method.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableInterfaceDecomposedClass", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(as3Class.methods.length).toBe(1);
+		let method = as3Class.methods[0];
+		expect(method).not.toBeNull();
+		expect(method.name).toBe("method1");
+		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(method.isStatic).toBe(true);
+		let as3MethodType = as3.getDefinitionByName("Number", symbols);
+		expect(method.type).toBe(as3MethodType);
+	});
+});
+
+describe("A module", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+	});
+	it("may be exported with a different name", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/assign-inner-module-to-export.d.ts"]).definitions;
+		let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("outer.variable", symbols);
+		expect(as3Variable).not.toBeNull();
+		expect(as3Variable.name).toBe("variable");
+		expect(as3Variable.packageName).toBe("outer");
+	});
+	it("may export something declared outside", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/assign-definition-outside-module-to-export.d.ts"]).definitions;
+		let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variable", symbols);
+		expect(as3Variable).not.toBeNull();
+		expect(as3Variable.name).toBe("variable");
+		expect(as3Variable.packageName).toBe("");
+		expect(as3Variable.require).toBe("some-module");
 	});
 });
