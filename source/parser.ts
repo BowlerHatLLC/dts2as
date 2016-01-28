@@ -1067,7 +1067,16 @@ class TS2ASParser
 				}
 				if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
 				{
-					console.info("Mapping type parameter " + typeParameterName + " to " + as3TypeName + " in " + this.declarationNameToString(declaration.name) + ".");
+					let declarationName = null;
+					if(declaration.name === undefined)
+					{
+						declarationName = "a constructor";
+					}
+					else
+					{
+						declarationName = this.declarationNameToString(declaration.name);
+					}
+					console.info("Mapping type parameter " + typeParameterName + " to " + as3TypeName + " in " + declarationName + ".");
 				}
 				this._typeParameterMap[typeParameterName] = as3TypeName;
 				typeParameters.push(typeParameterName);
