@@ -1,0 +1,1 @@
+declare function functionWithTypeParameter<T>(param1: T)

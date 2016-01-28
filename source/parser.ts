@@ -39,12 +39,13 @@ class ParserMethodDefinition extends as3.MethodDefinition
 	forceStatic: boolean = false;
 } 
 
-enum TypeScriptBuiltIns
+enum TypeScriptPrimitives
 {
 	any,
 	number,
 	boolean,
 	string,
+	symbol,
 	void
 }
 
@@ -65,12 +66,13 @@ const DYNAMIC_CLASSES =
 	"URIError"
 ];
 
-let TS_TO_AS3_TYPE_MAP = {};
-TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.number]] = as3.BuiltIns[as3.BuiltIns.Number];
-TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.boolean]] = as3.BuiltIns[as3.BuiltIns.Boolean];
-TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.string]] =  as3.BuiltIns[as3.BuiltIns.String];
-TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.any]] =  as3.BuiltIns[as3.BuiltIns.Object];
-TS_TO_AS3_TYPE_MAP[TypeScriptBuiltIns[TypeScriptBuiltIns.void]] =  as3.BuiltIns[as3.BuiltIns.void];
+let PRIMITIVE_TO_CLASS_TYPE_MAP = {};
+PRIMITIVE_TO_CLASS_TYPE_MAP[TypeScriptPrimitives[TypeScriptPrimitives.number]] = as3.BuiltIns[as3.BuiltIns.Number];
+PRIMITIVE_TO_CLASS_TYPE_MAP[TypeScriptPrimitives[TypeScriptPrimitives.boolean]] = as3.BuiltIns[as3.BuiltIns.Boolean];
+PRIMITIVE_TO_CLASS_TYPE_MAP[TypeScriptPrimitives[TypeScriptPrimitives.string]] =  as3.BuiltIns[as3.BuiltIns.String];
+PRIMITIVE_TO_CLASS_TYPE_MAP[TypeScriptPrimitives[TypeScriptPrimitives.any]] =  as3.BuiltIns[as3.BuiltIns.Object];
+PRIMITIVE_TO_CLASS_TYPE_MAP[TypeScriptPrimitives[TypeScriptPrimitives.void]] =  as3.BuiltIns[as3.BuiltIns.void];
+PRIMITIVE_TO_CLASS_TYPE_MAP[TypeScriptPrimitives[TypeScriptPrimitives.symbol]] =  "Symbol";
 
 class TS2ASParser
 {
@@ -339,6 +341,7 @@ class TS2ASParser
 					break;
 				}
 				case ts.SyntaxKind.UnionType:
+				case ts.SyntaxKind.IntersectionType:
 				{
 					let unionType = <ts.UnionTypeNode> type;
 					let commonBaseClass = this.getCommonBaseClassFromUnionOrIntersectionType(unionType);
@@ -458,9 +461,9 @@ class TS2ASParser
 		{
 			return as3.BuiltIns[as3.BuiltIns.Function];
 		}
-		if(TS_TO_AS3_TYPE_MAP.hasOwnProperty(typeInSource))
+		if(PRIMITIVE_TO_CLASS_TYPE_MAP.hasOwnProperty(typeInSource))
 		{
-			return TS_TO_AS3_TYPE_MAP[typeInSource];
+			return PRIMITIVE_TO_CLASS_TYPE_MAP[typeInSource];
 		}
 		return typeInSource;
 	}
@@ -1068,7 +1071,6 @@ class TS2ASParser
 				}
 				this._typeParameterMap[typeParameterName] = as3TypeName;
 				typeParameters.push(typeParameterName);
-				
 			}
 		});
 		
@@ -1350,6 +1352,8 @@ class TS2ASParser
 	
 	private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
 	{
+		let typeParameters = this.populateTypeParameters(functionDeclaration);
+		
 		let functionName = this.declarationNameToString(functionDeclaration.name);
 		let packageName = this._moduleStack.join(".");
 		let fullyQualifiedPackageFunctionName = functionName;
@@ -1378,6 +1382,8 @@ class TS2ASParser
 		}
 		this.mergeFunctionParameters(as3PackageFunction.parameters, functionParameters);
 		as3PackageFunction.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+		
+		this.cleanupTypeParameters(typeParameters);
 	}
 	
 	private readPackageVariable(variableDeclaration: ts.VariableDeclaration): as3.PackageVariableDefinition
@@ -1491,7 +1497,13 @@ class TS2ASParser
 				//all the members from the static side to the instance side
 				//and make them static
 				this.copyMembers(variableType, as3PackageLevelDefinition, true);
-				as3PackageLevelDefinition.constructorMethod = variableType.constructorMethod;
+				let constructorMethod = variableType.constructorMethod;
+				if(constructorMethod !== null)
+				{
+					//the constructor name should match
+					constructorMethod.name = as3PackageLevelDefinition.name;
+				}
+				as3PackageLevelDefinition.constructorMethod = constructorMethod;
 				return;
 			}
 			
@@ -1710,6 +1722,8 @@ class TS2ASParser
 	
 	private populateConstructor(constructorDeclaration: ts.ConstructorDeclaration, as3Class: as3.ClassDefinition)
 	{
+		let typeParameters = this.populateTypeParameters(constructorDeclaration);
+		
 		let className = as3Class.name;
 		let as3Constructor = as3Class.constructorMethod;
 		if(!as3Constructor)
@@ -1718,6 +1732,8 @@ class TS2ASParser
 		}
 		let constructorParameters = this.populateParameters(constructorDeclaration);
 		this.mergeFunctionParameters(as3Constructor.parameters, constructorParameters);
+		
+		this.cleanupTypeParameters(typeParameters);
 	}
 	
 	private readMethod(functionDeclaration: ts.FunctionDeclaration, as3Type: as3.TypeDefinition): as3.MethodDefinition
