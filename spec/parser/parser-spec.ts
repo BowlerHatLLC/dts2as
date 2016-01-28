@@ -697,21 +697,25 @@ describe("A decomposed class", () =>
 		let as3MethodType = as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
-	it("may be a variable followed by an interface with same name that has a method", () =>
+
+	describe("that is a variable typed as an interface with same name", () =>
 	{
-		let symbols = parser.parse(["spec/fixtures/variable-interface-decomposed-class-method.d.ts"]).definitions;
-		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableInterfaceDecomposedClass", symbols);
-		expect(as3Class).not.toBeNull();
-		expect(as3Class.constructor).toBe(as3.ClassDefinition);
-		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.methods.length).toBe(1);
-		let method = as3Class.methods[0];
-		expect(method).not.toBeNull();
-		expect(method.name).toBe("method1");
-		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(method.isStatic).toBe(true);
-		let as3MethodType = as3.getDefinitionByName("Number", symbols);
-		expect(method.type).toBe(as3MethodType);
+		it("may define a static method as a member of the interface", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-interface-decomposed-class-method.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableInterfaceDecomposedClass", symbols);
+			expect(as3Class).not.toBeNull();
+			expect(as3Class.constructor).toBe(as3.ClassDefinition);
+			expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			expect(as3Class.methods.length).toBe(1);
+			let method = as3Class.methods[0];
+			expect(method).not.toBeNull();
+			expect(method.name).toBe("method1");
+			expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			expect(method.isStatic).toBe(true);
+			let as3MethodType = as3.getDefinitionByName("Number", symbols);
+			expect(method.type).toBe(as3MethodType);
+		});
 	});
 });
 
