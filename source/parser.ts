@@ -1627,7 +1627,7 @@ class TS2ASParser
 		let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
 		if(!propertyType)
 		{
-			throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " not found for property " + propertyName + ".");
+			throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " not found for property " + propertyName + " on type " + as3Type.getFullyQualifiedName() + ".");
 		}
 		as3Property.type = propertyType;
 		if("superClass" in as3Type)
@@ -1754,7 +1754,7 @@ class TS2ASParser
 		let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
 		if(!methodType)
 		{
-			throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + ".");
+			throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + "() on type " + as3Type.getFullyQualifiedName() + ".");
 		}
 		let methodParameters = this.populateParameters(functionDeclaration);
 		this.mergeFunctionParameters(as3Method.parameters, methodParameters);
