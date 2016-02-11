@@ -223,6 +223,10 @@ class JSExternsEmitter
 	
 	private getNameToEmit(target:as3.PackageLevelDefinition, scope:as3.PackageLevelDefinition): string
 	{
+		if(!target)
+		{
+			return "*";
+		}
 		let fullyQualifiedName = target.getFullyQualifiedName();
 		if(fullyQualifiedName in AS_TO_EXTERNS_TYPE_MAP)
 		{

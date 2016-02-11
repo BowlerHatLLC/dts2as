@@ -310,8 +310,33 @@ class ASEmitter
 		return packageVariableOutput;
 	}
 	
+	emitNamespace(as3Namespace: as3.NamespaceDefinition): string
+	{
+		
+		let namespaceName = as3Namespace.name;
+		let packageName = as3Namespace.packageName;
+		let accessLevel = as3Namespace.accessLevel;
+		let uri = as3Namespace.uri;
+		
+		let namespaceOutput = this.emitStartPackage(packageName);
+		namespaceOutput += accessLevel;
+		namespaceOutput += " namespace ";
+		namespaceOutput += namespaceName;
+		namespaceOutput += " = \"";
+		namespaceOutput += uri;
+		namespaceOutput += "\";";
+		namespaceOutput += NEW_LINE;
+		namespaceOutput += this.emitEndPackage();
+		return namespaceOutput;
+	}
+	
 	private getNameToEmit(target:as3.PackageLevelDefinition, scope:as3.PackageLevelDefinition): string
 	{
+		if(!target)
+		{
+			return "*";
+		}
+		
 		let name = target.name;
 		
 		let typeConflictsWithMember = false;
@@ -513,12 +538,24 @@ class ASEmitter
 		let propertyName = as3Property.name;
 		let propertyType = as3Property.type;
 		let accessLevel = as3Property.accessLevel;
+		let isConstant = as3Property.isConstant;
 		
 		let propertyOutput = accessLevel;
-		propertyOutput += " var ";
+		if(isConstant)
+		{
+			propertyOutput += " const ";
+		}
+		else
+		{
+			propertyOutput += " var ";
+		}
 		propertyOutput += propertyName;
 		propertyOutput += ":";
 		propertyOutput += this.getNameToEmit(propertyType, scope);
+		if(isConstant)
+		{
+			propertyOutput += " = 0";
+		}
 		propertyOutput += ";";
 		propertyOutput += NEW_LINE;
 		

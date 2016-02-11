@@ -144,6 +144,37 @@ export class PropertyDefinition
 	isConstant: boolean;
 }
 
+export class NamespaceDefinition implements PackageLevelDefinition
+{
+	constructor(name: string, packageName: string, accessLevel: string, uri: string, sourceFile: string, require: string, external: boolean)
+	{
+		this.name = name;
+		this.packageName = packageName;
+		this.accessLevel = accessLevel;
+		this.uri = uri;
+		this.sourceFile = sourceFile;	
+		this.require = require;
+		this.external = external;
+	}
+	
+	name: string;
+	packageName: string;
+	accessLevel: string;
+	uri: string;
+	sourceFile: string;
+	require: string;
+	external: boolean;
+	
+	getFullyQualifiedName(): string
+	{
+		if(this.packageName)
+		{
+			return this.packageName + "." + this.name;
+		}
+		return this.name;
+	}
+}
+
 export class PackageVariableDefinition extends PropertyDefinition implements PackageLevelDefinition
 {
 	constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: string, external: boolean)
@@ -260,6 +291,10 @@ export function getDefaultReturnValueForType(type: TypeDefinition): string
 
 export function requiresImport(target:PackageLevelDefinition, scope:PackageLevelDefinition): boolean
 {
+	if(!target)
+	{
+		return false;
+	}
 	let packageName = target.packageName;
 	if(!packageName)
 	{

@@ -229,10 +229,22 @@ class TS2ASParser
 		this._moduleStack = [];
 		if(sourceFile.hasNoDefaultLib)
 		{
-			//void is a special type that is defined by the language, and it
-			//doesn't appear in the standard library. we need to add it
+			let as3SourceFile = "playerglobal.swc";
+			
+			//these are special types that are defined by the language, and
+			//they don't appear in the standard library. we need to add them
 			//manually.
-			this._definitions.push(new as3.InterfaceDefinition("void", null, null, null, null, true));
+			let as3NamespaceDefinition = new as3.NamespaceDefinition("AS3", "", as3.AccessModifiers[as3.AccessModifiers.public], "http://adobe.com/AS3/2006/builtin", as3SourceFile, null, this._currentFileIsExternal);
+			this._definitions.push(as3NamespaceDefinition);
+			let voidDefinition = new as3.InterfaceDefinition("void", null, null, null, null, this._currentFileIsExternal);
+			this._definitions.push(voidDefinition);
+			let intDefinition = new as3.ClassDefinition("int", "", as3.AccessModifiers[as3.AccessModifiers.public], as3SourceFile, null, this._currentFileIsExternal);
+			this._definitions.push(intDefinition);
+			let uintDefinition = new as3.ClassDefinition("uint", "", as3.AccessModifiers[as3.AccessModifiers.public], as3SourceFile, null, this._currentFileIsExternal);
+			this._definitions.push(uintDefinition);
+			let undefinedDefinition = new as3.PackageVariableDefinition("undefined", "", as3.AccessModifiers[as3.AccessModifiers.public], as3SourceFile, null, this._currentFileIsExternal);
+			undefinedDefinition.isConstant = true;
+			this._definitions.push(undefinedDefinition);
 		}
 		this.readPackageLevelDefinitions(sourceFile);
 		if(sourceFile.hasNoDefaultLib)

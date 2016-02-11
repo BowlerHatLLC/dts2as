@@ -36,7 +36,7 @@ let depsSWCOutputPath: string = null;
 let externsOutputPath: string = null;
 let flexHome: string = null;
 let fileNames: string[];
-let debugLevel: TS2ASParser.DebugLevel;
+let debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
 let excludedSymbols: string[];
 let includedSymbols: string[];
 let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
@@ -209,7 +209,7 @@ if(swcOutputPath !== null)
 	}
 	else
 	{
-		if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+		if(debugLevel >= TS2ASParser.DebugLevel.INFO)
 		{
 			console.info("Apache FlexJS: " + flexHome);
 		}
@@ -294,6 +294,11 @@ packageLevelSymbols.forEach((as3Type:as3.PackageLevelDefinition) =>
 			externsOutput += externsEmitter.emitPackageFunction(as3PackageFunction);
 		}
 	}
+	else if("uri" in as3Type)
+	{
+		let as3Namespace = <as3.NamespaceDefinition> as3Type;
+		writeAS3File(as3Namespace, sourcePaths, directoryPrefix, sourceEmitter.emitNamespace(as3Namespace));
+	}
 	else
 	{
 		let as3PackageVariable = <as3.PackageVariableDefinition> as3Type;
@@ -317,7 +322,7 @@ else
 	externsOutputPath = path.join(outputDirectory, "externs.js");
 }
 fs.writeFileSync(externsOutputPath, externsOutput);
-if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+if(debugLevel >= TS2ASParser.DebugLevel.INFO)
 {
 	console.info("Created JavaScript externs file: " + externsOutputPath);
 }
@@ -343,7 +348,7 @@ if(swcOutputPath !== null)
 		}
 		else
 		{
-			if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+			if(debugLevel >= TS2ASParser.DebugLevel.INFO)
 			{
 				console.info("Created SWC file for dependencies: " + depsSWCOutputPath);
 			}
@@ -370,7 +375,7 @@ if(swcOutputPath !== null)
 		console.error(compilerError);
 		console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.");
 	}
-	else if(this.debugLevel >= TS2ASParser.DebugLevel.INFO)
+	else if(debugLevel >= TS2ASParser.DebugLevel.INFO)
 	{
 		console.info("Created SWC file: " + swcOutputPath);
 	}
@@ -412,14 +417,13 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 	}
 	let compcArgs =
 	[
-		"--external-library-path",
-		path.join(flexHome, "js", "libs", "js.swc"),
+		"--load-config=" + path.join(__dirname, "custom-flex-config.xml"),
 		"--output",
 		swcPath
 	];
 	if(depsSWCOutputPath !== null && swcPath !== depsSWCOutputPath)
 	{
-		compcArgs.splice(2, 0, "--external-library-path+=" + depsSWCOutputPath);
+		compcArgs.splice(1, 0, "--external-library-path=" + depsSWCOutputPath);
 	}
 	if(externsPath !== null)
 	{
@@ -436,6 +440,10 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 	//we need to use ./compc to avoid launching a different version of compc
 	//that might be added to the PATH environment variable.
 	let compcCommand = "." + path.sep + path.basename(compcPath);
+	if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+	{
+		console.info("Running: " + compcCommand + " " + compcArgs.join(" "));
+	}
 	let result = child_process.spawnSync(compcCommand, compcArgs,
 	{
 		//node on windows can't seem to run executables with spaces in the path
@@ -484,7 +492,7 @@ function writeAS3File(symbol: as3.PackageLevelDefinition, sourcePaths: string[],
 	let outputDirPath = path.dirname(outputFilePath);
 	mkdirp.sync(outputDirPath);
 	fs.writeFileSync(outputFilePath, code);
-	if(this.debugLevel >= TS2ASParser.DebugLevel.WARN)
+	if(debugLevel >= TS2ASParser.DebugLevel.INFO)
 	{
 		console.info("Created ActionScript file: " + outputFilePath);
 	}
