@@ -1,6 +1,6 @@
-interface InterfaceVariableDecomposedClass {}
+interface InterfaceDuplicateVariableDecomposedClass {}
 
 interface StaticSide {}
 
-declare var InterfaceVariableDecomposedClass: StaticSide;
-declare var InterfaceVariableDecomposedClass: StaticSide;
+declare var InterfaceDuplicateVariableDecomposedClass: StaticSide;
+declare var InterfaceDuplicateVariableDecomposedClass: StaticSide;

@@ -1123,18 +1123,36 @@ describe("A decomposed class", () =>
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
 		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
-	it("may be an interface followed by variable with same name", () =>
+	it("may be an interface followed by variable with same name with a static side interface", () =>
 	{
-		let symbols = parser.parse(["spec/fixtures/interface-variable-decomposed-class.d.ts"]).definitions;
-		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceVariableDecomposedClass", symbols);
+		let symbols = parser.parse(["spec/fixtures/interface-static-side-variable-decomposed-class.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceStaticSideVariableDecomposedClass", symbols);
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 	});
+	it("may be an interface followed by variable with same name with a static side interface that has no constructor", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/interface-static-side-variable-decomposed-class-without-constructor.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceStaticSideVariableDecomposedClassWithoutConstructor", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		
+		let methods = as3Class.methods;
+		expect(methods.length).toBe(1);
+		let method = methods[0];
+		expect(method).not.toBeNull();
+		expect(method.name).toBe("method1");
+		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(method.isStatic).toBe(true);
+		let as3MethodType = as3.getDefinitionByName("String", symbols);
+		expect(method.type).toBe(as3MethodType);
+	});
 	it("may be an interface followed by multiple variables with same name", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/interface-duplicate-variable-decomposed-class.d.ts"]).definitions;
-		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceVariableDecomposedClass", symbols);
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceDuplicateVariableDecomposedClass", symbols);
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
