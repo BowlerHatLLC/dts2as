@@ -1302,6 +1302,7 @@ class TS2ASParser
 		
 		let typeParameters = this.populateTypeParameters(interfaceDeclaration);
 		
+		//it could be a StaticSideClassDefinition instead
 		if(existingInterface instanceof as3.InterfaceDefinition)
 		{
 			if(interfaceDeclaration.heritageClauses)
@@ -1513,11 +1514,15 @@ class TS2ASParser
 			}
 			if(variableType instanceof StaticSideClassDefinition)
 			{
+				//an interface had a construct signature, so it was converted
+				//to a StaticSideClassDefinition
+				
 				//the static side of this decomposed class is a different
 				//interface than the instance side. we need to copy over
 				//all the members from the static side to the instance side
 				//and make them static
 				this.copyMembers(variableType, as3PackageLevelDefinition, true);
+				
 				let constructorMethod = variableType.constructorMethod;
 				if(constructorMethod !== null)
 				{
@@ -1525,6 +1530,19 @@ class TS2ASParser
 					constructorMethod.name = as3PackageLevelDefinition.name;
 				}
 				as3PackageLevelDefinition.constructorMethod = constructorMethod;
+				return;
+			}
+			if(variableType instanceof as3.InterfaceDefinition)
+			{
+				//the interface doesn't have a construct signature, so we
+				//couldn't tell that it was the static side of a class until
+				//now
+				
+				//the static side of this decomposed class is a different
+				//interface than the instance side. we need to copy over
+				//all the members from the static side to the instance side
+				//and make them static
+				this.copyMembers(variableType, as3PackageLevelDefinition, true);
 				return;
 			}
 			
