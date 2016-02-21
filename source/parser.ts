@@ -782,9 +782,9 @@ class TS2ASParser
 			{
 				accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 			}
-			let newProperty = new ParserPropertyDefinition(property.name, accessLevel, property.type, property.isStatic, property.isConstant);
-			newProperty.forceStatic = makeStatic;
-			toType.properties.push(newProperty);
+			property.accessLevel = accessLevel;
+			(<ParserPropertyDefinition> property).forceStatic = makeStatic;
+			toType.properties.push(property);
 		}
 		for(let method of fromType.methods)
 		{
@@ -793,9 +793,9 @@ class TS2ASParser
 			{
 				accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 			}
-			let newMethod = new ParserMethodDefinition(method.name, method.type, method.parameters.slice(), accessLevel, method.isStatic);
-			newMethod.forceStatic = makeStatic;
-			toType.methods.push(newMethod);
+			method.accessLevel = accessLevel;
+			(<ParserMethodDefinition> method).forceStatic = makeStatic;
+			toType.methods.push(method);
 		}
 	}
 	
@@ -1035,7 +1035,6 @@ class TS2ASParser
 			interfaceDefinition.sourceFile, interfaceDefinition.require,
 			this._currentFileIsExternal);
 		this.copyMembers(interfaceDefinition, as3Class, false);
-		
 		let index = this._definitions.indexOf(interfaceDefinition);
 		if(index >= 0)
 		{
@@ -1469,8 +1468,23 @@ class TS2ASParser
 		if(as3PackageLevelDefinition instanceof as3.PackageVariableDefinition)
 		{
 			let as3PackageVariable = <as3.PackageVariableDefinition> as3PackageLevelDefinition;
-			as3PackageVariable.type = variableType;
-			return;
+			if(variableType instanceof StaticSideClassDefinition)
+			{
+				//this is a decomposed class that only consists of a variable
+				//and a static side interface. we didn't have a chance to
+				//catch this special case until now
+				as3PackageLevelDefinition = new as3.ClassDefinition(as3PackageVariable.name,
+					as3PackageVariable.packageName, as3PackageVariable.accessLevel,
+					as3PackageVariable.sourceFile, as3PackageVariable.require,
+					as3PackageVariable.external);
+				let index = this._definitions.indexOf(as3PackageVariable);
+				this._definitions[index] = as3PackageLevelDefinition;
+			}
+			else
+			{
+				as3PackageVariable.type = variableType;
+				return;
+			}
 		}
 		if(as3PackageLevelDefinition instanceof StaticSideClassDefinition)
 		{

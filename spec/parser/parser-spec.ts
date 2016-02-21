@@ -1130,6 +1130,20 @@ describe("A decomposed class", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		
+		let staticSide = as3.getDefinitionByName("StaticSide", symbols);
+		expect(staticSide).toBeNull();
+	});
+	it("may be a variable with a static side interface", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/variable-no-interface-decomposed-class.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("VariableNoInterfaceDecomposedClass", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		
+		let staticSide = as3.getDefinitionByName("StaticSide", symbols);
+		expect(staticSide).toBeNull();
 	});
 	it("may be an interface followed by variable with same name with a static side interface that has no constructor", () =>
 	{
@@ -1148,6 +1162,10 @@ describe("A decomposed class", () =>
 		expect(method.isStatic).toBe(true);
 		let as3MethodType = as3.getDefinitionByName("String", symbols);
 		expect(method.type).toBe(as3MethodType);
+		
+		let staticSide = as3.getDefinitionByName("StaticSide", symbols);
+		expect(staticSide).toBeNull();
+		
 	});
 	it("may be an interface followed by multiple variables with same name", () =>
 	{
