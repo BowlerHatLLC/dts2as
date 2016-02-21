@@ -1569,7 +1569,11 @@ class TS2ASParser
 			{
 				let propertyDeclaration = <ts.PropertyDeclaration> member;
 				let as3Property = this.readProperty(propertyDeclaration);
-				as3Type.properties.push(as3Property);
+				if(as3Property !== null)
+				{
+					//if the property name starts with [, readProperty() will return null
+					as3Type.properties.push(as3Property);
+				}
 				break;
 			}
 			case ts.SyntaxKind.ConstructSignature:
@@ -1585,7 +1589,11 @@ class TS2ASParser
 			{
 				let functionDeclaration = <ts.FunctionDeclaration> member;
 				let as3Method = this.readMethod(functionDeclaration, as3Type);
-				this.addMethodToAS3Type(as3Type, as3Method);
+				if(as3Method !== null)
+				{
+					//if the method name starts with [, readMethod() will return null
+					this.addMethodToAS3Type(as3Type, as3Method);
+				}
 				break;
 			}
 			case ts.SyntaxKind.CallSignature:
@@ -1652,6 +1660,11 @@ class TS2ASParser
 	private readProperty(propertyDeclaration: ts.PropertyDeclaration): as3.PropertyDefinition
 	{
 		let propertyName = this.declarationNameToString(propertyDeclaration.name);
+		if(propertyName.indexOf("[") === 0)
+		{
+			//this property can be ignored
+			return null;
+		}
 		let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
 		return new ParserPropertyDefinition(propertyName, null, null, isStatic);
 	}
@@ -1659,6 +1672,11 @@ class TS2ASParser
 	private populateProperty(propertyDeclaration: ts.PropertyDeclaration, as3Type: as3.TypeDefinition)
 	{
 		let propertyName = this.declarationNameToString(propertyDeclaration.name);
+		if(propertyName.indexOf("[") === 0)
+		{
+			//this property can be ignored
+			return;
+		}
 		let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
 		let as3Property: as3.PropertyDefinition = null;
 		as3Type.properties.some((otherProperty) =>
@@ -1778,6 +1796,11 @@ class TS2ASParser
 	private readMethod(functionDeclaration: ts.FunctionDeclaration, as3Type: as3.TypeDefinition): as3.MethodDefinition
 	{
 		let methodName = this.declarationNameToString(functionDeclaration.name);
+		if(methodName.indexOf("[") === 0)
+		{
+			//this method can be ignored
+			return null;
+		}
 		let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
 		let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
 		return new ParserMethodDefinition(methodName, null, null, accessLevel, isStatic);
@@ -1788,6 +1811,11 @@ class TS2ASParser
 		let typeParameters = this.populateTypeParameters(functionDeclaration);
 		
 		let methodName = this.declarationNameToString(functionDeclaration.name);
+		if(methodName.indexOf("[") === 0)
+		{
+			//this method can be ignored
+			return;
+		}
 		let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
 		let as3Method: as3.MethodDefinition = null;
 		as3Type.methods.some((otherMethod) =>
