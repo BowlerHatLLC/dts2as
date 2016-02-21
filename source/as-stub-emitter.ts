@@ -460,7 +460,8 @@ class ASEmitter
 		}
 		else
 		{
-			if(methodType.getFullyQualifiedName() !== as3.BuiltIns[as3.BuiltIns.void])
+			if(methodType !== null &&
+				methodType.getFullyQualifiedName() !== as3.BuiltIns[as3.BuiltIns.void])
 			{
 				methodOutput += " { return ";
 				methodOutput += as3.getDefaultReturnValueForType(methodType);
