@@ -145,6 +145,7 @@ class TS2ASParser
 			this.promoteInterfaces();
 			this.cleanupStaticSideDefinitions();
 			this.cleanupMembersWithForceStaticFlag();
+			this.makeInternalReturnTypesPublic();
 		});
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
@@ -1971,6 +1972,32 @@ class TS2ASParser
 		});
 	}
 	
+	private makeInternalReturnTypesPublic()
+	{
+		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
+		{
+			if(definition instanceof as3.PackageFunctionDefinition)
+			{
+				let functionType = definition.type;
+				if(functionType.packageName !== definition.packageName)
+				{
+					functionType.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+				}
+			}
+			else if(definition instanceof as3.InterfaceDefinition ||
+				definition instanceof as3.ClassDefinition)
+			{
+				definition.methods.forEach((method: as3.FunctionDefinition) =>
+				{
+					let methodType = method.type;
+					if(methodType.packageName !== definition.packageName)
+					{
+						methodType.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
+					}
+				});
+			}
+		});
+	}
 }
 
 module TS2ASParser
