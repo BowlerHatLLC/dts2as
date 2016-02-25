@@ -337,20 +337,20 @@ class ASEmitter
 			return "*";
 		}
 		
-		let name = target.name;
+		let targetName = target.name;
 		
 		let typeConflictsWithMember = false;
 		if(scope instanceof as3.InterfaceDefinition || scope instanceof as3.ClassDefinition)
 		{
 			typeConflictsWithMember = scope.properties.some((prop) => 
 			{
-				return prop.name === name;
+				return prop.name === targetName;
 			});
 			if(typeConflictsWithMember === false)
 			{
 				typeConflictsWithMember = scope.methods.some((method) =>
 				{
-					return method.name === name;
+					return method.name === targetName;
 				});
 			}
 		}
@@ -359,7 +359,7 @@ class ASEmitter
 			let fullyQualifiedName = target.getFullyQualifiedName();
 			//the AS3 compiler doesn't like giving a member a type that matches
 			//the name of any of the members.
-			if(name === fullyQualifiedName)
+			if(targetName === fullyQualifiedName)
 			{
 				//if the type is in the top level package, we need to fall back
 				//to Object because there's no fully-qualified name to reference
@@ -368,23 +368,28 @@ class ASEmitter
 			return fullyQualifiedName;
 		}
 		
-		let packageName = target.packageName;
-		if(!packageName)
+		let targetPackageName = target.packageName;
+		if(!targetPackageName)
 		{
-			return name;
+			return targetName;
 		}
-		//if there's a top level definition or another symbol in the same
-		//package as the scope with the same name, we need to be specific.
-		let nameInPackage = name;
+		//if there's a top level definition with the same name, another symbol
+		//in the same package as the scope with the same name, or if the scope
+		//has the same name, we need to be specific.
+		let nameInPackage = targetName;
 		let scopePackageName = scope.packageName;
+		if(targetName === scope.name && targetPackageName !== scopePackageName)
+		{
+			return target.getFullyQualifiedName();
+		}
 		if(nameInPackage.length > 0)
 		{
 			nameInPackage = scopePackageName + nameInPackage;
 		}
-		if(as3.getDefinitionByName(name, this._types) === null ||
-			(packageName !== scopePackageName && as3.getDefinitionByName(nameInPackage, this._types) === null))
+		if(as3.getDefinitionByName(targetName, this._types) === null ||
+			(targetPackageName !== scopePackageName && as3.getDefinitionByName(nameInPackage, this._types) === null))
 		{
-			return name;
+			return targetName;
 		}
 		return target.getFullyQualifiedName();
 	}
