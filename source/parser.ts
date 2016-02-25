@@ -1558,6 +1558,14 @@ class TS2ASParser
 				//all the members from the static side to the instance side
 				//and make them static
 				this.copyMembers(variableType, as3PackageLevelDefinition, true);
+				
+				//we need this interface to be cleaned up at the end, so we
+				//convert it to a StaticSideClassDefinition
+				let staticSide = new StaticSideClassDefinition(variableType.name, variableType.packageName, variableType.accessLevel, variableType.sourceFile, variableType.require);
+				staticSide.methods = variableType.methods;
+				staticSide.properties = variableType.properties;
+				let index = this._definitions.indexOf(variableType);
+				this._definitions[index] = staticSide;
 				return;
 			}
 			

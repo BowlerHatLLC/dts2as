@@ -21,6 +21,42 @@ limitations under the License.
 import as3 = require("../../source/as3");
 import TS2ASParser = require("../../source/parser");
 import ts = require("typescript");
+import path = require("path");
+
+describe("The parser", () =>
+{
+	let parser: TS2ASParser;
+	it("must parse the ES5 standard library", () =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		let es5Path = require.resolve("typescript");
+		es5Path = path.dirname(es5Path);
+		es5Path = path.resolve(es5Path, "lib.d.ts");
+		let result = parser.parse([es5Path]);
+		expect(result).not.toBeNull();
+		expect(result).not.toBeUndefined();
+		let symbols = result.definitions;
+		expect(symbols).not.toBeNull();
+		expect(symbols).not.toBeUndefined();
+		expect(symbols.length).toBeGreaterThan(0);
+	});
+	it("must parse the ES6 standard library", () =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES6);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		let es6Path = require.resolve("typescript");
+		es6Path = path.dirname(es6Path);
+		es6Path = path.resolve(es6Path, "lib.es6.d.ts");
+		let result = parser.parse([es6Path]);
+		expect(result).not.toBeNull();
+		expect(result).not.toBeUndefined();
+		let symbols = result.definitions;
+		expect(symbols).not.toBeNull();
+		expect(symbols).not.toBeUndefined();
+		expect(symbols.length).toBeGreaterThan(0);
+	});
+});
 
 describe("A TypeScript definition", () =>
 {
