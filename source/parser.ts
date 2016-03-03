@@ -370,7 +370,7 @@ class TS2ASParser
 					fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Object];
 					break;
 				}
-				case ts.SyntaxKind.StringLiteral:
+				case ts.SyntaxKind.StringLiteralType:
 				{
 					fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
 					break;
