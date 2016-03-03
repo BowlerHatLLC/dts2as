@@ -1014,7 +1014,8 @@ class TS2ASParser
 	
 	private readMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode)
 	{
-		declaration.members.forEach((member: ts.Declaration) =>
+		let members: Array<ts.Declaration> = declaration.members;
+		members.forEach((member: ts.Declaration) =>
 		{
 			this.readMember(member, typeDefinition);
 		});
@@ -1022,7 +1023,8 @@ class TS2ASParser
 	
 	private populateMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode)
 	{
-		declaration.members.forEach((member: ts.Declaration) =>
+		let members: Array<ts.Declaration> = declaration.members;
+		members.forEach((member: ts.Declaration) =>
 		{
 			this.populateMember(member, typeDefinition);
 		});
@@ -1741,7 +1743,8 @@ class TS2ASParser
 			let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
 			if(!parameterType)
 			{
-				throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(value.type) + " not found for parameter " + parameterName + ".");
+				let functionName = this.declarationNameToString(functionLikeDeclaration.name);
+				throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(value.type) + " not found for parameter " + parameterName + " in function " + functionName + ".");
 			}
 			if(parameterType instanceof as3.InterfaceDefinition)
 			{
