@@ -1280,16 +1280,33 @@ class TS2ASParser
 			}
 			return null;
 		}
+		let existingDefinition = as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
 		if(hasConstructSignature)
 		{
 			//if the interface defines a constructor, it is the static side of a
 			//decomposed class
+			if(existingDefinition instanceof StaticSideClassDefinition)
+			{
+				//the static-side class already exists, so we need to add
+				//the new members
+				this.readMembers(existingDefinition, interfaceDeclaration);
+				return null;
+			}
 			let staticSideClass = new StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire);
 			this.readMembers(staticSideClass, interfaceDeclaration);
+			if(existingDefinition instanceof as3.InterfaceDefinition)
+			{
+				//an interface already exists, and we need to turn it into a
+				//static side class
+				this.copyMembers(existingDefinition, staticSideClass, true);
+				
+				let index = this._definitions.indexOf(existingDefinition);
+				this._definitions[index] = staticSideClass;
+				return null;
+			}
 			return staticSideClass;
 		}
 		
-		let existingDefinition = as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
 		if(existingDefinition instanceof as3.InterfaceDefinition)
 		{
 			//this interface already exists!
