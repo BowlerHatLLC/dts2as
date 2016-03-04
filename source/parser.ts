@@ -142,12 +142,16 @@ class TS2ASParser
 		{
 			this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
 			this.populateInheritance(sourceFile);
-			this.populatePackageLevelDefinitions(sourceFile);
-			this.promoteInterfaces();
-			this.cleanupStaticSideDefinitions();
-			this.cleanupMembersWithForceStaticFlag();
-			this.makeInternalReturnTypesPublic();
 		});
+		this._sourceFiles.forEach((sourceFile, index) =>
+		{
+			this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
+			this.populatePackageLevelDefinitions(sourceFile);
+		});
+		this.promoteInterfaces();
+		this.cleanupStaticSideDefinitions();
+		this.cleanupMembersWithForceStaticFlag();
+		this.makeInternalReturnTypesPublic();
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
 	}
