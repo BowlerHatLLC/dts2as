@@ -776,6 +776,16 @@ class TS2ASParser
 				this._definitions.push(as3Class);
 				break;
 			}
+			case ts.SyntaxKind.EnumDeclaration:
+			{
+				let as3Class = this.readEnum(<ts.EnumDeclaration> node);
+				if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !as3Class.external)
+				{
+					console.info("Enum: " + as3Class.getFullyQualifiedName());
+				}
+				this._definitions.push(as3Class);
+				break;
+			}
 			default:
 			{
 				if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
@@ -989,6 +999,7 @@ class TS2ASParser
 			case ts.SyntaxKind.VariableStatement:
 			case ts.SyntaxKind.VariableDeclarationList:
 			case ts.SyntaxKind.FunctionDeclaration:
+			case ts.SyntaxKind.EnumDeclaration:
 			{
 				//no inheritance to populate for these, so we wait until the
 				//next pass
@@ -1086,6 +1097,11 @@ class TS2ASParser
 				this.populateClassMembers(<ts.ClassDeclaration> node);
 				break;
 			}
+			case ts.SyntaxKind.EnumDeclaration:
+			{
+				this.populateEnumMembers(<ts.EnumDeclaration> node);
+				break;
+			}
 			default:
 			{
 				if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
@@ -1098,7 +1114,7 @@ class TS2ASParser
 		}
 	}
 	
-	private readMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode)
+	private readMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode|ts.EnumDeclaration)
 	{
 		let members: Array<ts.Declaration> = declaration.members;
 		members.forEach((member: ts.Declaration) =>
@@ -1107,7 +1123,7 @@ class TS2ASParser
 		});
 	}
 	
-	private populateMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode)
+	private populateMembers(typeDefinition: as3.TypeDefinition, declaration: ts.ClassDeclaration|ts.InterfaceDeclaration|ts.TypeLiteralNode|ts.EnumDeclaration)
 	{
 		let members: Array<ts.Declaration> = declaration.members;
 		members.forEach((member: ts.Declaration) =>
@@ -1502,6 +1518,44 @@ class TS2ASParser
 		this.cleanupTypeParameters(typeParameters);
 	}
 	
+	private readEnum(enumDeclaration: ts.EnumDeclaration): as3.ClassDefinition
+	{
+		let enumName = this.declarationNameToString(enumDeclaration.name);
+		let packageName = this._moduleStack.join(".");
+		let fullyQualifiedEnumName = enumName;
+		if(packageName.length > 0)
+		{
+			fullyQualifiedEnumName = packageName + "." + enumName;
+		}
+		
+		let existingDefinition = as3.getDefinitionByName(fullyQualifiedEnumName, this._definitions);
+		if(existingDefinition !== null)
+		{
+			throw new Error("Definition with name " + fullyQualifiedEnumName + " already exists. Cannot create class for enum.");
+		}
+		let as3Class = new as3.ClassDefinition(enumName, packageName, this.getAccessLevel(enumDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		this.readMembers(as3Class, enumDeclaration);
+		return as3Class;
+	}
+	
+	private populateEnumMembers(enumDeclaration: ts.EnumDeclaration)
+	{
+		let enumName = this.declarationNameToString(enumDeclaration.name);
+		let packageName = this._moduleStack.join(".");
+		let fullyQualifiedEnumName = enumName;
+		if(packageName.length > 0)
+		{
+			fullyQualifiedEnumName = packageName + "." + enumName;
+		}
+		
+		let existingEnum = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedEnumName, this._definitions);
+		if(!existingEnum)
+		{
+			throw new Error("Enum not found when trying to populate members: " + fullyQualifiedEnumName);
+		}
+		this.populateMembers(existingEnum, enumDeclaration);
+	}
+	
 	private readPackageFunction(functionDeclaration: ts.FunctionDeclaration): as3.PackageFunctionDefinition
 	{
 		let functionName = this.declarationNameToString(functionDeclaration.name);
@@ -1773,6 +1827,16 @@ class TS2ASParser
 				}
 				break;
 			}
+			case ts.SyntaxKind.EnumMember:
+			{
+				let enumMember = <ts.EnumMember> member;
+				let as3Property = this.readEnumMember(enumMember);
+				if(as3Property !== null)
+				{
+					as3Type.properties.push(as3Property);
+				}
+				break;
+			}
 			case ts.SyntaxKind.CallSignature:
 			case ts.SyntaxKind.IndexSignature:
 			{
@@ -1814,6 +1878,12 @@ class TS2ASParser
 			{
 				let functionDeclaration = <ts.FunctionDeclaration> member;
 				this.populateMethod(functionDeclaration, as3Type);
+				break;
+			}
+			case ts.SyntaxKind.EnumMember:
+			{
+				let enumMember = <ts.EnumMember> member;
+				this.populateEnumMember(enumMember, as3Type);
 				break;
 			}
 			case ts.SyntaxKind.CallSignature:
@@ -1882,6 +1952,34 @@ class TS2ASParser
 			//use public for classes
 			as3Property.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 		}
+	}
+	
+	private readEnumMember(enumMember: ts.EnumMember): as3.PropertyDefinition
+	{
+		let propertyName = this.declarationNameToString(enumMember.name);
+		return new ParserPropertyDefinition(propertyName, as3.AccessModifiers[as3.AccessModifiers.public], null, true, true);
+	}
+	
+	private populateEnumMember(enumMember: ts.EnumMember, as3Type: as3.TypeDefinition)
+	{
+		let propertyName = this.declarationNameToString(enumMember.name);
+		let as3Property: as3.PropertyDefinition = null;
+		as3Type.properties.some((otherProperty) =>
+		{
+			if(otherProperty.name === propertyName &&
+				otherProperty.isStatic === true)
+			{
+				as3Property = otherProperty;
+				return true;
+			}
+			return false; 
+		});
+		if(!as3Property)
+		{
+			throw new Error("Property " + propertyName + " not found on enum type " + as3Type.getFullyQualifiedName() + ".");
+		}
+		let propertyType = <as3.TypeDefinition> as3.getDefinitionByName("int", this._definitions);
+		as3Property.type = propertyType;
 	}
 	
 	private populateParameters(functionLikeDeclaration: ts.FunctionLikeDeclaration): as3.ParameterDefinition[]

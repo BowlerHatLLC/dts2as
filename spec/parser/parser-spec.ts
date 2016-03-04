@@ -203,6 +203,24 @@ describe("A TypeScript definition", () =>
 		expect(as3InnerClass.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(as3InnerClass.require).toBeNull();
 	});
+	it("may declare an enum", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/declare-enum.d.ts"]).definitions;
+		let as3Class = as3.getDefinitionByName("DeclareEnum", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(as3Class.require).toBeNull();
+	});
+	it("may export an enum", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/export-enum.d.ts"]).definitions;
+		let as3Class = as3.getDefinitionByName("ExportEnum", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(as3Class.require).toBeNull();
+	});
 });
 
 describe("A class", () =>
@@ -314,6 +332,50 @@ describe("A class", () =>
 		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(method.isStatic).toBe(true);
 		expect(method.type).toBe(as3MethodType);
+	});
+});
+
+describe("An enum", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+	});
+	it("may have a property", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/enum-member.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("EnumWithMember", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.properties.length).toBe(3);
+		
+		let property = as3Class.properties[0];
+		expect(property).not.toBeNull();
+		expect(property.name).toBe("ONE");
+		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(property.isStatic).toBe(true);
+		expect(property.isConstant).toBe(true);
+		let as3PropertyType = as3.getDefinitionByName("int", symbols);
+		expect(property.type).toBe(as3PropertyType);
+		
+		property = as3Class.properties[1];
+		expect(property).not.toBeNull();
+		expect(property.name).toBe("TWO");
+		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(property.isStatic).toBe(true);
+		expect(property.isConstant).toBe(true);
+		as3PropertyType = as3.getDefinitionByName("int", symbols);
+		expect(property.type).toBe(as3PropertyType);
+		
+		property = as3Class.properties[2];
+		expect(property).not.toBeNull();
+		expect(property.name).toBe("THREE");
+		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(property.isStatic).toBe(true);
+		expect(property.isConstant).toBe(true);
+		as3PropertyType = as3.getDefinitionByName("int", symbols);
+		expect(property.type).toBe(as3PropertyType);
 	});
 });
 
