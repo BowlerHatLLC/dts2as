@@ -56,6 +56,21 @@ describe("The parser", () =>
 		expect(symbols).not.toBeUndefined();
 		expect(symbols.length).toBeGreaterThan(0);
 	});
+	it("must parse the ES7 standard library", () =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES6);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		let es6Path = require.resolve("typescript");
+		es6Path = path.dirname(es6Path);
+		es6Path = path.resolve(es6Path, "lib.es7.d.ts");
+		let result = parser.parse([es6Path]);
+		expect(result).not.toBeNull();
+		expect(result).not.toBeUndefined();
+		let symbols = result.definitions;
+		expect(symbols).not.toBeNull();
+		expect(symbols).not.toBeUndefined();
+		expect(symbols.length).toBeGreaterThan(0);
+	});
 });
 
 describe("A TypeScript definition", () =>
@@ -1158,6 +1173,53 @@ describe("A decomposed class", () =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
 		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+	});
+	it("may have multiple static side interfaces with constructors and the same name", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/duplicate-static-side.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("DuplicateStaticSide", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		
+		let methods = as3Class.methods;
+		expect(methods.length).toBe(2);
+		let foundMethod1 = false;
+		let foundMethod2 = false;
+		methods.forEach((method) =>
+		{
+			expect(method).not.toBeNull();
+			switch(method.name)
+			{
+				case "method1":
+				{
+					foundMethod1 = true;
+					expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+					expect(method.isStatic).toBe(true);
+					let as3MethodType = as3.getDefinitionByName("String", symbols);
+					expect(method.type).toBe(as3MethodType);
+					break;
+				}
+				case "method2":
+				{
+					foundMethod2 = true;
+					expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+					expect(method.isStatic).toBe(true);
+					let as3MethodType = as3.getDefinitionByName("Number", symbols);
+					expect(method.type).toBe(as3MethodType);
+					break;
+				}
+				default:
+				{
+					fail("unknown method with name " + method.name);
+				}
+			}
+		});
+		expect(foundMethod1).toBe(true);
+		expect(foundMethod2).toBe(true);
+		
+		let staticSide = as3.getDefinitionByName("StaticSide", symbols);
+		expect(staticSide).toBeNull();
 	});
 	it("may be an interface followed by variable with same name with a static side interface", () =>
 	{

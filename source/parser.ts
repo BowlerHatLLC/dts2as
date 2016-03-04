@@ -191,6 +191,7 @@ class TS2ASParser
 		this._definitions = [];
 		this._currentFileIsExternal = true;
 		this.readSourceFile(sourceFile);
+		this.populateInheritance(sourceFile);
 		this.populatePackageLevelDefinitions(sourceFile);
 		this.promoteInterfaces();
 	}
@@ -580,20 +581,26 @@ class TS2ASParser
 		as3Type.methods.push(methodToAdd);
 	}
 	
-	private handleModuleBlock(node: ts.Node, callback: (node: ts.Node) => void)
+	private handleModuleBlock(node: ts.Node, handleImportAndExport: boolean, callback: (node: ts.Node) => void)
 	{	
 		ts.forEachChild(node, (node) =>
 		{
 			if(node.kind === ts.SyntaxKind.ImportDeclaration)
 			{
-				let importDeclaration = <ts.ImportDeclaration> node;
-				this.populateImport(importDeclaration);
+				if(handleImportAndExport)
+				{
+					let importDeclaration = <ts.ImportDeclaration> node;
+					this.populateImport(importDeclaration);
+				}
 				return;
 			}
 			if(node.kind === ts.SyntaxKind.ExportAssignment)
 			{
-				let exportAssignment = <ts.ExportAssignment> node;
-				this.assignExport(exportAssignment);
+				if(handleImportAndExport)
+				{
+					let exportAssignment = <ts.ExportAssignment> node;
+					this.assignExport(exportAssignment);
+				}
 				return;
 			}
 			callback.call(this, node);
@@ -660,7 +667,7 @@ class TS2ASParser
 			}
 			case ts.SyntaxKind.ModuleBlock:
 			{
-				this.handleModuleBlock(node, this.readPackageLevelDefinitions);
+				this.handleModuleBlock(node, false, this.readPackageLevelDefinitions);
 				break;
 			}
 			case ts.SyntaxKind.ModuleDeclaration:
@@ -783,8 +790,34 @@ class TS2ASParser
 	
 	private copyMembers(fromType: as3.TypeDefinition, toType: as3.TypeDefinition, makeStatic: boolean)
 	{
-		for(let property of fromType.properties)
+		fromType.properties.forEach((property) =>
 		{
+			let propertyName = property.name;
+			let isStatic = property.isStatic;
+			let existingProperty: as3.PropertyDefinition = null;
+			toType.properties.some((otherProperty) =>
+			{
+				if(otherProperty.name === propertyName &&
+					otherProperty.isStatic === isStatic)
+				{
+					existingProperty = otherProperty;
+					return true;
+				}
+				return false; 
+			});
+			if(existingProperty !== null)
+			{
+				let existingType = existingProperty.type;
+				if(existingType !== null)
+				{
+					existingProperty.type = this.mergeTypes(existingProperty.type, property.type);
+				}
+				else
+				{
+					existingProperty.type = property.type;
+				}
+				return;
+			}
 			let accessLevel = property.accessLevel;
 			if(makeStatic)
 			{
@@ -793,9 +826,36 @@ class TS2ASParser
 			property.accessLevel = accessLevel;
 			(<ParserPropertyDefinition> property).forceStatic = makeStatic;
 			toType.properties.push(property);
-		}
-		for(let method of fromType.methods)
+		});
+		fromType.methods.forEach((method) =>
 		{
+			let methodName = method.name;
+			let isStatic = method.isStatic;
+			let existingMethod: as3.FunctionDefinition = null;
+			toType.methods.some((otherMethod) =>
+			{
+				if(otherMethod.name === methodName &&
+					otherMethod.isStatic === isStatic)
+				{
+					existingMethod = otherMethod;
+					return true;
+				}
+				return false; 
+			});
+			if(existingMethod !== null)
+			{
+				this.mergeFunctionParameters(existingMethod.parameters, method.parameters);
+				let existingType = existingMethod.type;
+				if(existingType !== null)
+				{
+					existingMethod.type = this.mergeTypes(existingMethod.type, method.type);
+				}
+				else
+				{
+					existingMethod.type = method.type;
+				}
+				return;
+			}
 			let accessLevel = method.accessLevel;
 			if(makeStatic)
 			{
@@ -804,7 +864,7 @@ class TS2ASParser
 			method.accessLevel = accessLevel;
 			(<ParserMethodDefinition> method).forceStatic = makeStatic;
 			toType.methods.push(method);
-		}
+		});
 	}
 	
 	private extendsClass(interfaceDeclaration: ts.InterfaceDeclaration)
@@ -908,7 +968,7 @@ class TS2ASParser
 			}
 			case ts.SyntaxKind.ModuleBlock:
 			{
-				this.handleModuleBlock(node, this.populateInheritance);
+				this.handleModuleBlock(node, false, this.populateInheritance);
 				break;
 			}
 			case ts.SyntaxKind.ModuleDeclaration:
@@ -930,6 +990,8 @@ class TS2ASParser
 			case ts.SyntaxKind.VariableDeclarationList:
 			case ts.SyntaxKind.FunctionDeclaration:
 			{
+				//no inheritance to populate for these, so we wait until the
+				//next pass
 				break;
 			}
 			case ts.SyntaxKind.TypeAliasDeclaration:
@@ -981,7 +1043,7 @@ class TS2ASParser
 			}
 			case ts.SyntaxKind.ModuleBlock:
 			{
-				this.handleModuleBlock(node, this.populatePackageLevelDefinitions);
+				this.handleModuleBlock(node, true, this.populatePackageLevelDefinitions);
 				break;
 			}
 			case ts.SyntaxKind.ModuleDeclaration:
@@ -1564,12 +1626,13 @@ class TS2ASParser
 				//this is a decomposed class that only consists of a variable
 				//and a static side interface. we didn't have a chance to
 				//catch this special case until now
-				as3PackageLevelDefinition = new as3.ClassDefinition(as3PackageVariable.name,
+				let classDefinition = new as3.ClassDefinition(as3PackageVariable.name,
 					as3PackageVariable.packageName, as3PackageVariable.accessLevel,
 					as3PackageVariable.sourceFile, as3PackageVariable.require,
 					as3PackageVariable.external);
 				let index = this._definitions.indexOf(as3PackageVariable);
-				this._definitions[index] = as3PackageLevelDefinition;
+				this._definitions[index] = classDefinition;
+				as3PackageLevelDefinition = classDefinition;
 			}
 			else
 			{
