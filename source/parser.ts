@@ -141,6 +141,7 @@ class TS2ASParser
 		this._sourceFiles.forEach((sourceFile, index) =>
 		{
 			this._currentFileIsExternal = index !== (this._sourceFiles.length - 1);
+			this.populateInheritance(sourceFile);
 			this.populatePackageLevelDefinitions(sourceFile);
 			this.promoteInterfaces();
 			this.cleanupStaticSideDefinitions();
@@ -358,7 +359,7 @@ class TS2ASParser
 				{
 					let unionType = <ts.UnionTypeNode> type;
 					let commonBaseClass = this.getCommonBaseClassFromUnionOrIntersectionType(unionType);
-					if(commonBaseClass)
+					if(commonBaseClass !== null)
 					{
 						return commonBaseClass;
 					}
@@ -401,7 +402,7 @@ class TS2ASParser
 		{
 			fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.void];
 		}
-		if(fullyQualifiedName)
+		if(fullyQualifiedName !== null)
 		{
 			return <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedName, this._definitions);
 		}
@@ -437,7 +438,7 @@ class TS2ASParser
 	private getAS3FullyQualifiedNameFromTSTypeNode(type: ts.TypeNode): string
 	{
 		let result = this.getAS3TypeFromTypeNodeKind(type);
-		if(result)
+		if(result !== null)
 		{
 			return result.getFullyQualifiedName();
 		}
@@ -579,6 +580,61 @@ class TS2ASParser
 		as3Type.methods.push(methodToAdd);
 	}
 	
+	private handleModuleBlock(node: ts.Node, callback: (node: ts.Node) => void)
+	{	
+		ts.forEachChild(node, (node) =>
+		{
+			if(node.kind === ts.SyntaxKind.ImportDeclaration)
+			{
+				let importDeclaration = <ts.ImportDeclaration> node;
+				this.populateImport(importDeclaration);
+				return;
+			}
+			if(node.kind === ts.SyntaxKind.ExportAssignment)
+			{
+				let exportAssignment = <ts.ExportAssignment> node;
+				this.assignExport(exportAssignment);
+				return;
+			}
+			callback.call(this, node);
+		});
+		//clear imported modules after we're done with this module
+		this._importModuleMap = {};
+	}
+	
+	private handleModuleDeclaration(node: ts.Node, callback: (node: ts.Node) => void)
+	{	
+		let moduleDeclaration = <ts.ModuleDeclaration> node;
+		let moduleName = moduleDeclaration.name;
+		this._moduleStack.push(this.declarationNameToString(moduleName));
+		if(moduleName.kind === ts.SyntaxKind.StringLiteral)
+		{
+			this._currentModuleRequire = this.declarationNameToString(moduleName);
+		}
+		ts.forEachChild(node, (node) =>
+		{
+			if(node.kind === ts.SyntaxKind.Identifier ||
+				node.kind === ts.SyntaxKind.StringLiteral)
+			{
+				//safe to skip name of module
+				return;
+			}
+			if(node.kind === ts.SyntaxKind.DeclareKeyword)
+			{
+				//safe to skip declare keyword
+				return;
+			}
+			if(node.kind === ts.SyntaxKind.ExportKeyword)
+			{
+				//safe to skip export keyword
+				return;
+			}
+			callback.call(this, node);
+		});
+		this._currentModuleRequire = null;
+		this._moduleStack.pop();
+	}
+	
 	private readPackageLevelDefinitions(node: ts.Node)
 	{
 		switch(node.kind)
@@ -593,59 +649,23 @@ class TS2ASParser
 						//safe to ignore end of file
 						return;
 					}
+					if(node.kind === ts.SyntaxKind.TypeAliasDeclaration)
+					{
+						//safe to ignore type aliases until later
+						return;
+					}
 					this.readPackageLevelDefinitions(node);
 				});
 				break;
 			}
 			case ts.SyntaxKind.ModuleBlock:
 			{
-				ts.forEachChild(node, (node) =>
-				{
-					if(node.kind === ts.SyntaxKind.ImportDeclaration)
-					{
-						//safe to ignore import declarations until later
-						return;
-					}
-					if(node.kind === ts.SyntaxKind.ExportAssignment)
-					{
-						//safe to ignore export assignments until later
-						return;
-					}
-					this.readPackageLevelDefinitions(node);
-				});
+				this.handleModuleBlock(node, this.readPackageLevelDefinitions);
 				break;
 			}
 			case ts.SyntaxKind.ModuleDeclaration:
 			{
-				let moduleDeclaration = <ts.ModuleDeclaration> node;
-				let moduleName = moduleDeclaration.name;
-				this._moduleStack.push(this.declarationNameToString(moduleName));
-				if(moduleName.kind === ts.SyntaxKind.StringLiteral)
-				{
-					this._currentModuleRequire = this.declarationNameToString(moduleName);
-				}
-				ts.forEachChild(node, (node) =>
-				{
-					if(node.kind === ts.SyntaxKind.Identifier ||
-						node.kind === ts.SyntaxKind.StringLiteral)
-					{
-						//safe to skip name of module
-						return;
-					}
-					if(node.kind === ts.SyntaxKind.DeclareKeyword)
-					{
-						//safe to skip declare keyword
-						return;
-					}
-					if(node.kind === ts.SyntaxKind.ExportKeyword)
-					{
-						//safe to skip export keyword
-						return;
-					}
-					this.readPackageLevelDefinitions(node);
-				});
-				this._currentModuleRequire = null;
-				this._moduleStack.pop();
+				this.handleModuleDeclaration(node, this.readPackageLevelDefinitions);
 				break;
 			}
 			case ts.SyntaxKind.FunctionDeclaration:
@@ -749,23 +769,11 @@ class TS2ASParser
 				this._definitions.push(as3Class);
 				break;
 			}
-			case ts.SyntaxKind.TypeAliasDeclaration:
-			{
-				let typeAliasDeclaration = <ts.TypeAliasDeclaration> node;
-				let aliasName = this.declarationNameToString(typeAliasDeclaration.name);
-				let aliasType = this.getAS3TypeFromTSTypeNode(typeAliasDeclaration.type);
-				this._typeAliasMap[aliasName] = aliasType.getFullyQualifiedName();
-				if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
-				{
-					console.info("Creating type alias from " + aliasName + " to " + aliasType.getFullyQualifiedName() + ".");
-				}
-				break;
-			}
 			default:
 			{
 				if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
 				{
-					console.warn("Unknown SyntaxKind: " + node.kind.toString());
+					console.warn("Unknown SyntaxKind while reading package-level definitions: " + node.kind.toString());
 					console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
 				}
 				break;
@@ -880,6 +888,74 @@ class TS2ASParser
 		}
 	}
 	
+	private populateInheritance(node: ts.Node)
+	{
+		switch(node.kind)
+		{
+			case ts.SyntaxKind.SourceFile:
+			{
+				this._currentSourceFile = <ts.SourceFile> node;
+				ts.forEachChild(node, (node) =>
+				{
+					if(node.kind === ts.SyntaxKind.EndOfFileToken)
+					{
+						//safe to ignore end of file token in source file
+						return;
+					}
+					this.populateInheritance(node);
+				});
+				break;
+			}
+			case ts.SyntaxKind.ModuleBlock:
+			{
+				this.handleModuleBlock(node, this.populateInheritance);
+				break;
+			}
+			case ts.SyntaxKind.ModuleDeclaration:
+			{
+				this.handleModuleDeclaration(node, this.populateInheritance);
+				break;
+			}
+			case ts.SyntaxKind.InterfaceDeclaration:
+			{
+				this.populateInterfaceInheritance(<ts.InterfaceDeclaration> node);
+				break;
+			}
+			case ts.SyntaxKind.ClassDeclaration:
+			{
+				this.populateClassInheritance(<ts.ClassDeclaration> node);
+				break;
+			}
+			case ts.SyntaxKind.VariableStatement:
+			case ts.SyntaxKind.VariableDeclarationList:
+			case ts.SyntaxKind.FunctionDeclaration:
+			{
+				break;
+			}
+			case ts.SyntaxKind.TypeAliasDeclaration:
+			{
+				let typeAliasDeclaration = <ts.TypeAliasDeclaration> node;
+				let aliasName = this.declarationNameToString(typeAliasDeclaration.name);
+				let aliasType = this.getAS3TypeFromTSTypeNode(typeAliasDeclaration.type);
+				this._typeAliasMap[aliasName] = aliasType.getFullyQualifiedName();
+				if(this.debugLevel >= TS2ASParser.DebugLevel.INFO && !this._currentFileIsExternal)
+				{
+					console.info("Creating type alias from " + aliasName + " to " + aliasType.getFullyQualifiedName() + ".");
+				}
+				break;
+			}
+			default:
+			{
+				if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
+				{
+					console.warn("Unknown SyntaxKind while populating inheritance: " + node.kind.toString());
+					console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
+				}
+				break;
+			}
+		}
+	}
+	
 	private populatePackageLevelDefinitions(node: ts.Node)
 	{
 		switch(node.kind)
@@ -896,7 +972,7 @@ class TS2ASParser
 					}
 					if(node.kind === ts.SyntaxKind.TypeAliasDeclaration)
 					{
-						//we took care of type aliases in the first pass
+						//we already handled type aliases in populateInheritance()
 						return;
 					}
 					this.populatePackageLevelDefinitions(node);
@@ -905,64 +981,12 @@ class TS2ASParser
 			}
 			case ts.SyntaxKind.ModuleBlock:
 			{
-				ts.forEachChild(node, (node) =>
-				{
-					if(node.kind === ts.SyntaxKind.ImportDeclaration)
-					{
-						let importDeclaration = <ts.ImportDeclaration> node;
-						this.populateImport(importDeclaration);
-						return;
-					}
-					if(node.kind === ts.SyntaxKind.ExportAssignment)
-					{
-						let exportAssignment = <ts.ExportAssignment> node;
-						this.assignExport(exportAssignment);
-						return;
-					}
-					this.populatePackageLevelDefinitions(node);
-				});
-				//clear imported modules after we're done with this module
-				this._importModuleMap = {};
+				this.handleModuleBlock(node, this.populatePackageLevelDefinitions);
 				break;
 			}
 			case ts.SyntaxKind.ModuleDeclaration:
 			{
-				let moduleDeclaration = <ts.ModuleDeclaration> node;
-				let moduleName = moduleDeclaration.name;
-				this._moduleStack.push(this.declarationNameToString(moduleName));
-				if(moduleName.kind === ts.SyntaxKind.StringLiteral)
-				{
-					this._currentModuleRequire = this._moduleStack[this._moduleStack.length - 1];
-				}
-				ts.forEachChild(node, (node) =>
-				{
-					if(node.kind === ts.SyntaxKind.Identifier ||
-						node.kind === ts.SyntaxKind.StringLiteral)
-					{
-						//safe to ignore name of module
-						return;
-					}
-					if(node.kind === ts.SyntaxKind.DeclareKeyword)
-					{
-						//we already took care of the declare keyword
-						return;
-					}
-					if(node.kind === ts.SyntaxKind.ExportKeyword)
-					{
-						//we already took care of the export keyword
-						return;
-					}
-					this.populatePackageLevelDefinitions(node);
-				});
-				this._moduleStack.pop();
-				if(this._moduleStack.length > 0)
-				{
-					this._currentModuleRequire = this._moduleStack[this._moduleStack.length - 1];
-				}
-				else
-				{
-					this._currentModuleRequire = null;
-				}
+				this.handleModuleDeclaration(node, this.populatePackageLevelDefinitions);
 				break;
 			}
 			case ts.SyntaxKind.FunctionDeclaration:
@@ -992,19 +1016,19 @@ class TS2ASParser
 			}
 			case ts.SyntaxKind.InterfaceDeclaration:
 			{
-				this.populateInterface(<ts.InterfaceDeclaration> node);
+				this.populateInterfaceMembers(<ts.InterfaceDeclaration> node);
 				break;
 			}
 			case ts.SyntaxKind.ClassDeclaration:
 			{
-				this.populateClass(<ts.ClassDeclaration> node);
+				this.populateClassMembers(<ts.ClassDeclaration> node);
 				break;
 			}
 			default:
 			{
 				if(this.debugLevel >= TS2ASParser.DebugLevel.WARN && !this._currentFileIsExternal)
 				{
-					console.warn("Unknown SyntaxKind: " + node.kind.toString());
+					console.warn("Unknown SyntaxKind while populating members: " + node.kind.toString());
 					console.warn(this._currentSourceFile.text.substring(node.pos, node.end));
 				}
 				break;
@@ -1128,7 +1152,7 @@ class TS2ASParser
 		return as3Class;
 	}
 	
-	private populateClass(classDeclaration: ts.ClassDeclaration)
+	private populateClassInheritance(classDeclaration: ts.ClassDeclaration)
 	{
 		let className = this.declarationNameToString(classDeclaration.name);
 		let packageName = this._moduleStack.join(".");
@@ -1141,7 +1165,7 @@ class TS2ASParser
 		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedClassName, this._definitions);
 		if(!as3Class)
 		{
-			throw new Error("Class not found: " + fullyQualifiedClassName);
+			throw new Error("Class not found when trying to populate inheritance: " + fullyQualifiedClassName);
 		}
 		
 		let typeParameters = this.populateTypeParameters(classDeclaration);
@@ -1199,9 +1223,28 @@ class TS2ASParser
 				}
 			});
 		}
-	
-		this.populateMembers(as3Class, classDeclaration);
 		
+		this.cleanupTypeParameters(typeParameters);
+	}
+	
+	private populateClassMembers(classDeclaration: ts.ClassDeclaration)
+	{
+		let className = this.declarationNameToString(classDeclaration.name);
+		let packageName = this._moduleStack.join(".");
+		let fullyQualifiedClassName = className;
+		if(packageName.length > 0)
+		{
+			fullyQualifiedClassName = packageName + "." + className;
+		}
+		
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName(fullyQualifiedClassName, this._definitions);
+		if(!as3Class)
+		{
+			throw new Error("Class not found when trying to populate members: " + fullyQualifiedClassName);
+		}
+		
+		let typeParameters = this.populateTypeParameters(classDeclaration);
+		this.populateMembers(as3Class, classDeclaration);
 		this.cleanupTypeParameters(typeParameters);
 	}
 	
@@ -1278,7 +1321,7 @@ class TS2ASParser
 		return as3Interface;
 	}
 	
-	private populateInterface(interfaceDeclaration: ts.InterfaceDeclaration)
+	private populateInterfaceInheritance(interfaceDeclaration: ts.InterfaceDeclaration)
 	{
 		let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
 		let packageName = this._moduleStack.join(".");
@@ -1289,7 +1332,8 @@ class TS2ASParser
 		}
 		if(this._functionAliases.indexOf(fullyQualifiedInterfaceName) >= 0)
 		{
-			//this is a function alias
+			//this is a function alias, which is not treated as an interface
+			//in ActionScript
 			return;
 		}
 		
@@ -1299,7 +1343,7 @@ class TS2ASParser
 		let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
 		if(!existingInterface)
 		{
-			throw new Error("Interface not found: " + fullyQualifiedInterfaceName);
+			throw new Error("Interface not found when trying to populate inheritance: " + fullyQualifiedInterfaceName);
 		}
 		
 		let typeParameters = this.populateTypeParameters(interfaceDeclaration);
@@ -1346,8 +1390,36 @@ class TS2ASParser
 				});
 			}
 		}
-		this.populateMembers(existingInterface, interfaceDeclaration);
+		this.cleanupTypeParameters(typeParameters);
+	}
+	
+	private populateInterfaceMembers(interfaceDeclaration: ts.InterfaceDeclaration)
+	{
+		let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
+		let packageName = this._moduleStack.join(".");
+		let fullyQualifiedInterfaceName = interfaceName;
+		if(packageName.length > 0)
+		{
+			fullyQualifiedInterfaceName = packageName + "." + interfaceName;
+		}
+		if(this._functionAliases.indexOf(fullyQualifiedInterfaceName) >= 0)
+		{
+			//this is a function alias, which is not treated as an interface
+			//in ActionScript
+			return;
+		}
 		
+		//an interface may have been converted into a class,
+		//so that's why the superclass of InterfaceDefinition
+		//and ClassDefinition is used here.
+		let existingInterface = <as3.TypeDefinition> as3.getDefinitionByName(fullyQualifiedInterfaceName, this._definitions);
+		if(!existingInterface)
+		{
+			throw new Error("Interface not found when trying to populate members: " + fullyQualifiedInterfaceName);
+		}
+		
+		let typeParameters = this.populateTypeParameters(interfaceDeclaration);
+		this.populateMembers(existingInterface, interfaceDeclaration);
 		this.cleanupTypeParameters(typeParameters);
 	}
 	
