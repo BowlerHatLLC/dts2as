@@ -204,7 +204,10 @@ class TS2ASParser
 	{
 		return this._sourceFiles.some((otherSourceFile) =>
 		{
-			return otherSourceFile.fileName === fileName;
+			//the fileName property of a ts.SourceFile object may not use the
+			//path conventions of the current platform (Windows, in particular),
+			//so we pass it to path.resolve() to normalize
+			return path.resolve(otherSourceFile.fileName) === fileName;
 		});
 	}
 	
