@@ -131,10 +131,13 @@ class TS2ASParser
 		}
 		this._sourceFiles.forEach((sourceFile, index) =>
 		{
+			//the fileName property of ts.SourceFile may not account for
+			//platform path differences, so use path.resolve to normalize
+			let sourceFileName = path.resolve(sourceFile.fileName);
 			this._currentFileIsExternal = !fileNames.some((fileName) =>
 			{
 				fileName = path.resolve(fileName); 
-				return fileName === sourceFile.fileName;
+				return fileName === sourceFileName;
 			});
 			this.readSourceFile(sourceFile);
 		});
