@@ -3,4 +3,5 @@
 	<compiler>
 		<external-library-path/>
 	</compiler>
+	<warnings>false</warnings>
 </flex-config>
