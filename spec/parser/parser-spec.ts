@@ -231,21 +231,21 @@ describe("A class", () =>
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
 		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
-	it("may have a property", () =>
+	it("may have a member variable", () =>
 	{
-		let symbols = parser.parse(["spec/fixtures/class-member-property.d.ts"]).definitions;
-		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithProperty", symbols);
+		let symbols = parser.parse(["spec/fixtures/class-member-variable.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithVariable", symbols);
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.properties.length).toBe(1);
 		let property = as3Class.properties[0];
 		expect(property).not.toBeNull();
-		expect(property.name).toBe("property1");
+		expect(property.name).toBe("variable1");
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(false);
 		let as3PropertyType = as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
-	it("may have a static property", () =>
+	it("may have a static variable", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/class-static-property.d.ts"]).definitions;
 		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithStaticProperty", symbols);
@@ -259,7 +259,7 @@ describe("A class", () =>
 		let as3PropertyType = as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
-	it("may have a method", () =>
+	it("may have a member method", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/class-member-method.d.ts"]).definitions;
 		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithMethod", symbols);
