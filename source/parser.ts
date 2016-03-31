@@ -154,6 +154,7 @@ class TS2ASParser
 		this.promoteInterfaces();
 		this.cleanupStaticSideDefinitions();
 		this.cleanupMembersWithForceStaticFlag();
+		this.cleanupInterfaceOverrides();
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
 	}
@@ -2228,6 +2229,33 @@ class TS2ASParser
 					 }
 				 })
 			 }
+		});
+	}
+	
+	//an interface that overrides another cannot override methods in
+	//ActionScript, but TypeScript allows overloads, so we must remove
+	//any duplicates that are found 
+	private cleanupInterfaceOverrides()
+	{
+		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
+		{
+			if(definition instanceof as3.InterfaceDefinition)
+			{
+				definition.methods.forEach((method, index) =>
+				{
+					let foundMethod = definition.interfaces.some((otherInterface) =>
+					{
+						return otherInterface.methods.some((otherMethod) =>
+						{
+							return otherMethod.name === method.name;
+						});
+					});
+					if(foundMethod)
+					{
+						definition.methods.splice(index, 1);
+					}
+				});
+			}
 		});
 	}
 }
