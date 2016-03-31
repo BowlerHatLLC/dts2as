@@ -154,7 +154,6 @@ class TS2ASParser
 		this.promoteInterfaces();
 		this.cleanupStaticSideDefinitions();
 		this.cleanupMembersWithForceStaticFlag();
-		this.makeInternalReturnTypesPublic();
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
 	}
@@ -533,31 +532,6 @@ class TS2ASParser
 			result = result.substr(1, result.length - 2);
 		}
 		return result.trim();
-	}
-	
-	private getAccessLevel(node: ts.Node): string
-	{
-		if(this._variableStatementHasDeclareKeyword || this._variableStatementHasExport)
-		{
-			return as3.AccessModifiers[as3.AccessModifiers.public];
-		}
-		if((node.flags & ts.NodeFlags.Export) === ts.NodeFlags.Export)
-		{
-			return as3.AccessModifiers[as3.AccessModifiers.public];
-		}
-		var declareKeyword: boolean = false;
-		ts.forEachChild(node, (node) =>
-		{
-		   if(node.kind === ts.SyntaxKind.DeclareKeyword)
-		   {
-			   declareKeyword = true;
-		   }
-		});
-		if(declareKeyword)
-		{
-			return as3.AccessModifiers[as3.AccessModifiers.public];
-		}
-		return as3.AccessModifiers[as3.AccessModifiers.internal];
 	}
 		
 	private addConstructorMethodToAS3Class(as3Class: as3.ClassDefinition, constructorMethodToAdd: as3.ConstructorDefinition)
@@ -1235,7 +1209,7 @@ class TS2ASParser
 		{
 			throw new Error("Definition with name " + fullyQualifiedClassName + " already exists. Cannot create class.");
 		}
-		let as3Class = new as3.ClassDefinition(className, packageName, this.getAccessLevel(classDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Class = new as3.ClassDefinition(className, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
 		this.readMembers(as3Class, classDeclaration);
 		return as3Class;
 	}
@@ -1380,7 +1354,7 @@ class TS2ASParser
 				this.readMembers(existingDefinition, interfaceDeclaration);
 				return null;
 			}
-			let staticSideClass = new StaticSideClassDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire);
+			let staticSideClass = new StaticSideClassDefinition(interfaceName, packageName, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleRequire);
 			this.readMembers(staticSideClass, interfaceDeclaration);
 			if(existingDefinition instanceof as3.InterfaceDefinition)
 			{
@@ -1410,7 +1384,7 @@ class TS2ASParser
 			return null;
 		}
 		
-		let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, this.getAccessLevel(interfaceDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
 		this.readMembers(as3Interface, interfaceDeclaration);
 		if(existingDefinition instanceof as3.PackageVariableDefinition)
 		{
@@ -1543,7 +1517,7 @@ class TS2ASParser
 		{
 			throw new Error("Definition with name " + fullyQualifiedEnumName + " already exists. Cannot create class for enum.");
 		}
-		let as3Class = new as3.ClassDefinition(enumName, packageName, this.getAccessLevel(enumDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Class = new as3.ClassDefinition(enumName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
 		this.readMembers(as3Class, enumDeclaration);
 		return as3Class;
 	}
@@ -1586,7 +1560,7 @@ class TS2ASParser
 		{
 			throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package function.");
 		}
-		return new as3.PackageFunctionDefinition(functionName, packageName, this.getAccessLevel(functionDeclaration), this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		return new as3.PackageFunctionDefinition(functionName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
 	}
 	
 	private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
@@ -1634,7 +1608,7 @@ class TS2ASParser
 		{
 			fullyQualifiedName = packageName + "." + variableName; 
 		}
-		let accessLevel = this.getAccessLevel(variableDeclaration);
+		let accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 		let existingDefinition = as3.getDefinitionByName(fullyQualifiedName, this._definitions);
 		if(existingDefinition instanceof StaticSideClassDefinition)
 		{
@@ -2254,33 +2228,6 @@ class TS2ASParser
 					 }
 				 })
 			 }
-		});
-	}
-	
-	private makeInternalReturnTypesPublic()
-	{
-		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
-		{
-			if(definition instanceof as3.PackageFunctionDefinition)
-			{
-				let functionType = definition.type;
-				if(functionType.packageName !== definition.packageName)
-				{
-					functionType.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
-				}
-			}
-			else if(definition instanceof as3.InterfaceDefinition ||
-				definition instanceof as3.ClassDefinition)
-			{
-				definition.methods.forEach((method: as3.FunctionDefinition) =>
-				{
-					let methodType = method.type;
-					if(methodType.packageName !== definition.packageName)
-					{
-						methodType.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
-					}
-				});
-			}
 		});
 	}
 }
