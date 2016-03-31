@@ -1501,3 +1501,46 @@ describe("A module", () =>
 		expect(as3Variable.require).toBe("some-module");
 	});
 });
+
+describe("An import", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+	});
+	describe("declared in a module", () =>
+	{
+		it("may refer to another module", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/import-module.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("first.ClassOne", symbols);
+			expect(as3Class).not.toBeNull();
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("second.var1", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.type).toBe(as3Class);
+		});
+		it("may be used in a sub-module", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/import-module-use-in-sub-module.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("aliased.ClassOne", symbols);
+			expect(as3Class).not.toBeNull();
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("outer.inner.var1", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.type).toBe(as3Class);
+		});
+	});
+	describe("declared in a source file", () =>
+	{
+		it("may be used in a module", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/import-module-in-source-file-use-in-module.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("aliasedModule.ClassOne", symbols);
+			expect(as3Class).not.toBeNull();
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("aliasedModule.var1", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.type).toBe(as3Class);
+		});
+	});
+});

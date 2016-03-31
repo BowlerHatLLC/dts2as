@@ -86,6 +86,7 @@ class TS2ASParser
 	private _functionAliases: string[];
 	private _typeAliasMap: any;
 	private _typeParameterMap: any;
+	private _importModuleStack: any[];
 	private _importModuleMap: any;
 	private _currentSourceFile: ts.SourceFile;
 	private _currentFileIsExternal: boolean;
@@ -102,7 +103,7 @@ class TS2ASParser
 		this._functionAliases = [];
 		this._typeAliasMap = {};
 		this._typeParameterMap = {};
-		this._importModuleMap = {};
+		this._importModuleStack = [];
 		this._sourceFiles = [];
 		this._promoted = {};
 		fileNames.forEach((fileName: string) =>
@@ -471,6 +472,19 @@ class TS2ASParser
 				typeInSource = alias + typeInSource.substr(moduleAlias.length);
 			}
 		}
+		this._importModuleStack.some((importModuleMap) =>
+		{			
+			for(let moduleAlias in importModuleMap)
+			{
+				if(typeInSource.indexOf(moduleAlias) === 0)
+				{
+					let alias = importModuleMap[moduleAlias];
+					typeInSource = alias + typeInSource.substr(moduleAlias.length);
+					return true;
+				}
+			}
+			return false;
+		});
 		var moduleStack = this._moduleStack.slice();
 		while(moduleStack.length > 0)
 		{
@@ -568,6 +582,8 @@ class TS2ASParser
 	
 	private handleModuleBlock(node: ts.Node, handleImportAndExport: boolean, callback: (node: ts.Node) => void)
 	{	
+		this._importModuleStack.push(this._importModuleMap);
+		this._importModuleMap = {};
 		ts.forEachChild(node, (node) =>
 		{
 			if(node.kind === ts.SyntaxKind.ImportDeclaration)
@@ -576,6 +592,15 @@ class TS2ASParser
 				{
 					let importDeclaration = <ts.ImportDeclaration> node;
 					this.populateImport(importDeclaration);
+				}
+				return;
+			}
+			if(node.kind === ts.SyntaxKind.ImportEqualsDeclaration)
+			{
+				if(handleImportAndExport)
+				{
+					let importEqualsDeclaration = <ts.ImportEqualsDeclaration> node;
+					this.populateImportEquals(importEqualsDeclaration);
 				}
 				return;
 			}
@@ -591,7 +616,7 @@ class TS2ASParser
 			callback.call(this, node);
 		});
 		//clear imported modules after we're done with this module
-		this._importModuleMap = {};
+		this._importModuleMap = this._importModuleStack.pop();
 	}
 	
 	private handleModuleDeclaration(node: ts.Node, callback: (node: ts.Node) => void)
@@ -644,6 +669,11 @@ class TS2ASParser
 					if(node.kind === ts.SyntaxKind.TypeAliasDeclaration)
 					{
 						//safe to ignore type aliases until later
+						return;
+					}
+					if(node.kind === ts.SyntaxKind.ImportEqualsDeclaration)
+					{
+						//safe to ignore imports until later
 						return;
 					}
 					this.readPackageLevelDefinitions(node);
@@ -921,6 +951,14 @@ class TS2ASParser
 		}
 	}
 	
+	private populateImportEquals(importEqualsDeclaration: ts.ImportEqualsDeclaration)
+	{
+		let importName = this.declarationNameToString(importEqualsDeclaration.name);
+		let moduleReference = importEqualsDeclaration.moduleReference;
+		let moduleName = this.declarationNameToString(<ts.Identifier> moduleReference);
+		this._importModuleMap[importName] = moduleName;
+	}	
+	
 	private populateImport(importDeclaration: ts.ImportDeclaration)
 	{
 		if(!importDeclaration.importClause)
@@ -955,6 +993,11 @@ class TS2ASParser
 					if(node.kind === ts.SyntaxKind.EndOfFileToken)
 					{
 						//safe to ignore end of file token in source file
+						return;
+					}
+					if(node.kind === ts.SyntaxKind.ImportEqualsDeclaration)
+					{
+						//safe to ignore source file imports during this phase
 						return;
 					}
 					this.populateInheritance(node);
@@ -1020,6 +1063,7 @@ class TS2ASParser
 		{
 			case ts.SyntaxKind.SourceFile:
 			{
+				this._importModuleMap = {};
 				this._currentSourceFile = <ts.SourceFile> node;
 				ts.forEachChild(node, (node) =>
 				{
@@ -1033,8 +1077,14 @@ class TS2ASParser
 						//we already handled type aliases in populateInheritance()
 						return;
 					}
+					if(node.kind === ts.SyntaxKind.ImportEqualsDeclaration)
+					{
+						this.populateImportEquals(<ts.ImportEqualsDeclaration> node);
+						return;
+					}
 					this.populatePackageLevelDefinitions(node);
 				});
+				this._importModuleMap = null;
 				break;
 			}
 			case ts.SyntaxKind.ModuleBlock:
