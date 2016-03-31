@@ -333,6 +333,13 @@ describe("A class", () =>
 		expect(method.isStatic).toBe(true);
 		expect(method.type).toBe(as3MethodType);
 	});
+	it("may not expose a member variable that starts with a number", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/class-member-variable-starts-with-number.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassWithVariable", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.properties.length).toBe(0);
+	});
 });
 
 describe("An enum", () =>
