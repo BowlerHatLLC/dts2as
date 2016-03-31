@@ -415,6 +415,33 @@ describe("An interface", () =>
 		let as3MethodType = as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
+	it("may extend another interface", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/interface-extends-interface.d.ts"]).definitions;
+		let as3Interface1 = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceOne", symbols);
+		expect(as3Interface1).not.toBeNull();
+		let as3Interface2 = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceTwo", symbols);
+		expect(as3Interface2).not.toBeNull();
+		let interfaces = as3Interface2.interfaces;
+		expect(interfaces).not.toBeNull();
+		expect(interfaces.length).toBe(1);
+		let extendsInterface = interfaces[0];
+		expect(extendsInterface).toBe(as3Interface1);
+	});
+	describe("that extends another interface", () =>
+	{
+		it("may not override methods", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/interface-extends-interface-strip-overloads.d.ts"]).definitions;
+			let as3Interface1 = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceOne", symbols);
+			expect(as3Interface1).not.toBeNull();
+			let as3Interface2 = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceTwo", symbols);
+			expect(as3Interface2).not.toBeNull();
+			let interfaces = as3Interface2.interfaces;
+			expect(as3Interface1.methods.length).toBe(1);
+			expect(as3Interface2.methods.length).toBe(0);
+		});
+	});
 });
 
 describe("A function", () =>
