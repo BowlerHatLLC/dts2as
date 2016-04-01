@@ -6,6 +6,7 @@ var minimist = require("minimist");
 var child_process = require("child_process");
 var rimraf = require("rimraf");
 var fs = require("fs");
+var path = require("path");
 
 gulp.task("clean-tests", function()
 {
@@ -105,7 +106,7 @@ function run_dts2as(files, callback)
 		console.error("Apache FlexJS SDK not found: " + flexHome);
 		process.exit(1);
 	}
-	child_process.exec("bin/dts2as --flexHome " + flexHome + " --outSWC dts2astests_temp/test.swc " + files.join(" "),
+	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
 	{},
 	function(error)
 	{
