@@ -88,7 +88,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 	it("may export a class", () =>
 	{
@@ -97,7 +97,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 	it("may export a class in a module", () =>
 	{
@@ -106,7 +106,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 	it("may export a class in a module with a dot in the name", () =>
 	{
@@ -115,7 +115,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 	it("may export a class in a nested module", () =>
 	{
@@ -124,7 +124,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 	it("may export a class in a string module", () =>
 	{
@@ -133,7 +133,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBe("test");
+		expect(as3Class.moduleName).toBe("test");
 	});
 	it("may declare an interface", () =>
 	{
@@ -142,7 +142,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Interface).not.toBeNull();
 		expect(as3Interface.constructor).toBe(as3.InterfaceDefinition);
 		expect(as3Interface.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Interface.require).toBeNull();
+		expect(as3Interface.moduleName).toBeNull();
 	});
 	it("may export an interface", () =>
 	{
@@ -151,7 +151,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Interface).not.toBeNull();
 		expect(as3Interface.constructor).toBe(as3.InterfaceDefinition);
 		expect(as3Interface.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Interface.require).toBeNull();
+		expect(as3Interface.moduleName).toBeNull();
 	});
 	it("may declare a function", () =>
 	{
@@ -160,7 +160,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Function).not.toBeNull();
 		expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
 		expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Function.require).toBeNull();
+		expect(as3Function.moduleName).toBeNull();
 	});
 	it("may export a function", () =>
 	{
@@ -169,7 +169,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Function).not.toBeNull();
 		expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
 		expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Function.require).toBeNull();
+		expect(as3Function.moduleName).toBeNull();
 	});
 	it("may declare a variable", () =>
 	{
@@ -178,7 +178,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Variable).not.toBeNull();
 		expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
 		expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Variable.require).toBeNull();
+		expect(as3Variable.moduleName).toBeNull();
 	});
 	it("may export a variable", () =>
 	{
@@ -187,7 +187,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Variable).not.toBeNull();
 		expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
 		expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Variable.require).toBeNull();
+		expect(as3Variable.moduleName).toBeNull();
 	});
 	it("may declare an inner class", () =>
 	{
@@ -196,12 +196,12 @@ describe("A TypeScript definition", () =>
 		expect(as3OuterClass).not.toBeNull();
 		expect(as3OuterClass.constructor).toBe(as3.ClassDefinition);
 		expect(as3OuterClass.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3OuterClass.require).toBeNull();
+		expect(as3OuterClass.moduleName).toBeNull();
 		let as3InnerClass = as3.getDefinitionByName("OuterClass.InnerClass", symbols);
 		expect(as3InnerClass).not.toBeNull();
 		expect(as3InnerClass.constructor).toBe(as3.ClassDefinition);
 		expect(as3InnerClass.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3InnerClass.require).toBeNull();
+		expect(as3InnerClass.moduleName).toBeNull();
 	});
 	it("may declare an enum", () =>
 	{
@@ -210,7 +210,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 	it("may export an enum", () =>
 	{
@@ -219,7 +219,7 @@ describe("A TypeScript definition", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.constructor).toBe(as3.ClassDefinition);
 		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-		expect(as3Class.require).toBeNull();
+		expect(as3Class.moduleName).toBeNull();
 	});
 });
 
@@ -1505,7 +1505,7 @@ describe("A module", () =>
 		expect(as3Variable).not.toBeNull();
 		expect(as3Variable.name).toBe("variable");
 		expect(as3Variable.packageName).toBe("");
-		expect(as3Variable.require).toBe("some-module");
+		expect(as3Variable.moduleName).toBe("some-module");
 	});
 });
 

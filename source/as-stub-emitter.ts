@@ -77,6 +77,7 @@ class ASEmitter
 			classOutput += NEW_LINE;
 		}
 		
+		classOutput += this.emitModuleMetadata(as3Class);
 		classOutput += as3Class.accessLevel;
 		if(as3Class.dynamic)
 		{
@@ -285,7 +286,7 @@ class ASEmitter
 			packageFunctionOutput += "import " + as3Import + ";";
 			packageFunctionOutput += NEW_LINE;
 		}
-		
+		packageFunctionOutput += this.emitModuleMetadata(as3PackageFunction);
 		packageFunctionOutput += this.emitMethod(as3PackageFunction, as3PackageFunction);
 		packageFunctionOutput += NEW_LINE;
 		packageFunctionOutput += this.emitEndPackage();
@@ -304,6 +305,7 @@ class ASEmitter
 			packageVariableOutput += "import " + as3Import + ";";
 			packageVariableOutput += NEW_LINE;
 		}
+        packageVariableOutput += this.emitModuleMetadata(as3PackageVariable);
 		packageVariableOutput += this.emitVariable(as3PackageVariable, as3PackageVariable);
 		packageVariableOutput += NEW_LINE;
 		packageVariableOutput += this.emitEndPackage();
@@ -312,7 +314,6 @@ class ASEmitter
 	
 	emitNamespace(as3Namespace: as3.NamespaceDefinition): string
 	{
-		
 		let namespaceName = as3Namespace.name;
 		let packageName = as3Namespace.packageName;
 		let accessLevel = as3Namespace.accessLevel;
@@ -567,6 +568,16 @@ class ASEmitter
 		
 		return propertyOutput;
 	}
+    
+    private emitModuleMetadata(as3Type: as3.PackageLevelDefinition): string
+    {
+        let moduleName = as3Type.moduleName;
+        if(moduleName)
+        {
+            return "[JSModule(name=\"" + moduleName + "\")]" + NEW_LINE;
+        }
+        return ""
+    }
 	
 	private emitStartPackage(packageName: string): string
 	{

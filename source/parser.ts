@@ -23,9 +23,9 @@ import ts = require("typescript");
 
 class StaticSideClassDefinition extends as3.ClassDefinition
 {
-	constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, require: string)
+	constructor(name: string, packageName: string, accessLevel: string, sourceFile: string, moduleName: string)
 	{
-		super(name, packageName, accessLevel, sourceFile, require, true);
+		super(name, packageName, accessLevel, sourceFile, moduleName, true);
 	}
 }
 
@@ -93,7 +93,7 @@ class TS2ASParser
 	private _currentSourceFile: ts.SourceFile;
 	private _currentFileIsExternal: boolean;
 	private _moduleStack: string[];
-	private _currentModuleRequire: string;
+	private _currentModuleName: string;
 	private _variableStatementHasDeclareKeyword: boolean = false;
 	private _variableStatementHasExport: boolean = false;
 	private _scriptTarget: ts.ScriptTarget;
@@ -633,7 +633,7 @@ class TS2ASParser
 		this._moduleStack.push(this.declarationNameToString(moduleName));
 		if(moduleName.kind === ts.SyntaxKind.StringLiteral)
 		{
-			this._currentModuleRequire = this.declarationNameToString(moduleName);
+			this._currentModuleName = this.declarationNameToString(moduleName);
 		}
 		ts.forEachChild(node, (node) =>
 		{
@@ -655,7 +655,7 @@ class TS2ASParser
 			}
 			callback.call(this, node);
 		});
-		this._currentModuleRequire = null;
+		this._currentModuleName = null;
 		this._moduleStack.pop();
 	}
 	
@@ -936,7 +936,7 @@ class TS2ASParser
 		let exportedDefinition = as3.getDefinitionByName(assignedIdentifier, this._definitions);
 		if(exportedDefinition)
 		{
-			exportedDefinition.require = this._currentModuleRequire;
+			exportedDefinition.moduleName = this._currentModuleName;
 		}
 		else
 		{
@@ -1178,7 +1178,7 @@ class TS2ASParser
 	{
 		let as3Class = new as3.ClassDefinition(interfaceDefinition.name,
 			interfaceDefinition.packageName, variableDefinition.accessLevel,
-			interfaceDefinition.sourceFile, interfaceDefinition.require,
+			interfaceDefinition.sourceFile, interfaceDefinition.moduleName,
 			this._currentFileIsExternal);
 		this.copyMembers(interfaceDefinition, as3Class, false);
 		let index = this._definitions.indexOf(interfaceDefinition);
@@ -1267,7 +1267,7 @@ class TS2ASParser
 		{
 			throw new Error("Definition with name " + fullyQualifiedClassName + " already exists. Cannot create class.");
 		}
-		let as3Class = new as3.ClassDefinition(className, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Class = new as3.ClassDefinition(className, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleName, this._currentFileIsExternal);
 		this.readMembers(as3Class, classDeclaration);
 		return as3Class;
 	}
@@ -1412,7 +1412,7 @@ class TS2ASParser
 				this.readMembers(existingDefinition, interfaceDeclaration);
 				return null;
 			}
-			let staticSideClass = new StaticSideClassDefinition(interfaceName, packageName, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleRequire);
+			let staticSideClass = new StaticSideClassDefinition(interfaceName, packageName, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleName);
 			this.readMembers(staticSideClass, interfaceDeclaration);
 			if(existingDefinition instanceof as3.InterfaceDefinition)
 			{
@@ -1442,7 +1442,7 @@ class TS2ASParser
 			return null;
 		}
 		
-		let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Interface = new as3.InterfaceDefinition(interfaceName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleName, this._currentFileIsExternal);
 		this.readMembers(as3Interface, interfaceDeclaration);
 		if(existingDefinition instanceof as3.PackageVariableDefinition)
 		{
@@ -1575,7 +1575,7 @@ class TS2ASParser
 		{
 			throw new Error("Definition with name " + fullyQualifiedEnumName + " already exists. Cannot create class for enum.");
 		}
-		let as3Class = new as3.ClassDefinition(enumName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Class = new as3.ClassDefinition(enumName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleName, this._currentFileIsExternal);
 		this.readMembers(as3Class, enumDeclaration);
 		return as3Class;
 	}
@@ -1618,7 +1618,7 @@ class TS2ASParser
 		{
 			throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package function.");
 		}
-		return new as3.PackageFunctionDefinition(functionName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		return new as3.PackageFunctionDefinition(functionName, packageName, as3.AccessModifiers[as3.AccessModifiers.public], this._currentSourceFile.fileName, this._currentModuleName, this._currentFileIsExternal);
 	}
 	
 	private populatePackageFunction(functionDeclaration: ts.FunctionDeclaration)
@@ -1675,7 +1675,7 @@ class TS2ASParser
 			existingDefinition.accessLevel = accessLevel;
 			return null;
 		}
-		let as3Variable = new as3.PackageVariableDefinition(variableName, packageName, accessLevel, this._currentSourceFile.fileName, this._currentModuleRequire, this._currentFileIsExternal);
+		let as3Variable = new as3.PackageVariableDefinition(variableName, packageName, accessLevel, this._currentSourceFile.fileName, this._currentModuleName, this._currentFileIsExternal);
 		if(existingDefinition instanceof as3.InterfaceDefinition)
 		{
 			//this is a decomposed class where the variable name and the
@@ -1724,7 +1724,7 @@ class TS2ASParser
 				//catch this special case until now
 				let classDefinition = new as3.ClassDefinition(as3PackageVariable.name,
 					as3PackageVariable.packageName, as3PackageVariable.accessLevel,
-					as3PackageVariable.sourceFile, as3PackageVariable.require,
+					as3PackageVariable.sourceFile, as3PackageVariable.moduleName,
 					as3PackageVariable.external);
 				let index = this._definitions.indexOf(as3PackageVariable);
 				this._definitions[index] = classDefinition;
@@ -1771,7 +1771,7 @@ class TS2ASParser
 				//the static side of this decomposed class is a type literal
 				//so we haven't created the AS3 class for it yet. we need to
 				//do it on the fly.
-				let tempStaticSideClass = new StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleRequire);
+				let tempStaticSideClass = new StaticSideClassDefinition(null, null, as3.AccessModifiers[as3.AccessModifiers.internal], this._currentSourceFile.fileName, this._currentModuleName);
 				let typeLiteral = <ts.TypeLiteralNode> variableDeclaration.type;
 				this.readMembers(tempStaticSideClass, typeLiteral);
 				this.populateMembers(tempStaticSideClass, typeLiteral);
@@ -1811,7 +1811,7 @@ class TS2ASParser
 				
 				//we need this interface to be cleaned up at the end, so we
 				//convert it to a StaticSideClassDefinition
-				let staticSide = new StaticSideClassDefinition(variableType.name, variableType.packageName, variableType.accessLevel, variableType.sourceFile, variableType.require);
+				let staticSide = new StaticSideClassDefinition(variableType.name, variableType.packageName, variableType.accessLevel, variableType.sourceFile, variableType.moduleName);
 				staticSide.methods = variableType.methods;
 				staticSide.properties = variableType.properties;
 				let index = this._definitions.indexOf(variableType);
@@ -2240,7 +2240,7 @@ class TS2ASParser
 					}
 					let as3Class = new as3.ClassDefinition(as3Definition.name, as3Definition.packageName,
 						as3.AccessModifiers[as3.AccessModifiers.public], as3Definition.sourceFile,
-						as3Definition.require, as3Definition.external);
+						as3Definition.moduleName, as3Definition.external);
 					as3Class.superClass = superClass;
 					this.copyMembers(as3Definition, as3Class, false);
 					as3Class.properties.forEach((as3Property) =>
