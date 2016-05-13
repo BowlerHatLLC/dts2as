@@ -93,7 +93,7 @@ class TS2ASParser
 	private _currentSourceFile: ts.SourceFile;
 	private _currentFileIsExternal: boolean;
 	private _moduleStack: string[];
-	private _currentModuleName: string;
+	private _currentModuleName: string = null;
 	private _variableStatementHasDeclareKeyword: boolean = false;
 	private _variableStatementHasExport: boolean = false;
 	private _scriptTarget: ts.ScriptTarget;
@@ -631,6 +631,7 @@ class TS2ASParser
 		let moduleDeclaration = <ts.ModuleDeclaration> node;
 		let moduleName = moduleDeclaration.name;
 		this._moduleStack.push(this.declarationNameToString(moduleName));
+		let previousModuleName: string = this._currentModuleName;
 		if(moduleName.kind === ts.SyntaxKind.StringLiteral)
 		{
 			this._currentModuleName = this.declarationNameToString(moduleName);
@@ -655,8 +656,8 @@ class TS2ASParser
 			}
 			callback.call(this, node);
 		});
-		this._currentModuleName = null;
 		this._moduleStack.pop();
+		this._currentModuleName = previousModuleName;
 	}
 	
 	private readPackageLevelDefinitions(node: ts.Node)
@@ -940,7 +941,7 @@ class TS2ASParser
 		}
 		else
 		{
-			let currentStack = this._moduleStack.join(".")
+			let currentStack = this._moduleStack.join(".");
 			let innerModule = assignedIdentifier;
 			if(currentStack.length > 0)
 			{
@@ -948,11 +949,18 @@ class TS2ASParser
 			}
 			this._definitions.forEach((definition) =>
 			{
+				let name = definition.name;
 				let packageName = definition.packageName;
-				if(packageName !== null &&
+				if(name === assignedIdentifier && packageName === currentStack)
+				{
+					definition.packageName = "";
+					definition.moduleName = this._currentModuleName;
+				}
+				else if(packageName !== null &&
 					packageName.indexOf(innerModule) === 0)
 				{
 					definition.packageName = packageName.replace(innerModule, currentStack);
+					definition.moduleName = this._currentModuleName;
 				}
 			});
 		}
