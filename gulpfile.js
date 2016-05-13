@@ -78,6 +78,8 @@ gulp.task("test-definitely-typed", function(callback)
 		["../DefinitelyTyped/angularjs/angular.d.ts"],
 		["../DefinitelyTyped/jquery/jquery.d.ts"],
 		["../DefinitelyTyped/bootstrap/bootstrap.d.ts"],
+		["../DefinitelyTyped/minimist/minimist.d.ts"],
+		["../DefinitelyTyped/page/page.d.ts"],
 	];
 	(function next()
 	{
