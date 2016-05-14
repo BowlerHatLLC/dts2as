@@ -1507,6 +1507,15 @@ describe("A module", () =>
 		expect(as3Variable.packageName).toBe("");
 		expect(as3Variable.moduleName).toBe("some-module");
 	});
+	it("may assign a function with the same name to be exported", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/export-function-as-named-module.d.ts"]).definitions;
+		let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionModule", symbols);
+		expect(as3Function).not.toBeNull();
+		expect(as3Function.name).toBe("functionModule");
+		expect(as3Function.packageName).toBe("");
+		expect(as3Function.moduleName).toBe("functionModule");
+	});
 });
 
 describe("An import", () =>
