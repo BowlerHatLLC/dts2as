@@ -958,6 +958,7 @@ class TS2ASParser
 				if(name === assignedIdentifier && packageName === currentStack)
 				{
 					definition.packageName = "";
+					definition.name = this._currentModuleName;
 					definition.moduleName = this._currentModuleName;
 				}
 				else if(packageName !== null &&
