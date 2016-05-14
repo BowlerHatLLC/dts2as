@@ -514,9 +514,13 @@ class TS2ASParser
 		return typeInSource;
 	}
 	
-	private getAS3TypeFromTSTypeNode(type: ts.TypeNode): as3.TypeDefinition
+	private getAS3TypeFromTSTypeNode(type: ts.TypeNode, as3Type?: as3.TypeDefinition): as3.TypeDefinition
 	{
 		let typeName = this.getAS3FullyQualifiedNameFromTSTypeNode(type);
+		if(as3Type && typeName === "this")
+		{
+			return as3Type;
+		}
 		return <as3.TypeDefinition> as3.getDefinitionByName(typeName, this._definitions);
 	}
 	
@@ -2170,7 +2174,7 @@ class TS2ASParser
 			throw new Error(staticMessage + " method " + methodName + "() not found on type " + as3Type.getFullyQualifiedName() + ".");
 		}
 		
-		let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type);
+		let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type, as3Type);
 		if(!methodType)
 		{
 			throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + "() on type " + as3Type.getFullyQualifiedName() + ".");
