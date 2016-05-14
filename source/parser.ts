@@ -303,6 +303,7 @@ class TS2ASParser
 	private mergeFunctionParameters(parametersToKeep: as3.ParameterDefinition[], parametersToMerge: as3.ParameterDefinition[])
 	{
 		let methodToKeepParamsCount = parametersToKeep.length;
+		let mustBeOptional: boolean = false;
 		for(let j = 0, paramCount = parametersToMerge.length; j < paramCount; j++)
 		{
 			let paramToMerge = parametersToMerge[j];
@@ -328,7 +329,15 @@ class TS2ASParser
 				parametersToKeep.length = j;
 				parametersToKeep[j] = paramToMerge;
 			}
+			if(paramToKeep.value || paramToMerge.value)
+			{
+				mustBeOptional = true;
+			}
 			paramToKeep.type = this.mergeTypes(paramToKeep.type, paramToMerge.type);
+			if(mustBeOptional && !paramToKeep.value)
+			{
+				paramToKeep.value = "undefined";
+			}
 		}
 	}
 	
