@@ -151,7 +151,7 @@ class JSExternsEmitter
 		
 		as3Class.properties.forEach((property: as3.PropertyDefinition) =>
 		{
-			if(property.isStatic || as3.requiresOverride(property, as3Class))
+			if(property.isStatic || as3.requiresClassOverride(property, as3Class))
 			{
 				return;
 			}
@@ -161,7 +161,7 @@ class JSExternsEmitter
 		
 		as3Class.methods.forEach((method: as3.MethodDefinition) =>
 		{
-			if(method.isStatic || as3.requiresOverride(method, as3Class))
+			if(method.isStatic || as3.requiresClassOverride(method, as3Class))
 			{
 				return;
 			}
@@ -199,12 +199,20 @@ class JSExternsEmitter
 		
 		as3Interface.properties.forEach((property: as3.PropertyDefinition) =>
 		{
+			if(as3.requiresInterfaceOverride(property, as3Interface))
+			{
+				return;
+			}
 			interfaceOutput += this.emitProperty(property, as3Interface);
 			interfaceOutput += NEW_LINE + NEW_LINE;
 		});
 		
 		as3Interface.methods.forEach((method: as3.MethodDefinition) =>
 		{
+			if(as3.requiresInterfaceOverride(method, as3Interface))
+			{
+				return;
+			}
 			interfaceOutput += this.emitMethod(method, as3Interface);
 			interfaceOutput += NEW_LINE + NEW_LINE;
 		});

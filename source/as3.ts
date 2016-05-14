@@ -344,7 +344,7 @@ export function requiresInterfaceOverride(target:MethodDefinition | PropertyDefi
 	return false;
 }
 
-export function requiresOverride(target:MethodDefinition | PropertyDefinition, scope:ClassDefinition): boolean
+export function requiresClassOverride(target:MethodDefinition | PropertyDefinition, scope:ClassDefinition): boolean
 {
 	let memberName = target.name;
 	let superClass = scope.superClass;
