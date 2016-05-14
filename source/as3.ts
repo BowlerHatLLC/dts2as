@@ -308,6 +308,42 @@ export function requiresImport(target:PackageLevelDefinition, scope:PackageLevel
 	return true;
 }
 
+export function requiresInterfaceOverride(target:MethodDefinition | PropertyDefinition, scope:InterfaceDefinition): boolean
+{
+	let memberName = target.name;
+	let interfaces = scope.interfaces;
+	let needsOverride = false;
+	if(target instanceof MethodDefinition)
+	{
+		needsOverride = scope.methods.some((method) =>
+		{
+			return method.name === memberName;
+		});
+	}
+	else if(target instanceof PropertyDefinition)
+	{
+		needsOverride = scope.properties.some((property) =>
+		{
+			return property.name === memberName;
+		});
+	}
+	if(needsOverride)
+	{
+		return true;
+	}
+	let interfaceCount = interfaces.length;
+	for(let i = 0; i < interfaceCount; i++)
+	{
+		let as3Interface = interfaces[i];
+		needsOverride = requiresInterfaceOverride(target, as3Interface);
+		if(needsOverride)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 export function requiresOverride(target:MethodDefinition | PropertyDefinition, scope:ClassDefinition): boolean
 {
 	let memberName = target.name;

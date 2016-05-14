@@ -257,12 +257,20 @@ class ASEmitter
 		
 		as3Interface.properties.forEach((property: as3.PropertyDefinition) =>
 		{
+			if(as3.requiresInterfaceOverride(property, as3Interface))
+			{
+				return;
+			}
 			interfaceOutput += this.emitProperty(property, as3Interface);
 			interfaceOutput += NEW_LINE;
 		});
 		
 		as3Interface.methods.forEach((method: as3.MethodDefinition) =>
 		{
+			if(as3.requiresInterfaceOverride(method, as3Interface))
+			{
+				return;
+			}
 			interfaceOutput += this.emitMethod(method, as3Interface);
 			interfaceOutput += NEW_LINE;
 		});
