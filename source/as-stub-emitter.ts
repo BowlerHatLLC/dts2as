@@ -363,8 +363,8 @@ class ASEmitter
 			if(targetName === fullyQualifiedName)
 			{
 				//if the type is in the top level package, we need to fall back
-				//to Object because there's no fully-qualified name to reference
-				return as3.BuiltIns[as3.BuiltIns.Object];
+				//to * because there's no fully-qualified name to reference
+				return "*";
 			}
 			return fullyQualifiedName;
 		}
