@@ -310,6 +310,22 @@ describe("A class", () =>
 		expect(property.isStatic).toBe(true);
 		expect(property.type).toBe(as3PropertyType);
 	});
+	it("may not have a property with the same name as the class", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/class-and-property-same-name.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassAndPropertyWithSameName", symbols);
+		expect(as3Class).not.toBeNull();
+		//it should be removed
+		expect(as3Class.properties.length).toBe(0);
+	});
+	it("may not have a method with the same name as the class", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/class-and-method-same-name.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassAndMethodWithSameName", symbols);
+		expect(as3Class).not.toBeNull();
+		//it should be removed
+		expect(as3Class.methods.length).toBe(0);
+	});
 	it("may have a static method and a member method with the same name", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/class-member-static-method-same-name.d.ts"]).definitions;

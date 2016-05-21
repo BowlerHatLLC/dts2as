@@ -158,6 +158,7 @@ class TS2ASParser
 		this.cleanupStaticSideDefinitions();
 		this.cleanupMembersWithForceStaticFlag();
 		this.cleanupInterfaceOverrides();
+		this.cleanupMembersWithSameNameAsType();
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
 	}
@@ -2316,6 +2317,28 @@ class TS2ASParser
 					 {
 						 method.isStatic = true;
 					 }
+				 })
+			 }
+		});
+	}
+
+	private cleanupMembersWithSameNameAsType()
+	{
+		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
+		{
+			 if(definition instanceof as3.ClassDefinition)
+			 {
+				 definition.properties = definition.properties.filter((property: as3.PropertyDefinition) =>
+				 {
+					 return property.name !== definition.name;
+				 });
+			 }
+			 if(definition instanceof as3.ClassDefinition ||
+			 	definition instanceof as3.InterfaceDefinition)
+			 {
+				 definition.methods = definition.methods.filter((method: as3.MethodDefinition) =>
+				 {
+					 return method.name !== definition.name;
 				 })
 			 }
 		});
