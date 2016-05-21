@@ -39,6 +39,7 @@ class ASEmitter
 		this._types = types;
 	}
 	
+	moduleMetadata: boolean = false;
 	private _types: as3.PackageLevelDefinition[];
 	
 	emitClass(as3Class: as3.ClassDefinition): string
@@ -580,7 +581,7 @@ class ASEmitter
     private emitModuleMetadata(as3Type: as3.PackageLevelDefinition): string
     {
         let moduleName = as3Type.moduleName;
-        if(moduleName)
+        if(this.moduleMetadata && moduleName)
         {
             return "[JSModule(name=\"" + moduleName + "\")]" + NEW_LINE;
         }

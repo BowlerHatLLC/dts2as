@@ -40,9 +40,11 @@ let debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
 let excludedSymbols: string[];
 let includedSymbols: string[];
 let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
+let moduleMetadata = false;
 
 let params = minimist(process.argv.slice(2),
 {
+	boolean: ["moduleMetadata"], 
 	alias:
 	{
 		i: ["include"],
@@ -140,6 +142,11 @@ for(let key in params)
 					process.exit(1);
 				}
 			}
+			break;
+		}
+		case "moduleMetadata":
+		{
+			moduleMetadata = params[key];
 			break;
 		}
 		case "exclude":
@@ -244,6 +251,7 @@ if(externsOutput.length === 0)
 }
 externsOutput += externsEmitter.emitPackages();
 let sourceEmitter = new ASStubEmitter(packageLevelSymbols);
+sourceEmitter.moduleMetadata = moduleMetadata;
 packageLevelSymbols.forEach((as3Type:as3.PackageLevelDefinition) =>
 {
 	if(!canEmit(as3Type))
@@ -516,11 +524,12 @@ function printUsage()
 	console.info("        dts2as --exclude com.example.SomeType file.d.ts");
 	console.info();
 	console.info("Options:");
-	console.info(" --outSWC FILE                      Generate a compiled SWC file. Requires either FLEX_HOME environment variable or --flexHome option.");
+	console.info(" --outSWC FILE                     Generate a compiled SWC file. Requires either FLEX_HOME environment variable or --flexHome option.");
 	console.info(" --outDir DIRECTORY                Generate ActionScript and externs files in a specific output directory. Defaults to './dts2as_generated'.");
-	console.info(" --flexHome DIRECTORY            Specify the directory where Apache FlexJS is located. Defaults to FLEX_HOME environment variable, if available.");
-	console.info(" -e SYMBOL, --exclude SYMBOL      Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
-	console.info(" -i SYMBOL, --include SYMBOL      Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
-	console.info(" -t VERSION, --target VERSION    Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
-	console.info(" -v, --version                      Print the version of dts2as.");
+	console.info(" --flexHome DIRECTORY              Specify the directory where Apache FlexJS is located. Defaults to FLEX_HOME environment variable, if available.");
+	console.info(" --moduleMetadata                  Include [JSModule] metadata for external modules.")
+	console.info(" -e SYMBOL, --exclude SYMBOL       Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
+	console.info(" -i SYMBOL, --include SYMBOL       Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
+	console.info(" -t VERSION, --target VERSION      Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
+	console.info(" -v, --version                     Print the version of dts2as.");
 }
