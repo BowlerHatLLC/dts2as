@@ -348,23 +348,38 @@ class ASEmitter
 		}
 		
 		let targetName = target.name;
+		let scopeName = scope.name;
 		
-		let typeConflictsWithMember = false;
+		let typeNameHasConflict = false;
 		if(scope instanceof as3.InterfaceDefinition || scope instanceof as3.ClassDefinition)
 		{
-			typeConflictsWithMember = scope.properties.some((prop) => 
+			typeNameHasConflict = scope.properties.some((prop) => 
 			{
 				return prop.name === targetName;
 			});
-			if(typeConflictsWithMember === false)
+			if(typeNameHasConflict === false)
 			{
-				typeConflictsWithMember = scope.methods.some((method) =>
+				typeNameHasConflict = scope.methods.some((method) =>
 				{
 					return method.name === targetName;
 				});
 			}
+			if(typeNameHasConflict === false && scopeName === targetName)
+			{
+				//if the type name is the same as the scope name, we need to
+				//check if an interface or the super class also has the same
+				//name, but appears in another package
+				typeNameHasConflict = scope.interfaces.some((otherInterface: as3.InterfaceDefinition) =>
+				{
+					return otherInterface.name === targetName;
+				});
+				if(typeNameHasConflict === false && scope instanceof as3.ClassDefinition)
+				{
+					typeNameHasConflict = scope.superClass && scope.superClass.name === targetName;
+				}
+			}
 		}
-		if(typeConflictsWithMember)
+		if(typeNameHasConflict)
 		{
 			let fullyQualifiedName = target.getFullyQualifiedName();
 			//the AS3 compiler doesn't like giving a member a type that matches
@@ -388,7 +403,7 @@ class ASEmitter
 		//has the same name, we need to be specific.
 		let nameInPackage = targetName;
 		let scopePackageName = scope.packageName;
-		if(targetName === scope.name && targetPackageName !== scopePackageName)
+		if(targetName === scopeName && targetPackageName !== scopePackageName)
 		{
 			return target.getFullyQualifiedName();
 		}
