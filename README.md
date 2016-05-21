@@ -62,11 +62,11 @@ For more details, please read the following tutorial:
 
 [Introduction to `dts2as`: Using TypeScript definitions with ActionScript](http://nextgenactionscript.com/tutorials/dts2as-typescript-definitions-with-actionscript/)
 
----
+## Support this project
 
 Want to see more ActionScript transpiler tools and utilities like `dts2as`? How about in-depth articles and step-by-step video tutorials that teach you how to use ActionScript with libraries like jQuery, CreateJS, and Pixi.js? Please [become a patron](http://patreon.com/josht) and support the next generation of ActionScript development on the web -- without a plugin!
 
-[NextGen ActionScript by Josh Tynjala on Patreon](http://patreon.com/josht).
+[NextGen ActionScript by Josh Tynjala on Patreon](http://patreon.com/josht)
 
 Special thanks to the following sponsors for their generous support:
 
