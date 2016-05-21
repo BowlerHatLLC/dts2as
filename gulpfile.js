@@ -58,8 +58,10 @@ gulp.task("test", ["build-tests"], function()
 		.pipe(jasmine());
 });
 
-//tests dts2as with several libraries from DefinitelyTyped
+//tests dts2as with a selection of libraries from DefinitelyTyped.
 //https://github.com/DefinitelyTyped/DefinitelyTyped
+//successful execution of this task is no guarantee that the generated output
+//is correct. it simply ensures that the generated output will compile.
 //usage: gulp test-definitely-typed --flexHome <Path to Apache FlexJS SDK>
 gulp.task("test-definitely-typed", function(callback)
 {
@@ -74,12 +76,36 @@ gulp.task("test-definitely-typed", function(callback)
 			"../DefinitelyTyped/easeljs/easeljs.d.ts",
 			"../DefinitelyTyped/preloadjs/preloadjs.d.ts",
 		],
-		["../DefinitelyTyped/pixi.js/pixi.js.d.ts"],
 		["../DefinitelyTyped/angularjs/angular.d.ts"],
-		["../DefinitelyTyped/jquery/jquery.d.ts"],
 		["../DefinitelyTyped/bootstrap/bootstrap.d.ts"],
+		["../DefinitelyTyped/box2d/box2dweb.d.ts"],
+		["../DefinitelyTyped/chartjs/chart.d.ts"],
+		["../DefinitelyTyped/commonmark/commonmark.d.ts"],
+		["../DefinitelyTyped/cordova/cordova.d.ts"],
+		["../DefinitelyTyped/fbsdk/fbsdk.d.ts"],
+		["../DefinitelyTyped/googlemaps/google.maps.d.ts"],
+		["../DefinitelyTyped/greensock/greensock.d.ts"],
+		["../DefinitelyTyped/handlebars/handlebars.d.ts"],
+		["../DefinitelyTyped/history/history.d.ts"],
+		["../DefinitelyTyped/humane/humane.d.ts"],
+		["../DefinitelyTyped/jade/jade.d.ts"],
+		["../DefinitelyTyped/jquery/jquery.d.ts"],
+		["../DefinitelyTyped/jqueryui/jqueryui.d.ts"],
+		["../DefinitelyTyped/knockout/knockout.d.ts"],
+		["../DefinitelyTyped/less/less.d.ts"],
+		["../DefinitelyTyped/marked/marked.d.ts"],
+		["../DefinitelyTyped/mocha/mocha.d.ts"],
 		["../DefinitelyTyped/minimist/minimist.d.ts"],
+		["../DefinitelyTyped/mustache/mustache.d.ts"],
 		["../DefinitelyTyped/page/page.d.ts"],
+		["../DefinitelyTyped/pdf/pdf.d.ts"],
+		["../DefinitelyTyped/pixi.js/pixi.js.d.ts"],
+		["../DefinitelyTyped/semver/semver.d.ts"],
+		["../DefinitelyTyped/source-map/source-map.d.ts"],
+		["../DefinitelyTyped/swfobject/swfobject.d.ts"],
+		["../DefinitelyTyped/threejs/three.d.ts"],
+		["../DefinitelyTyped/twitter/twitter.d.ts"],
+		["../DefinitelyTyped/zynga-scroller/zynga-scroller.d.ts"],
 	];
 	(function next()
 	{
@@ -94,7 +120,7 @@ gulp.task("test-definitely-typed", function(callback)
 			{
 				return callback();
 			}
-			next();
+			setImmediate(next);
 		});
 	})();
 });
@@ -108,7 +134,7 @@ function run_dts2as(files, callback)
 		console.error("Apache FlexJS SDK not found: " + flexHome);
 		process.exit(1);
 	}
-	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
+	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target ES6 --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
 	{},
 	function(error)
 	{
