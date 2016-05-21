@@ -50,6 +50,18 @@ The following arguments are available:
 
 	Print the version of `dts2as`.
 
+## Compiling with Apache FlexJS
+
+To use the generated SWC file with Apache FlexJS, append it to the external library path:
+
+```
+asjsc --external-library-path+=generated.swc src/MyProject.as
+```
+
+For more details, please read the following tutorial:
+
+[Introduction to `dts2as`: Using TypeScript definitions with ActionScript](http://nextgenactionscript.com/tutorials/dts2as-typescript-definitions-with-actionscript/)
+
 ---
 
 Want to see more ActionScript transpiler tools and utilities like `dts2as`? How about in-depth articles and step-by-step video tutorials that teach you how to use ActionScript with libraries like jQuery, CreateJS, and Pixi.js? Please [become a patron](http://patreon.com/josht) and support the next generation of ActionScript development on the web -- without a plugin!
