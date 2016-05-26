@@ -161,6 +161,7 @@ class TS2ASParser
 		this.cleanupInterfaceOverrides();
 		this.cleanupClassOverrides();
 		this.cleanupMembersWithSameNameAsType();
+		this.cleanupMembersWithStaticSideTypes();
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
 	}
@@ -2298,6 +2299,33 @@ class TS2ASParser
 				 definition.methods = definition.methods.filter((method: as3.MethodDefinition) =>
 				 {
 					 return method.name !== definition.name;
+				 })
+			 }
+		});
+	}
+
+	private cleanupMembersWithStaticSideTypes()
+	{
+		//if a member is typed as a static-side type, it will result in a
+		//compiler error because these types are removed, so convert it to *
+		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
+		{
+			 if(definition instanceof as3.ClassDefinition ||
+			 	definition instanceof as3.InterfaceDefinition)
+			 {
+				 definition.properties.forEach((property: as3.PropertyDefinition) =>
+				 {
+					 if(property.type instanceof StaticSideClassDefinition)
+					 {
+						 property.type = <as3.TypeDefinition> as3.getDefinitionByName("Object", this._definitions);
+					 }
+				 });
+				 definition.methods.forEach((method: as3.MethodDefinition) =>
+				 {
+					 if(method.type instanceof StaticSideClassDefinition)
+					 {
+						 method.type = <as3.TypeDefinition> as3.getDefinitionByName("Object", this._definitions);
+					 }
 				 })
 			 }
 		});
