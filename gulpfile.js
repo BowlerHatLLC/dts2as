@@ -69,6 +69,9 @@ gulp.task("test-definitely-typed", function(callback)
 	[
 		[ "node_modules/typescript/lib/lib.d.ts" ],
 		[ "node_modules/typescript/lib/lib.es6.d.ts" ],
+		[ "node_modules/typescript/lib/lib.es7.d.ts" ],
+		[ "node_modules/typescript/lib/typescript.d.ts" ],
+		[ "node_modules/typescript/lib/typescriptServices.d.ts" ],
 		[
 			"../DefinitelyTyped/createjs-lib/createjs-lib.d.ts",
 			"../DefinitelyTyped/tweenjs/tweenjs.d.ts",
@@ -81,21 +84,33 @@ gulp.task("test-definitely-typed", function(callback)
 		["../DefinitelyTyped/box2d/box2dweb.d.ts"],
 		["../DefinitelyTyped/chartjs/chart.d.ts"],
 		["../DefinitelyTyped/commonmark/commonmark.d.ts"],
+		["../DefinitelyTyped/facebook-js-sdk/facebook-js-sdk.d.ts"],
 		["../DefinitelyTyped/firebase/firebase.d.ts"],
 		["../DefinitelyTyped/fbsdk/fbsdk.d.ts"],
 		["../DefinitelyTyped/google.analytics/ga.d.ts"],
 		["../DefinitelyTyped/greensock/greensock.d.ts"],
+		["../DefinitelyTyped/gruntjs/gruntjs.d.ts"],
 		["../DefinitelyTyped/handlebars/handlebars.d.ts"],
 		["../DefinitelyTyped/history/history.d.ts"],
 		["../DefinitelyTyped/humane/humane.d.ts"],
+		["../DefinitelyTyped/ionic/ionic.d.ts"],
 		["../DefinitelyTyped/jade/jade.d.ts"],
 		["../DefinitelyTyped/jquery/jquery.d.ts"],
+		[
+			//jquery ui modifies jquery types, so they must be
+			//compiled together
+			"../DefinitelyTyped/jquery/jquery.d.ts",
+			"../DefinitelyTyped/jqueryui/jqueryui.d.ts"
+		],
 		["../DefinitelyTyped/less/less.d.ts"],
 		["../DefinitelyTyped/marked/marked.d.ts"],
+		["../DefinitelyTyped/mkdirp/mkdirp.d.ts"],
 		["../DefinitelyTyped/mocha/mocha.d.ts"],
 		["../DefinitelyTyped/minimist/minimist.d.ts"],
 		["../DefinitelyTyped/mustache/mustache.d.ts"],
-		//["../DefinitelyTyped/node/node.d.ts"],
+		["../DefinitelyTyped/node/node.d.ts"],
+		["../DefinitelyTyped/node-webkit/node-webkit.d.ts"],
+		["../DefinitelyTyped/onsenui/onsenui.d.ts"],
 		["../DefinitelyTyped/page/page.d.ts"],
 		["../DefinitelyTyped/pdf/pdf.d.ts"],
 		["../DefinitelyTyped/pixi.js/pixi.js.d.ts"],
@@ -133,7 +148,7 @@ function run_dts2as(files, callback)
 		console.error("Apache FlexJS SDK not found: " + flexHome);
 		process.exit(1);
 	}
-	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target ES6 --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
+	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target ES6 --outDir dts2astests_temp --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
 	{},
 	function(error)
 	{
