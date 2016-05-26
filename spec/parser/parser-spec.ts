@@ -231,6 +231,24 @@ describe("A class", () =>
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
 		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
 	});
+	it("must use interface method signature when class overrides parameter type", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/class-method-change-interface-parameter-type.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassChangeInterfaceParameterType", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.methods.length).toBe(1);
+		let method = as3Class.methods[0];
+		expect(method).not.toBeNull();
+		expect(method.name).toBe("method1");
+		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(method.isStatic).toBe(false);
+		expect(method.parameters.length).toBe(1);
+		let params = method.parameters;
+		let param1 = params[0];
+		expect(param1).not.toBeNull();
+		let as3ParameterType = as3.getDefinitionByName("Object", symbols);
+		expect(param1.type).toBe(as3ParameterType);
+	});
 	it("may have a member variable", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/class-member-variable.d.ts"]).definitions;

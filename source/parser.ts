@@ -158,6 +158,7 @@ class TS2ASParser
 		this.cleanupStaticSideDefinitions();
 		this.cleanupMembersWithForceStaticFlag();
 		this.cleanupInterfaceOverrides();
+		this.cleanupClassOverrides();
 		this.cleanupMembersWithSameNameAsType();
 		this.cleanupBuiltInTypes();
 		return { definitions: this._definitions, hasNoDefaultLib: referencedFileIsStandardLib };
@@ -2316,6 +2317,44 @@ class TS2ASParser
 					{
 						definition.methods.splice(index, 1);
 					}
+				});
+			}
+		});
+	}
+	
+	//TypeScript allows classes to change certain parts of method signatures
+	//when overloading, and that's not allowed in ActionScript
+	private cleanupClassOverrides()
+	{
+		this._definitions.forEach((definition: as3.PackageLevelDefinition) =>
+		{
+			if(definition instanceof as3.ClassDefinition)
+			{
+				definition.methods.forEach((method) =>
+				{
+					definition.interfaces.some((otherInterface) =>
+					{
+						let otherMethod = otherInterface.getMethod(method.name);
+						if(otherMethod === null)
+						{
+							return false;
+						}
+						if(method.type !== otherMethod.type)
+						{
+							method.type = otherMethod.type;
+						}
+						let parameterCount = Math.min(method.parameters.length, otherMethod.parameters.length);
+						for(let i = 0; i < parameterCount; i++)
+						{
+							let param1 = method.parameters[i];
+							let param2 = otherMethod.parameters[i];
+							if(param1.type !== param2.type)
+							{
+								param1.type = param2.type;
+							}
+						}
+						return true;
+					});
 				});
 			}
 		});
