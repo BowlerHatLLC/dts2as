@@ -232,6 +232,30 @@ export class TypeDefinition implements PackageLevelDefinition
 		}
 		return this.name;
 	}
+	
+	getProperty(name: string, isStatic: boolean): PropertyDefinition
+	{
+		for(let property of this.properties)
+		{
+			if(property.name === name && property.isStatic === isStatic)
+			{
+				return property;
+			}
+		}
+		return null;
+	}
+	
+	getMethod(name: string, isStatic: boolean): MethodDefinition
+	{
+		for(let method of this.methods)
+		{
+			if(method.name === name && method.isStatic === isStatic)
+			{
+				return method;
+			}
+		}
+		return null;
+	}
 }
 
 export class InterfaceDefinition extends TypeDefinition

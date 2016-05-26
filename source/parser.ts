@@ -595,15 +595,9 @@ class TS2ASParser
 	private addMethodToAS3Type(as3Type: as3.TypeDefinition, methodToAdd: as3.MethodDefinition)
 	{
 		//first, we need to check if this is an overload
-		for(let i = 0, methodCount = as3Type.methods.length; i < methodCount; i++)
+		let existingMethod = as3Type.getMethod(methodToAdd.name, methodToAdd.isStatic);
+		if(existingMethod !== null)
 		{
-			let existingMethod = as3Type.methods[i];
-			if(existingMethod.name !== methodToAdd.name ||
-				existingMethod.isStatic !== methodToAdd.isStatic)
-			{
-				continue;
-			}
-			//we'll ignore overloads for now
 			return;
 		}
 		//otherwise, add the new method
@@ -850,17 +844,7 @@ class TS2ASParser
 		{
 			let propertyName = property.name;
 			let isStatic = property.isStatic;
-			let existingProperty: as3.PropertyDefinition = null;
-			toType.properties.some((otherProperty) =>
-			{
-				if(otherProperty.name === propertyName &&
-					otherProperty.isStatic === isStatic)
-				{
-					existingProperty = otherProperty;
-					return true;
-				}
-				return false; 
-			});
+			let existingProperty = toType.getProperty(propertyName, isStatic);
 			if(existingProperty !== null)
 			{
 				let existingType = existingProperty.type;
@@ -887,17 +871,7 @@ class TS2ASParser
 		{
 			let methodName = method.name;
 			let isStatic = method.isStatic;
-			let existingMethod: as3.FunctionDefinition = null;
-			toType.methods.some((otherMethod) =>
-			{
-				if(otherMethod.name === methodName &&
-					otherMethod.isStatic === isStatic)
-				{
-					existingMethod = otherMethod;
-					return true;
-				}
-				return false; 
-			});
+			let existingMethod = toType.getMethod(methodName, isStatic);
 			if(existingMethod !== null)
 			{
 				this.mergeFunctionParameters(existingMethod.parameters, method.parameters);
@@ -1999,18 +1973,8 @@ class TS2ASParser
 			return;
 		}
 		let isStatic = (propertyDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
-		let as3Property: as3.PropertyDefinition = null;
-		as3Type.properties.some((otherProperty) =>
-		{
-			if(otherProperty.name === propertyName &&
-				otherProperty.isStatic === isStatic)
-			{
-				as3Property = otherProperty;
-				return true;
-			}
-			return false; 
-		});
-		if(!as3Property)
+		let as3Property = as3Type.getProperty(propertyName, isStatic);
+		if(as3Property === null)
 		{
 			throw new Error("Property " + propertyName + " not found on type " + as3Type.getFullyQualifiedName() + ".");
 		}
@@ -2047,18 +2011,8 @@ class TS2ASParser
 			//this member can be ignored
 			return;
 		}
-		let as3Property: as3.PropertyDefinition = null;
-		as3Type.properties.some((otherProperty) =>
-		{
-			if(otherProperty.name === propertyName &&
-				otherProperty.isStatic === true)
-			{
-				as3Property = otherProperty;
-				return true;
-			}
-			return false; 
-		});
-		if(!as3Property)
+		let as3Property = as3Type.getProperty(propertyName, true);
+		if(as3Property === null)
 		{
 			throw new Error("Property " + propertyName + " not found on enum type " + as3Type.getFullyQualifiedName() + ".");
 		}
@@ -2177,18 +2131,8 @@ class TS2ASParser
 			return;
 		}
 		let isStatic = (functionDeclaration.flags & ts.NodeFlags.Static) === ts.NodeFlags.Static;
-		let as3Method: as3.MethodDefinition = null;
-		as3Type.methods.some((otherMethod) =>
-		{
-			if(otherMethod.name === methodName &&
-				otherMethod.isStatic === isStatic)
-			{
-				as3Method = otherMethod;
-				return true;
-			}
-			return false; 
-		});
-		if(!as3Method)
+		let as3Method = as3Type.getMethod(methodName, isStatic);
+		if(as3Method === null)
 		{
 			let staticMessage = isStatic ? "Static" : "Non-static";
 			throw new Error(staticMessage + " method " + methodName + "() not found on type " + as3Type.getFullyQualifiedName() + ".");
