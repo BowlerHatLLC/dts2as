@@ -334,6 +334,15 @@ class TS2ASParser
 			{
 				mustBeOptional = true;
 			}
+			let mergeName = paramToMerge.name;
+			if(paramToKeep.name !== mergeName)
+			{
+				paramToKeep.name += "Or" + mergeName.substr(0, 1).toUpperCase();
+				if(mergeName.length > 1)
+				{
+					paramToKeep.name += mergeName.substr(1);
+				}
+			}
 			paramToKeep.type = this.mergeTypes(paramToKeep.type, paramToMerge.type);
 			if(mustBeOptional && !paramToKeep.value)
 			{

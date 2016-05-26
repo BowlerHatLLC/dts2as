@@ -576,6 +576,25 @@ describe("A function", () =>
 			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
 			expect(param1.isRest).toBe(false);
 		});
+		it("must merge parameter names if they do not match to avoid conflicts with the same name appearing in different places", () =>
+		{	
+			let symbols = parser.parse(["spec/fixtures/function-overload-merge-parameter-names.d.ts"]).definitions;
+			let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOverload", symbols);
+			expect(as3Function).not.toBeNull();
+			expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+			expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			expect(as3Function.type).not.toBeNull();
+			expect(as3Function.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+			let params = as3Function.parameters;
+			expect(params).not.toBeNull();
+			expect(params.length).toBe(1);
+			let param1 = params[0];
+			expect(param1).not.toBeNull();
+			expect(param1.name).toBe("param1OrParam2");
+			expect(param1.type).not.toBeNull();
+			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+			expect(param1.isRest).toBe(false);
+		});
 		it("must type a return value as Object in ActionScript if the types have no common base type", () =>
 		{
 			let symbols = parser.parse(["spec/fixtures/function-overload-incompatible-return-type.d.ts"]).definitions;
