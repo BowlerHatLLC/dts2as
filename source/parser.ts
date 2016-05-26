@@ -2310,10 +2310,7 @@ class TS2ASParser
 				{
 					let foundMethod = definition.interfaces.some((otherInterface) =>
 					{
-						return otherInterface.methods.some((otherMethod) =>
-						{
-							return otherMethod.name === method.name;
-						});
+						return otherInterface.getMethod(method.name) !== null;
 					});
 					if(foundMethod)
 					{

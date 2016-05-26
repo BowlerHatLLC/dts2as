@@ -353,17 +353,8 @@ class ASEmitter
 		let typeNameHasConflict = false;
 		if(scope instanceof as3.InterfaceDefinition || scope instanceof as3.ClassDefinition)
 		{
-			typeNameHasConflict = scope.properties.some((prop) => 
-			{
-				return prop.name === targetName;
-			});
-			if(typeNameHasConflict === false)
-			{
-				typeNameHasConflict = scope.methods.some((method) =>
-				{
-					return method.name === targetName;
-				});
-			}
+			typeNameHasConflict = scope.getProperty(targetName) !== null ||
+				scope.getMethod(targetName) !== null;
 			if(typeNameHasConflict === false && scopeName === targetName)
 			{
 				//if the type name is the same as the scope name, we need to

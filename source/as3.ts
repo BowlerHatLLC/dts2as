@@ -233,25 +233,31 @@ export class TypeDefinition implements PackageLevelDefinition
 		return this.name;
 	}
 	
-	getProperty(name: string, isStatic: boolean): PropertyDefinition
+	getProperty(name: string, isStatic?: boolean): PropertyDefinition
 	{
 		for(let property of this.properties)
 		{
-			if(property.name === name && property.isStatic === isStatic)
+			if(property.name === name)
 			{
-				return property;
+				if(isStatic === undefined || property.isStatic === isStatic)
+				{
+					return property;
+				}
 			}
 		}
 		return null;
 	}
 	
-	getMethod(name: string, isStatic: boolean): MethodDefinition
+	getMethod(name: string, isStatic?: boolean): MethodDefinition
 	{
 		for(let method of this.methods)
 		{
-			if(method.name === name && method.isStatic === isStatic)
+			if(method.name === name)
 			{
-				return method;
+				if(isStatic === undefined || method.isStatic === isStatic)
+				{
+					return method;
+				}
 			}
 		}
 		return null;
@@ -343,17 +349,11 @@ export function requiresInterfaceOverride(target:MethodDefinition | PropertyDefi
 		let as3Interface = interfaces[i];
 		if(target instanceof MethodDefinition)
 		{
-			needsOverride = as3Interface.methods.some((method) =>
-			{
-				return method.name === memberName;
-			});
+			needsOverride = as3Interface.getMethod(memberName) !== null;
 		}
 		else if(target instanceof PropertyDefinition)
 		{
-			needsOverride = as3Interface.properties.some((property) =>
-			{
-				return property.name === memberName;
-			});
+			needsOverride = as3Interface.getProperty(memberName) !== null;
 		}
 		if(needsOverride)
 		{
@@ -377,17 +377,11 @@ export function requiresClassOverride(target:MethodDefinition | PropertyDefiniti
 	{
 		if(target instanceof MethodDefinition)
 		{
-			needsOverride = superClass.methods.some((method) =>
-			{
-				return method.name === memberName;
-			});
+			needsOverride = superClass.getMethod(memberName) !== null;
 		}
 		else if(target instanceof PropertyDefinition)
 		{
-			needsOverride = superClass.properties.some((property) =>
-			{
-				return property.name === memberName;
-			});
+			needsOverride = superClass.getProperty(memberName) !== null;
 		}
 		superClass = superClass.superClass;
 	}
