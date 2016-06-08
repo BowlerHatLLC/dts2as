@@ -308,15 +308,32 @@ class TS2ASParser
 		return identifierNameRegExp.test(memberName);
 	}
 	
-	private mergeFunctionParameters(parametersToKeep: as3.ParameterDefinition[], parametersToMerge: as3.ParameterDefinition[])
+	private mergeFunctionParameters(as3Function: as3.FunctionDefinition, parametersToMerge: as3.ParameterDefinition[])
 	{
-		let methodToKeepParamsCount = parametersToKeep.length;
-		let mustBeOptional: boolean = false;
-		for(let j = 0, paramCount = parametersToMerge.length; j < paramCount; j++)
+		let parametersToKeep = as3Function.parameters;
+		if(!parametersToKeep)
 		{
-			let paramToMerge = parametersToMerge[j];
+			as3Function.parameters = parametersToMerge;
+			return;
+		}
+		let methodToKeepParamsCount = parametersToKeep.length;
+		let parametersToMergeCount = parametersToMerge.length;
+		let paramCount = Math.max(methodToKeepParamsCount, parametersToMergeCount);
+		let mustBeOptional: boolean = false;
+		for(let j = 0; j < paramCount; j++)
+		{
+			let paramToMerge: as3.ParameterDefinition = null;
+			if(parametersToMergeCount > j)
+			{
+				paramToMerge = parametersToMerge[j];
+			}
+			else
+			{
+				mustBeOptional = true;
+			}
 			if(methodToKeepParamsCount <= j)
 			{
+				mustBeOptional = true;
 				parametersToKeep[j] = paramToMerge;
 			}
 			let paramToKeep = parametersToKeep[j];
@@ -326,32 +343,38 @@ class TS2ASParser
 				//one so, we can ignore the rest of the parameters to merge
 				break;
 			}
-			if(paramToMerge.isRest)
+			if(paramToMerge)
 			{
-				//the parameters to merge have a ...rest argument earlier than
-				//what we have already, so we need to remove any remaining
-				//arguments so that the ...rest is the last argument
-				
-				//we don't know if the name is relevant, so let's go generic
-				paramToMerge.name = "rest";
-				parametersToKeep.length = j;
-				parametersToKeep[j] = paramToMerge;
-			}
-			if(paramToKeep.value || paramToMerge.value)
-			{
-				mustBeOptional = true;
-			}
-			let mergeName = paramToMerge.name;
-			if(paramToKeep.name !== mergeName)
-			{
-				paramToKeep.name += "Or" + mergeName.substr(0, 1).toUpperCase();
-				if(mergeName.length > 1)
+				if(paramToMerge.isRest)
 				{
-					paramToKeep.name += mergeName.substr(1);
+					//the parameters to merge have a ...rest argument earlier than
+					//what we have already, so we need to remove any remaining
+					//arguments so that the ...rest is the last argument
+					
+					//we don't know if the name is relevant, so let's go generic
+					paramToMerge.name = "rest";
+					parametersToKeep.length = j;
+					parametersToKeep[j] = paramToMerge;
+
+					//no more parameters after a rest argument!
+					break;
 				}
+				if(paramToKeep.value || paramToMerge.value)
+				{
+					mustBeOptional = true;
+				}
+				let mergeName = paramToMerge.name;
+				if(paramToKeep.name !== mergeName)
+				{
+					paramToKeep.name += "Or" + mergeName.substr(0, 1).toUpperCase();
+					if(mergeName.length > 1)
+					{
+						paramToKeep.name += mergeName.substr(1);
+					}
+				}
+				paramToKeep.type = this.mergeTypes(paramToKeep.type, paramToMerge.type);
 			}
-			paramToKeep.type = this.mergeTypes(paramToKeep.type, paramToMerge.type);
-			if(mustBeOptional && !paramToKeep.value)
+			if(mustBeOptional && !paramToKeep.value && !paramToKeep.isRest)
 			{
 				paramToKeep.value = "undefined";
 			}
@@ -590,7 +613,7 @@ class TS2ASParser
 	{
 		if(as3Class.constructorMethod)
 		{
-			this.mergeFunctionParameters(as3Class.constructorMethod.parameters,
+			this.mergeFunctionParameters(as3Class.constructorMethod,
 				constructorMethodToAdd.parameters);
 		}
 		else
@@ -881,7 +904,7 @@ class TS2ASParser
 			let existingMethod = toType.getMethod(methodName, isStatic);
 			if(existingMethod !== null)
 			{
-				this.mergeFunctionParameters(existingMethod.parameters, method.parameters);
+				this.mergeFunctionParameters(existingMethod, method.parameters);
 				let existingType = existingMethod.type;
 				if(existingType !== null)
 				{
@@ -1664,7 +1687,7 @@ class TS2ASParser
 		{
 			as3PackageFunction.type = returnType;
 		}
-		this.mergeFunctionParameters(as3PackageFunction.parameters, functionParameters);
+		this.mergeFunctionParameters(as3PackageFunction, functionParameters);
 		as3PackageFunction.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 		
 		this.cleanupTypeParameters(typeParameters);
@@ -2109,7 +2132,7 @@ class TS2ASParser
 			throw new Error("Constructor not found on class " + as3Class.getFullyQualifiedName() + ".");
 		}
 		let constructorParameters = this.populateParameters(constructorDeclaration);
-		this.mergeFunctionParameters(as3Constructor.parameters, constructorParameters);
+		this.mergeFunctionParameters(as3Constructor, constructorParameters);
 		
 		this.cleanupTypeParameters(typeParameters);
 	}
@@ -2151,7 +2174,7 @@ class TS2ASParser
 			throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + "() on type " + as3Type.getFullyQualifiedName() + ".");
 		}
 		let methodParameters = this.populateParameters(functionDeclaration);
-		this.mergeFunctionParameters(as3Method.parameters, methodParameters);
+		this.mergeFunctionParameters(as3Method, methodParameters);
 		let existingReturnType = as3Method.type;
 		if(existingReturnType !== null)
 		{

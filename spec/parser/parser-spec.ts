@@ -663,6 +663,70 @@ describe("A function", () =>
 			expect(param3.isRest).toBe(false);
 			expect(param3.value).toBe("undefined");
 		});
+		it("must make non-optional parameters optional when overload has more parameters", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/function-overload-make-optional-more-parameters.d.ts"]).definitions;
+			let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOverload", symbols);
+			expect(as3Function).not.toBeNull();
+			expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+			expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let params = as3Function.parameters;
+			expect(params).not.toBeNull();
+			expect(params.length).toBe(3);
+			let param1 = params[0];
+			expect(param1).not.toBeNull();
+			expect(param1.name).toBe("param1");
+			expect(param1.type).not.toBeNull();
+			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+			expect(param1.isRest).toBe(false);
+			expect(param1.value).toBeNull();
+			let param2 = params[1];
+			expect(param2).not.toBeNull();
+			expect(param2.name).toBe("param2");
+			expect(param2.type).not.toBeNull();
+			expect(param2.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+			expect(param2.isRest).toBe(false);
+			expect(param2.value).toBe("undefined");
+			let param3 = params[2];
+			expect(param3).not.toBeNull();
+			expect(param3.name).toBe("param3");
+			expect(param3.type).not.toBeNull();
+			expect(param3.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Boolean]);
+			expect(param3.isRest).toBe(false);
+			expect(param3.value).toBe("undefined");
+		});
+		it("must make non-optional parameters optional when overload has fewer parameters", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/function-overload-make-optional-fewer-parameters.d.ts"]).definitions;
+			let as3Function = <as3.PackageFunctionDefinition> as3.getDefinitionByName("functionWithOverload", symbols);
+			expect(as3Function).not.toBeNull();
+			expect(as3Function.constructor).toBe(as3.PackageFunctionDefinition);
+			expect(as3Function.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let params = as3Function.parameters;
+			expect(params).not.toBeNull();
+			expect(params.length).toBe(3);
+			let param1 = params[0];
+			expect(param1).not.toBeNull();
+			expect(param1.name).toBe("param1");
+			expect(param1.type).not.toBeNull();
+			expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+			expect(param1.isRest).toBe(false);
+			expect(param1.value).toBeNull();
+			let param2 = params[1];
+			expect(param2).not.toBeNull();
+			expect(param2.name).toBe("param2");
+			expect(param2.type).not.toBeNull();
+			expect(param2.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+			expect(param2.isRest).toBe(false);
+			expect(param2.value).toBe("undefined");
+			let param3 = params[2];
+			expect(param3).not.toBeNull();
+			expect(param3.name).toBe("param3");
+			expect(param3.type).not.toBeNull();
+			expect(param3.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Boolean]);
+			expect(param3.isRest).toBe(false);
+			expect(param3.value).toBe("undefined");
+		});
 		it("must merge rest parameters", () =>
 		{
 			let symbols = parser.parse(["spec/fixtures/function-overload-merge-rest-params.d.ts"]).definitions;

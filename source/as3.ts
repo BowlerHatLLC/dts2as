@@ -69,7 +69,7 @@ export class FunctionDefinition
 	{
 		this.name = name;
 		this.type = type;
-		this.parameters = parameters || [];
+		this.parameters = parameters;
 	}
 	
 	name: string;
