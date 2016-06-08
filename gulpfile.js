@@ -80,6 +80,7 @@ gulp.task("test-definitely-typed", function(callback)
 			"../DefinitelyTyped/preloadjs/preloadjs.d.ts",
 		],
 		["../DefinitelyTyped/angularjs/angular.d.ts"],
+		["../DefinitelyTyped/backbone/backbone.d.ts"],
 		["../DefinitelyTyped/bootstrap/bootstrap.d.ts"],
 		["../DefinitelyTyped/box2d/box2dweb.d.ts"],
 		["../DefinitelyTyped/chartjs/chart.d.ts"],
@@ -114,11 +115,13 @@ gulp.task("test-definitely-typed", function(callback)
 		["../DefinitelyTyped/page/page.d.ts"],
 		["../DefinitelyTyped/pdf/pdf.d.ts"],
 		["../DefinitelyTyped/pixi.js/pixi.js.d.ts"],
+		["../DefinitelyTyped/qunit/qunit.d.ts"],
 		["../DefinitelyTyped/rimraf/rimraf.d.ts"],
 		["../DefinitelyTyped/semver/semver.d.ts"],
 		["../DefinitelyTyped/source-map/source-map.d.ts"],
 		["../DefinitelyTyped/swfobject/swfobject.d.ts"],
 		["../DefinitelyTyped/twitter/twitter.d.ts"],
+		["../DefinitelyTyped/underscore/underscore.d.ts"],
 		["../DefinitelyTyped/zynga-scroller/zynga-scroller.d.ts"],
 	];
 	(function next()
