@@ -1232,9 +1232,10 @@ class TS2ASParser
 		throw new Error("Cannot find existing definition to replace, with name " + as3Class.getFullyQualifiedName());
 	}
 	
-	private populateTypeParameters(declaration: ts.Declaration): string[]
+	private populateTypeParameters(declaration: ts.Declaration)
 	{
-		let typeParameters: string[] = [];
+		let names: string[] = [];
+		let restore = {};
 		
 		ts.forEachChild(declaration, (node) =>
 		{
@@ -1272,19 +1273,31 @@ class TS2ASParser
 					}
 					console.info("Mapping type parameter " + typeParameterName + " to " + as3TypeName + " in " + declarationName + ".");
 				}
+				if(typeParameterName in this._typeParameterMap)
+				{
+					//we need to restore this value later because it was
+					//already defined before this declaration
+					restore[typeParameterName] = this._typeParameterMap[typeParameterName];
+				}
 				this._typeParameterMap[typeParameterName] = as3TypeName;
-				typeParameters.push(typeParameterName);
+				names.push(typeParameterName);
 			}
 		});
 		
-		return typeParameters;
+		return {names: names, restore: restore};
 	}
 	
-	private cleanupTypeParameters(typeParameters: string[])
+	private cleanupTypeParameters(typeParameters: any)
 	{
-		for(let param of typeParameters)
+		let names = typeParameters.names;
+		for(let param of names)
 		{
 			delete this._typeParameterMap[param];
+		}
+		let restore = typeParameters.restore;
+		for(let param in restore)
+		{
+			this._typeParameterMap[param] = restore[param];
 		}
 	}
 	

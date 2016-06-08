@@ -1241,6 +1241,59 @@ describe("A method", () =>
 		expect(param1.value).toBeNull();
 		expect(param1.isRest).toBe(false);
 	});
+	it("may have a type parameter with the same name as a type parameter on the class", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/method-type-parameter-same-as-class.d.ts"]).definitions;
+		let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("ClassAndMethodWithSameTypeParameter", symbols);
+		expect(as3Class).not.toBeNull();
+		expect(as3Class.constructor).toBe(as3.ClassDefinition);
+		expect(as3Class.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		
+		let methods = as3Class.methods;
+		expect(methods.length).toBe(2);
+		
+		let method = methods[0];
+		expect(method).not.toBeNull();
+		expect(method.name).toBe("method1");
+		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(method.isStatic).toBe(false);
+		expect(method.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+		let params = method.parameters;
+		expect(params).not.toBeNull();
+		expect(params.length).toBe(1);
+		let param1 = params[0];
+		expect(param1).not.toBeNull();
+		expect(param1.name).toBe("param1");
+		expect(param1.type).not.toBeNull();
+		expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		expect(param1.value).toBeNull();
+		expect(param1.isRest).toBe(false);
+		expect(methods.length).toBe(2);
+
+		let method2 = methods[1];
+		expect(method2).not.toBeNull();
+		expect(method2.name).toBe("method2");
+		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+		expect(method2.isStatic).toBe(false);
+		expect(method2.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.void]);
+		params = method2.parameters;
+		expect(params).not.toBeNull();
+		expect(params.length).toBe(2);
+		param1 = params[0];
+		expect(param1).not.toBeNull();
+		expect(param1.name).toBe("param1");
+		expect(param1.type).not.toBeNull();
+		expect(param1.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		expect(param1.value).toBeNull();
+		expect(param1.isRest).toBe(false);
+		let param2 = params[1];
+		expect(param2).not.toBeNull();
+		expect(param2.name).toBe("param2");
+		expect(param2.type).not.toBeNull();
+		expect(param2.type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		expect(param2.value).toBeNull();
+		expect(param2.isRest).toBe(false);
+	});
 });
 
 describe("A constructor", () =>
