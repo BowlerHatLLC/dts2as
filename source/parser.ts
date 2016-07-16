@@ -544,7 +544,7 @@ class TS2ASParser
 		var moduleStack = this._moduleStack.slice();
 		while(moduleStack.length > 0)
 		{
-			let packageName = moduleStack.join(".");
+			let packageName = this.getCamelCasePackage(moduleStack.join("."));
 			if(this.isNameInPackage(typeInSource, packageName))
 			{
 				typeInSource = packageName + "." + typeInSource;
@@ -801,7 +801,7 @@ class TS2ASParser
 				{
 					let nodeName = (<ts.VariableDeclaration> node).name;
 					let className = this.declarationNameToString(nodeName);
-					let packageName = this._moduleStack.join(".");
+					let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 					if(packageName)
 					{
 						className = packageName + "." + className;
@@ -968,7 +968,7 @@ class TS2ASParser
 		}
 		else
 		{
-			let currentStack = this._moduleStack.join(".");
+			let currentStack = this.getCamelCasePackage(this._moduleStack.join("."));
 			let innerModule = assignedIdentifier;
 			if(currentStack.length > 0)
 			{
@@ -1301,10 +1301,24 @@ class TS2ASParser
 		}
 	}
 	
+	private getCamelCasePackage(moduleName: string): string
+	{
+		let camelCasePackage = moduleName;
+		let moduleIndex = camelCasePackage.indexOf("-");
+		while (moduleIndex != -1 && moduleIndex < camelCasePackage.length - 1)
+		{
+			camelCasePackage = camelCasePackage.substring(0, moduleIndex)
+					+ camelCasePackage.substring(moduleIndex + 1, moduleIndex + 2).toUpperCase()
+					+ camelCasePackage.substring(moduleIndex + 2);
+			moduleIndex = camelCasePackage.indexOf("-");
+		}
+		return camelCasePackage;
+	}
+	
 	private readClass(classDeclaration: ts.ClassDeclaration): as3.ClassDefinition
 	{
 		let className = this.declarationNameToString(classDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedClassName = className;
 		if(packageName.length > 0)
 		{
@@ -1324,7 +1338,7 @@ class TS2ASParser
 	private populateClassInheritance(classDeclaration: ts.ClassDeclaration)
 	{
 		let className = this.declarationNameToString(classDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedClassName = className;
 		if(packageName.length > 0)
 		{
@@ -1399,7 +1413,7 @@ class TS2ASParser
 	private populateClassMembers(classDeclaration: ts.ClassDeclaration)
 	{
 		let className = this.declarationNameToString(classDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedClassName = className;
 		if(packageName.length > 0)
 		{
@@ -1420,7 +1434,7 @@ class TS2ASParser
 	private readInterface(interfaceDeclaration: ts.InterfaceDeclaration): as3.InterfaceDefinition
 	{
 		let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedInterfaceName = interfaceName;
 		if(packageName.length > 0)
 		{
@@ -1510,7 +1524,7 @@ class TS2ASParser
 	private populateInterfaceInheritance(interfaceDeclaration: ts.InterfaceDeclaration)
 	{
 		let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedInterfaceName = interfaceName;
 		if(packageName.length > 0)
 		{
@@ -1582,7 +1596,7 @@ class TS2ASParser
 	private populateInterfaceMembers(interfaceDeclaration: ts.InterfaceDeclaration)
 	{
 		let interfaceName = this.declarationNameToString(interfaceDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedInterfaceName = interfaceName;
 		if(packageName.length > 0)
 		{
@@ -1612,7 +1626,7 @@ class TS2ASParser
 	private readEnum(enumDeclaration: ts.EnumDeclaration): as3.ClassDefinition
 	{
 		let enumName = this.declarationNameToString(enumDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedEnumName = enumName;
 		if(packageName.length > 0)
 		{
@@ -1632,7 +1646,7 @@ class TS2ASParser
 	private populateEnumMembers(enumDeclaration: ts.EnumDeclaration)
 	{
 		let enumName = this.declarationNameToString(enumDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedEnumName = enumName;
 		if(packageName.length > 0)
 		{
@@ -1650,7 +1664,7 @@ class TS2ASParser
 	private readPackageFunction(functionDeclaration: ts.FunctionDeclaration): as3.PackageFunctionDefinition
 	{
 		let functionName = this.declarationNameToString(functionDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedName = functionName;
 		if(packageName)
 		{
@@ -1675,7 +1689,7 @@ class TS2ASParser
 		let typeParameters = this.populateTypeParameters(functionDeclaration);
 		
 		let functionName = this.declarationNameToString(functionDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedPackageFunctionName = functionName;
 		if(packageName.length > 0)
 		{
@@ -1709,7 +1723,7 @@ class TS2ASParser
 	private readPackageVariable(variableDeclaration: ts.VariableDeclaration): as3.PackageVariableDefinition
 	{
 		let variableName = this.declarationNameToString(variableDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedName = variableName;
 		if(packageName)
 		{
@@ -1749,7 +1763,7 @@ class TS2ASParser
 	private populatePackageVariable(variableDeclaration: ts.VariableDeclaration)
 	{
 		let variableName = this.declarationNameToString(variableDeclaration.name);
-		let packageName = this._moduleStack.join(".");
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
 		let fullyQualifiedPackageVariableName = variableName;
 		if(packageName.length > 0)
 		{

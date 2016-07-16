@@ -1759,6 +1759,18 @@ describe("A module", () =>
 		expect(as3Function.packageName).toBe("");
 		expect(as3Function.moduleName).toBe("functionModule");
 	});
+	describe("with hyphens in the name", () =>
+	{
+		it("must not have hyphens in the package", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/module-hyphens.d.ts"]).definitions;
+			let as3Class = <as3.ClassDefinition> as3.getDefinitionByName("moduleWithHyphens.ClassInModuleWithHyphens", symbols);
+			expect(as3Class).not.toBeNull();
+			expect(as3Class.name).toBe("ClassInModuleWithHyphens");
+			expect(as3Class.packageName).toBe("moduleWithHyphens");
+			expect(as3Class.moduleName).toBe("module-with-hyphens");
+		});
+	});
 });
 
 describe("An import", () =>
