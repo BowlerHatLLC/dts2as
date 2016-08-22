@@ -18,3 +18,4 @@ bin-release/
 node_modules/
 typings/
 .vscode/
+dts2as-*.tgz
