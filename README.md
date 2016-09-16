@@ -71,3 +71,5 @@ Want to see more ActionScript transpiler tools and utilities like `dts2as`? How 
 Special thanks to the following sponsors for their generous support:
 
 * [YETi CGI](http://yeticgi.com/)
+
+* [Moonshine IDE](http://moonshine-ide.com/)
