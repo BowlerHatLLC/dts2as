@@ -34,6 +34,10 @@ The following arguments are available:
 
 	Specify the directory where Apache FlexJS is located. Defaults to `FLEX_HOME` environment variable, if available.
 
+* `--moduleMetadata`
+
+	Adds `[JSModule]` metadata to CommonJS modules. If a module is used in code, Apache FlexJS will automatically require it.
+
 * `-e SYMBOL` or `--exclude SYMBOL`
 
 	Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.
