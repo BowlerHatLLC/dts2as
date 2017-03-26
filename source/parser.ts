@@ -609,10 +609,14 @@ export default class
 	
 	private getAS3TypeFromTSTypeNode(type: ts.TypeNode, as3Type?: as3.TypeDefinition): as3.TypeDefinition
 	{
-		let typeName = this.getAS3FullyQualifiedNameFromTSTypeNode(type);
-		if(as3Type && typeName === "this")
+		let typeName = as3.BuiltIns[as3.BuiltIns.void];
+		if(type)
 		{
-			return as3Type;
+			typeName = this.getAS3FullyQualifiedNameFromTSTypeNode(type);
+			if(as3Type && typeName === "this")
+			{
+				return as3Type;
+			}
 		}
 		return <as3.TypeDefinition> as3.getDefinitionByName(typeName, this._definitions);
 	}
