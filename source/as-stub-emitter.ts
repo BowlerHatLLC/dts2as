@@ -624,6 +624,10 @@ export default class
 					signatureOutput += "...";
 				}
 				signatureOutput += parameter.name;
+				if(parameter.name === "this")
+				{
+					signatureOutput += "_";
+				}
 				let parameterType = parameter.type;
 				if(parameterType)
 				{
