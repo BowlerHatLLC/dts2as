@@ -2112,7 +2112,7 @@ export default class
 			case ts.SyntaxKind.Constructor:
 			{
 				let constructorDeclaration = <ts.ConstructorDeclaration> member;
-				this.populateConstructor(constructorDeclaration, <as3.ClassDefinition> as3Type);;
+				this.populateConstructor(constructorDeclaration, <as3.ClassDefinition> as3Type);
 				break;
 			}
 			case ts.SyntaxKind.MethodDeclaration:
@@ -2340,15 +2340,14 @@ export default class
 	}
 	
 	private populateMethod(functionDeclaration: ts.FunctionDeclaration, as3Type: as3.TypeDefinition)
-	{
-		let typeParameters = this.populateTypeParameters(functionDeclaration);
-		
+	{	
 		let methodName = this.declarationNameToString(functionDeclaration.name);
 		if(!this.isValidMemberName(methodName))
 		{
 			//this method can be ignored
 			return;
 		}
+		let typeParameters = this.populateTypeParameters(functionDeclaration);
 		let isStatic = functionDeclaration.modifiers && functionDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
 		let as3Method = as3Type.getMethod(methodName, isStatic);
 		if(as3Method === null)
