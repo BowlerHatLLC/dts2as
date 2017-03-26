@@ -2154,17 +2154,17 @@ export default class
 			//this property can be ignored
 			return null;
 		}
+		let isStatic = propertyDeclaration.modifiers && propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
 		//if the property is declared more than once, skip it!
 		let propertyAlreadyExists = as3Type.properties.some((property) =>
 		{
-			return property.name === propertyName;
+			return property.name === propertyName && property.isStatic === isStatic;
 		});
 		if(propertyAlreadyExists)
 		{
 			//avoid duplicates!
 			return null;
 		}
-		let isStatic = propertyDeclaration.modifiers && propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
 		return new ParserPropertyDefinition(propertyName, null, null, isStatic);
 	}
 	
@@ -2324,8 +2324,18 @@ export default class
 			//this method can be ignored
 			return null;
 		}
-		let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
 		let isStatic = functionDeclaration.modifiers && functionDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		//if the property is declared more than once, skip it!
+		let methodAlreadyExists = as3Type.methods.some((method) =>
+		{
+			return method.name === methodName && method.isStatic === isStatic;
+		});
+		if(methodAlreadyExists)
+		{
+			//avoid duplicates!
+			return null;
+		}
+		let accessLevel = as3Type.constructor === as3.ClassDefinition ? as3.AccessModifiers[as3.AccessModifiers.public] : null;
 		return new ParserMethodDefinition(methodName, null, null, accessLevel, isStatic);
 	}
 	
