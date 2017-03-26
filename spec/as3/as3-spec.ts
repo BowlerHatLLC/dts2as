@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Bowler Hat LLC
+Copyright 2015-2017 Bowler Hat LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,15 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/// <reference path="../../source/as3.ts" />
-/// <reference path="../../source/parser.ts" />
-/// <reference path="../../typings/jasmine/jasmine.d.ts" />
-/// <reference path="../../node_modules/typescript/lib/typescript.d.ts" />
 
-import path = require("path");
-import as3 = require("../../source/as3");
-import TS2ASParser = require("../../source/parser");
-import ts = require("typescript");
+import * as path from "path";
+import * as ts from "typescript";
+import * as as3 from "./as3";
+import TS2ASParser from "./parser";
 
 describe("A top-level class", () =>
 {
@@ -84,7 +80,7 @@ describe("The default return value", () =>
 		let parser = new TS2ASParser(ts.ScriptTarget.ES5);
 		let standardLibPath = require.resolve("typescript");
 		standardLibPath = path.dirname(standardLibPath);
-		standardLibPath = path.resolve(standardLibPath, "lib.core.d.ts");
+		standardLibPath = path.resolve(standardLibPath, "lib.es5.d.ts");
 		symbols = parser.parse([standardLibPath]).definitions;
 	});
 	describe("for Number", () =>
@@ -133,7 +129,7 @@ describe("The common base class", () =>
 		let parser = new TS2ASParser(ts.ScriptTarget.ES5);
 		let standardLibPath = require.resolve("typescript");
 		standardLibPath = path.dirname(standardLibPath);
-		standardLibPath = path.resolve(standardLibPath, "lib.core.d.ts");
+		standardLibPath = path.resolve(standardLibPath, "lib.es5.d.ts");
 		symbols = parser.parse([standardLibPath]).definitions;
 	});
 	describe("for a class and itself", () =>

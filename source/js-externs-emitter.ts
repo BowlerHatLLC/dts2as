@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Bowler Hat LLC
+Copyright 2015-2017 Bowler Hat LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,9 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/// <reference path="./as3.ts" />
 
-import as3 = require("./as3");
+import * as as3 from "./as3";
 
 let NEW_LINE = "\n";
 
@@ -24,7 +23,7 @@ AS_TO_EXTERNS_TYPE_MAP[as3.BuiltIns[as3.BuiltIns.Number]] = "number";
 AS_TO_EXTERNS_TYPE_MAP[as3.BuiltIns[as3.BuiltIns.Boolean]] = "boolean";
 AS_TO_EXTERNS_TYPE_MAP[as3.BuiltIns[as3.BuiltIns.String]] = "string";
 
-class JSExternsEmitter
+export default class
 {
 	constructor(types: as3.PackageLevelDefinition[])
 	{
@@ -443,5 +442,3 @@ class JSExternsEmitter
 		return null;
 	}
 }
-
-export = JSExternsEmitter;

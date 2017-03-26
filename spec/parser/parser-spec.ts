@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Bowler Hat LLC
+Copyright 2015-2017 Bowler Hat LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/// <reference path="../../source/as3.ts" />
-/// <reference path="../../source/parser.ts" />
-/// <reference path="../../typings/jasmine/jasmine.d.ts" />
-/// <reference path="../../node_modules/typescript/lib/typescript.d.ts" />
 
-import as3 = require("../../source/as3");
-import TS2ASParser = require("../../source/parser");
-import ts = require("typescript");
-import path = require("path");
+import * as path from "path";
+import * as ts from "typescript";
+import * as as3 from "./as3";
+import TS2ASParser from "./parser";
+import {DebugLevel} from "./parser";
 
 describe("The parser", () =>
 {
@@ -29,7 +26,7 @@ describe("The parser", () =>
 	it("must parse the ES5 standard library", () =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 		let es5Path = require.resolve("typescript");
 		es5Path = path.dirname(es5Path);
 		es5Path = path.resolve(es5Path, "lib.d.ts");
@@ -41,14 +38,14 @@ describe("The parser", () =>
 		expect(symbols).not.toBeUndefined();
 		expect(symbols.length).toBeGreaterThan(0);
 	});
-	it("must parse the ES6 standard library", () =>
+	it("must parse the ES2015 standard library", () =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES6);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
-		let es6Path = require.resolve("typescript");
-		es6Path = path.dirname(es6Path);
-		es6Path = path.resolve(es6Path, "lib.es6.d.ts");
-		let result = parser.parse([es6Path]);
+		parser = new TS2ASParser(ts.ScriptTarget.ES2015);
+		parser.debugLevel = DebugLevel.WARN;
+		let es2015Path = require.resolve("typescript");
+		es2015Path = path.dirname(es2015Path);
+		es2015Path = path.resolve(es2015Path, "lib.es2015.d.ts");
+		let result = parser.parse([es2015Path]);
 		expect(result).not.toBeNull();
 		expect(result).not.toBeUndefined();
 		let symbols = result.definitions;
@@ -56,14 +53,14 @@ describe("The parser", () =>
 		expect(symbols).not.toBeUndefined();
 		expect(symbols.length).toBeGreaterThan(0);
 	});
-	it("must parse the ES7 standard library", () =>
+	it("must parse the ES2016 standard library", () =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES6);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
-		let es6Path = require.resolve("typescript");
-		es6Path = path.dirname(es6Path);
-		es6Path = path.resolve(es6Path, "lib.es7.d.ts");
-		let result = parser.parse([es6Path]);
+		parser = new TS2ASParser(ts.ScriptTarget.ES2016);
+		parser.debugLevel = DebugLevel.WARN;
+		let es2016Path = require.resolve("typescript");
+		es2016Path = path.dirname(es2016Path);
+		es2016Path = path.resolve(es2016Path, "lib.es2016.d.ts");
+		let result = parser.parse([es2016Path]);
 		expect(result).not.toBeNull();
 		expect(result).not.toBeUndefined();
 		let symbols = result.definitions;
@@ -79,7 +76,7 @@ describe("A TypeScript definition", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may declare a class", () =>
 	{
@@ -229,7 +226,7 @@ describe("A class", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("must use interface method signature when class overrides parameter type", () =>
 	{
@@ -246,7 +243,7 @@ describe("A class", () =>
 		let params = method.parameters;
 		let param1 = params[0];
 		expect(param1).not.toBeNull();
-		let as3ParameterType = as3.getDefinitionByName("Object", symbols);
+		let as3ParameterType = <as3.TypeDefinition> as3.getDefinitionByName("Object", symbols);
 		expect(param1.type).toBe(as3ParameterType);
 	});
 	it("may have a member variable", () =>
@@ -260,7 +257,7 @@ describe("A class", () =>
 		expect(property.name).toBe("variable1");
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(false);
-		let as3PropertyType = as3.getDefinitionByName("String", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
 	it("may have a static variable", () =>
@@ -274,7 +271,7 @@ describe("A class", () =>
 		expect(property.name).toBe("property1");
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(true);
-		let as3PropertyType = as3.getDefinitionByName("String", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
 	it("may have a member method", () =>
@@ -288,7 +285,7 @@ describe("A class", () =>
 		expect(method.name).toBe("method1");
 		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(method.isStatic).toBe(false);
-		let as3MethodType = as3.getDefinitionByName("Number", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
 	it("may have a static method", () =>
@@ -302,7 +299,7 @@ describe("A class", () =>
 		expect(method.name).toBe("method1");
 		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(method.isStatic).toBe(true);
-		let as3MethodType = as3.getDefinitionByName("Number", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
 	it("may have a static property and a member property with the same name", () =>
@@ -312,7 +309,7 @@ describe("A class", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.properties.length).toBe(2);
 		
-		let as3PropertyType = as3.getDefinitionByName("String", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		
 		let property = as3Class.properties[0];
 		expect(property).not.toBeNull();
@@ -351,7 +348,7 @@ describe("A class", () =>
 		expect(as3Class).not.toBeNull();
 		expect(as3Class.methods.length).toBe(2);
 		
-		let as3MethodType = as3.getDefinitionByName("String", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		
 		let method = as3Class.methods[0];
 		expect(method).not.toBeNull();
@@ -389,7 +386,7 @@ describe("An enum", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a property", () =>
 	{
@@ -404,7 +401,7 @@ describe("An enum", () =>
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(true);
 		expect(property.isConstant).toBe(true);
-		let as3PropertyType = as3.getDefinitionByName("int", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("int", symbols);
 		expect(property.type).toBe(as3PropertyType);
 		
 		property = as3Class.properties[1];
@@ -413,7 +410,7 @@ describe("An enum", () =>
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(true);
 		expect(property.isConstant).toBe(true);
-		as3PropertyType = as3.getDefinitionByName("int", symbols);
+		as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("int", symbols);
 		expect(property.type).toBe(as3PropertyType);
 		
 		property = as3Class.properties[2];
@@ -422,7 +419,7 @@ describe("An enum", () =>
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(true);
 		expect(property.isConstant).toBe(true);
-		as3PropertyType = as3.getDefinitionByName("int", symbols);
+		as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("int", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
 });
@@ -433,7 +430,7 @@ describe("An interface", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a property", () =>
 	{
@@ -446,13 +443,13 @@ describe("An interface", () =>
 		expect(property.name).toBe("property1");
 		expect(property.accessLevel).toBeNull();
 		expect(property.isStatic).toBe(false);
-		let as3PropertyType = as3.getDefinitionByName("String", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
 	it("may have a method", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/interface-member-method.d.ts"]).definitions;
-		let as3Interface = <as3.ClassDefinition> as3.getDefinitionByName("InterfaceWithMethod", symbols);
+		let as3Interface = <as3.TypeDefinition> as3.getDefinitionByName("InterfaceWithMethod", symbols);
 		expect(as3Interface).not.toBeNull();
 		expect(as3Interface.methods.length).toBe(1);
 		let method = as3Interface.methods[0];
@@ -460,7 +457,7 @@ describe("An interface", () =>
 		expect(method.name).toBe("method1");
 		expect(method.accessLevel).toBeNull();
 		expect(method.isStatic).toBe(false);
-		let as3MethodType = as3.getDefinitionByName("Number", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
 	it("may extend another interface", () =>
@@ -498,7 +495,7 @@ describe("A function", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
 	{
@@ -847,7 +844,7 @@ describe("A variable", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	describe("when typed as a union type in TypeScript", () =>
 	{
@@ -983,7 +980,7 @@ describe("A method", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
 	{
@@ -1302,7 +1299,7 @@ describe("A constructor", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
 	{
@@ -1502,7 +1499,7 @@ describe("A decomposed class", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have multiple static side interfaces with constructors and the same name", () =>
 	{
@@ -1526,7 +1523,7 @@ describe("A decomposed class", () =>
 					foundMethod1 = true;
 					expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 					expect(method.isStatic).toBe(true);
-					let as3MethodType = as3.getDefinitionByName("String", symbols);
+					let as3MethodType = <as3.ClassDefinition> as3.getDefinitionByName("String", symbols);
 					expect(method.type).toBe(as3MethodType);
 					break;
 				}
@@ -1535,7 +1532,7 @@ describe("A decomposed class", () =>
 					foundMethod2 = true;
 					expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 					expect(method.isStatic).toBe(true);
-					let as3MethodType = as3.getDefinitionByName("Number", symbols);
+					let as3MethodType = <as3.ClassDefinition> as3.getDefinitionByName("Number", symbols);
 					expect(method.type).toBe(as3MethodType);
 					break;
 				}
@@ -1588,7 +1585,7 @@ describe("A decomposed class", () =>
 		expect(method.name).toBe("method1");
 		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(method.isStatic).toBe(true);
-		let as3MethodType = as3.getDefinitionByName("String", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		expect(method.type).toBe(as3MethodType);
 		
 		let staticSide = as3.getDefinitionByName("StaticSide", symbols);
@@ -1649,7 +1646,7 @@ describe("A decomposed class", () =>
 		expect(property.name).toBe("property1");
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(false);
-		let as3PropertyType = as3.getDefinitionByName("String", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
 	it("may have a static property", () =>
@@ -1663,7 +1660,7 @@ describe("A decomposed class", () =>
 		expect(property.name).toBe("property1");
 		expect(property.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(property.isStatic).toBe(true);
-		let as3PropertyType = as3.getDefinitionByName("String", symbols);
+		let as3PropertyType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
 		expect(property.type).toBe(as3PropertyType);
 	});
 	it("may have a method", () =>
@@ -1677,7 +1674,7 @@ describe("A decomposed class", () =>
 		expect(method.name).toBe("method1");
 		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(method.isStatic).toBe(false);
-		let as3MethodType = as3.getDefinitionByName("Number", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
 	it("may have a static method", () =>
@@ -1691,7 +1688,7 @@ describe("A decomposed class", () =>
 		expect(method.name).toBe("method1");
 		expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 		expect(method.isStatic).toBe(true);
-		let as3MethodType = as3.getDefinitionByName("Number", symbols);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
 
@@ -1710,7 +1707,7 @@ describe("A decomposed class", () =>
 			expect(method.name).toBe("method1");
 			expect(method.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
 			expect(method.isStatic).toBe(true);
-			let as3MethodType = as3.getDefinitionByName("Number", symbols);
+			let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 			expect(method.type).toBe(as3MethodType);
 		});
 	});
@@ -1722,7 +1719,7 @@ describe("A module", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may be exported with a different name", () =>
 	{
@@ -1779,7 +1776,7 @@ describe("An import", () =>
 	beforeAll(() =>
 	{
 		parser = new TS2ASParser(ts.ScriptTarget.ES5);
-		parser.debugLevel = TS2ASParser.DebugLevel.WARN;
+		parser.debugLevel = DebugLevel.WARN;
 	});
 	describe("declared in a module", () =>
 	{

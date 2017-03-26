@@ -26,36 +26,32 @@ gulp.task("clean", function()
 
 gulp.task("build-tests", ["build", "clean-tests"], function()
 {
+	var tsProject = ts.createProject("spec/tsconfig.json");
 	return gulp.src(
 		[
 			"source/*.ts",
 			"spec/as3/*.ts",
 			"spec/parser/*.ts",
 		])
-		.pipe(ts(
-		{
-			module: "commonjs",
-			target: "ES5",
-			outDir: "spec/bin"
-		}))
+		.pipe(tsProject())
 		.pipe(gulp.dest("spec/bin"));
 });
 
 gulp.task("build", ["clean"], function()
 {
+	var tsProject = ts.createProject("tsconfig.json");
 	return gulp.src("source/*.ts")
-		.pipe(ts(
-		{
-			module: "commonjs",
-			target: "ES5"
-		}))
+		.pipe(tsProject())
 		.pipe(gulp.dest("bin"));
 });
 
 gulp.task("test", ["build-tests"], function()
 {
-	return gulp.src("spec/bin/spec/**/*.js")
-		.pipe(jasmine());
+	return gulp.src("spec/bin/*-spec.js")
+		.pipe(jasmine(
+			{
+				//includeStackTrace: true
+			}));
 });
 
 //tests dts2as with a selection of libraries from DefinitelyTyped.
@@ -68,8 +64,8 @@ gulp.task("test-definitely-typed", function(callback)
 	var libraries =
 	[
 		[ "node_modules/typescript/lib/lib.d.ts" ],
-		[ "node_modules/typescript/lib/lib.es6.d.ts" ],
-		[ "node_modules/typescript/lib/lib.es7.d.ts" ],
+		[ "node_modules/typescript/lib/lib.es2015.d.ts" ],
+		[ "node_modules/typescript/lib/lib.es2016.d.ts" ],
 		[ "node_modules/typescript/lib/typescript.d.ts" ],
 		[ "node_modules/typescript/lib/typescriptServices.d.ts" ],
 		[

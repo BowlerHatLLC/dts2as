@@ -13,21 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/// <reference path="../typings/tsd.d.ts" />
-/// <reference path="../node_modules/typescript/lib/typescript.d.ts" />
 
-import fs = require("fs");
-import path = require("path");
-import child_process = require("child_process");
-import minimist = require("minimist");
-import TS2ASParser = require("./parser");
-import ASStubEmitter = require("./as-stub-emitter");
-import JSExternsEmitter = require("./js-externs-emitter");
-import flexjsUtils = require("./flexjs-utils");
+import * as fs from "fs";
+import * as path from "path";
+import * as child_process from "child_process";
+import * as minimist from "minimist";
+import * as ts from "typescript";
+import * as mkdirp from "mkdirp";
+import * as rimraf from "rimraf";
+import TS2ASParser from "./parser";
+import {DebugLevel} from "./parser";
+import ASStubEmitter from "./as-stub-emitter";
+import JSExternsEmitter from "./js-externs-emitter";
+import {findBinCompc, findFlexHome, isValidApacheFlexJSPath} from "./flexjs-utils";
 import as3 = require("./as3");
-import ts = require("typescript");
-import mkdirp = require("mkdirp");
-import rimraf = require("rimraf");
 
 let sourceOutputPathIsTemp = false;
 let outputDirectory: string = null;
@@ -36,7 +35,7 @@ let depsSWCOutputPath: string = null;
 let externsOutputPath: string = null;
 let flexHome: string = null;
 let fileNames: string[];
-let debugLevel: TS2ASParser.DebugLevel = TS2ASParser.DebugLevel.NONE;
+let debugLevel: DebugLevel = DebugLevel.NONE;
 let excludedSymbols: string[];
 let includedSymbols: string[];
 let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
@@ -105,7 +104,7 @@ for(let key in params)
 		case "flexHome":
 		{
 			let path = params[key];
-			if(flexjsUtils.isValidApacheFlexJSPath(path))
+			if(isValidApacheFlexJSPath(path))
 			{
 				flexHome = path;
 			}
@@ -131,9 +130,19 @@ for(let key in params)
 					scriptTarget = ts.ScriptTarget.ES5;
 					break;
 				}
-				case "ES6":
+				case "ES2015":
 				{
-					scriptTarget = ts.ScriptTarget.ES6;
+					scriptTarget = ts.ScriptTarget.ES2015;
+					break;
+				}
+				case "ES2016":
+				{
+					scriptTarget = ts.ScriptTarget.ES2016;
+					break;
+				}
+				case "ES2017":
+				{
+					scriptTarget = ts.ScriptTarget.ES2017;
 					break;
 				}
 				default:
@@ -152,7 +161,7 @@ for(let key in params)
 		case "exclude":
 		{
 			let value = params[key];
-			if(value instanceof String)
+			if(typeof value === "string")
 			{
 				excludedSymbols = [value];
 			}
@@ -165,7 +174,7 @@ for(let key in params)
 		case "include":
 		{
 			let value = params[key];
-			if(value instanceof String)
+			if(typeof value === "string")
 			{
 				includedSymbols = [value];
 			}
@@ -196,7 +205,7 @@ if(fileNames.length === 0)
 }
 if(flexHome === null)
 {
-	flexHome = flexjsUtils.findFlexHome();
+	flexHome = findFlexHome();
 }
 if(outputDirectory === null)
 {
@@ -216,7 +225,7 @@ if(swcOutputPath !== null)
 	}
 	else
 	{
-		if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+		if(debugLevel >= DebugLevel.INFO)
 		{
 			console.info("Apache FlexJS: " + flexHome);
 		}
@@ -330,7 +339,7 @@ else
 	externsOutputPath = path.join(outputDirectory, "externs.js");
 }
 fs.writeFileSync(externsOutputPath, externsOutput);
-if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+if(debugLevel >= DebugLevel.INFO)
 {
 	console.info("Created JavaScript externs file: " + externsOutputPath);
 }
@@ -356,7 +365,7 @@ if(swcOutputPath !== null)
 		}
 		else
 		{
-			if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+			if(debugLevel >= DebugLevel.INFO)
 			{
 				console.info("Created SWC file for dependencies: " + depsSWCOutputPath);
 			}
@@ -383,7 +392,7 @@ if(swcOutputPath !== null)
 		console.error(compilerError);
 		console.error("Could not create SWC file. The generated ActionScript contains compile-time errors.");
 	}
-	else if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+	else if(debugLevel >= DebugLevel.INFO)
 	{
 		console.info("Created SWC file: " + swcOutputPath);
 	}
@@ -417,7 +426,7 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 {
 	let swcName = path.basename(swcPath, ".swc");
 	let externsName = swcName + ".js";
-	let compcPath = flexjsUtils.findBinCompc(flexHome);
+	let compcPath = findBinCompc(flexHome);
 	if(compcPath === null)
 	{
 		console.error("Could not find bin/compc in Apache FlexJS directory.");
@@ -448,7 +457,7 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 	//we need to use ./compc to avoid launching a different version of compc
 	//that might be added to the PATH environment variable.
 	let compcCommand = "." + path.sep + path.basename(compcPath);
-	if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+	if(debugLevel >= DebugLevel.INFO)
 	{
 		console.info("Running: " + compcCommand + " " + compcArgs.join(" "));
 	}
@@ -500,7 +509,7 @@ function writeAS3File(symbol: as3.PackageLevelDefinition, sourcePaths: string[],
 	let outputDirPath = path.dirname(outputFilePath);
 	mkdirp.sync(outputDirPath);
 	fs.writeFileSync(outputFilePath, code);
-	if(debugLevel >= TS2ASParser.DebugLevel.INFO)
+	if(debugLevel >= DebugLevel.INFO)
 	{
 		console.info("Created ActionScript file: " + outputFilePath);
 	}
@@ -530,6 +539,6 @@ function printUsage()
 	console.info(" --moduleMetadata                  Include [JSModule] metadata for external modules.")
 	console.info(" -e SYMBOL, --exclude SYMBOL       Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL       Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
-	console.info(" -t VERSION, --target VERSION      Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'");
+	console.info(" -t VERSION, --target VERSION      Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), 'ES2015', 'ES2016', or 'ES2017'");
 	console.info(" -v, --version                     Print the version of dts2as.");
 }

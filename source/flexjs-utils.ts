@@ -1,5 +1,5 @@
 /*
-Copyright 2015 Bowler Hat LLC
+Copyright 2015-2017 Bowler Hat LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,11 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/// <reference path="../typings/tsd.d.ts" />
 
-import fs = require("fs");
-import path = require("path");
-import os = require("os");
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
 export function isValidApacheFlexJSPath(sdkPath: string)
 {
