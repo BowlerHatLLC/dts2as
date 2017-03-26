@@ -66,59 +66,63 @@ gulp.task("test-definitely-typed", function(callback)
 		[ "node_modules/typescript/lib/lib.d.ts" ],
 		[ "node_modules/typescript/lib/lib.es2015.d.ts" ],
 		[ "node_modules/typescript/lib/lib.es2016.d.ts" ],
-		[ "node_modules/typescript/lib/typescript.d.ts" ],
-		[ "node_modules/typescript/lib/typescriptServices.d.ts" ],
-		[
-			"../../DefinitelyTyped/createjs-lib/createjs-lib.d.ts",
-			"../../DefinitelyTyped/tweenjs/tweenjs.d.ts",
-			"../../DefinitelyTyped/soundjs/soundjs.d.ts",
-			"../../DefinitelyTyped/easeljs/easeljs.d.ts",
-			"../../DefinitelyTyped/preloadjs/preloadjs.d.ts",
-		],
-		["../../DefinitelyTyped/angularjs/angular.d.ts"],
-		["../../DefinitelyTyped/backbone/backbone.d.ts"],
-		["../../DefinitelyTyped/bootstrap/bootstrap.d.ts"],
-		["../../DefinitelyTyped/box2d/box2dweb.d.ts"],
-		["../../DefinitelyTyped/chartjs/chart.d.ts"],
-		["../../DefinitelyTyped/commonmark/commonmark.d.ts"],
-		["../../DefinitelyTyped/facebook-js-sdk/facebook-js-sdk.d.ts"],
-		["../../DefinitelyTyped/firebase/firebase.d.ts"],
-		["../../DefinitelyTyped/fbsdk/fbsdk.d.ts"],
-		["../../DefinitelyTyped/google.analytics/ga.d.ts"],
-		["../../DefinitelyTyped/greensock/greensock.d.ts"],
-		["../../DefinitelyTyped/gruntjs/gruntjs.d.ts"],
-		["../../DefinitelyTyped/handlebars/handlebars.d.ts"],
-		["../../DefinitelyTyped/history/history.d.ts"],
-		["../../DefinitelyTyped/humane/humane.d.ts"],
-		["../../DefinitelyTyped/ionic/ionic.d.ts"],
-		["../../DefinitelyTyped/jade/jade.d.ts"],
-		["../../DefinitelyTyped/jquery/jquery.d.ts"],
+		[ "node_modules/typescript/lib/lib.es2017.d.ts" ],
+		//[ "node_modules/typescript/lib/typescript.d.ts" ],
+		//[ "node_modules/typescript/lib/typescriptServices.d.ts" ],
+		/*[
+			"../../DefinitelyTyped/types/createjs-lib/index.d.ts",
+			"../../DefinitelyTyped/types/tweenjs/index.d.ts",
+			"../../DefinitelyTyped/types/soundjs/index.d.ts",
+			"../../DefinitelyTyped/types/easeljs/index.d.ts",
+			"../../DefinitelyTyped/types/preloadjs/index.d.ts",
+		],*/
+		//["../../DefinitelyTyped/types/angular/index.d.ts"],
+		//["../../DefinitelyTyped/types/backbone/index.d.ts"],
+		["../../DefinitelyTyped/types/bootstrap/index.d.ts"],
+		//["../../DefinitelyTyped/types/box2d/index.d.ts"],
+		["../../DefinitelyTyped/types/chartjs/index.d.ts"],
+		["../../DefinitelyTyped/types/commonmark/index.d.ts"],
+		["../../DefinitelyTyped/types/facebook-js-sdk/index.d.ts"],
+		["../../DefinitelyTyped/types/firebase/index.d.ts"],
+		["../../DefinitelyTyped/types/fb/index.d.ts"],
+		["../../DefinitelyTyped/types/google.analytics/index.d.ts"],
+		["../../DefinitelyTyped/types/gsap/index.d.ts"],
+		//["../../DefinitelyTyped/types/grunt/index.d.ts"],
+		["../../DefinitelyTyped/types/handlebars/index.d.ts"],
+		//["../../DefinitelyTyped/types/history/index.d.ts"],
+		["../../DefinitelyTyped/types/humane/index.d.ts"],
+		//["../../DefinitelyTyped/types/ionic/index.d.ts"],
+		["../../DefinitelyTyped/types/jade/index.d.ts"],
+		["../../DefinitelyTyped/types/jquery/index.d.ts"],
 		[
 			//jquery ui modifies jquery types, so they must be
 			//compiled together
-			"../../DefinitelyTyped/jquery/jquery.d.ts",
-			"../../DefinitelyTyped/jqueryui/jqueryui.d.ts"
+			"../../DefinitelyTyped/types/jquery/index.d.ts",
+			"../../DefinitelyTyped/types/jqueryui/index.d.ts"
 		],
-		["../../DefinitelyTyped/less/less.d.ts"],
-		["../../DefinitelyTyped/marked/marked.d.ts"],
-		["../../DefinitelyTyped/mkdirp/mkdirp.d.ts"],
-		["../../DefinitelyTyped/mocha/mocha.d.ts"],
-		["../../DefinitelyTyped/minimist/minimist.d.ts"],
-		["../../DefinitelyTyped/mustache/mustache.d.ts"],
-		["../../DefinitelyTyped/node/node.d.ts"],
-		["../../DefinitelyTyped/node-webkit/node-webkit.d.ts"],
-		["../../DefinitelyTyped/onsenui/onsenui.d.ts"],
-		["../../DefinitelyTyped/page/page.d.ts"],
-		["../../DefinitelyTyped/pdf/pdf.d.ts"],
-		["../../DefinitelyTyped/pixi.js/pixi.js.d.ts"],
-		["../../DefinitelyTyped/qunit/qunit.d.ts"],
-		["../../DefinitelyTyped/rimraf/rimraf.d.ts"],
-		["../../DefinitelyTyped/semver/semver.d.ts"],
-		["../../DefinitelyTyped/source-map/source-map.d.ts"],
-		["../../DefinitelyTyped/swfobject/swfobject.d.ts"],
-		["../../DefinitelyTyped/twitter/twitter.d.ts"],
-		["../../DefinitelyTyped/underscore/underscore.d.ts"],
-		["../../DefinitelyTyped/zynga-scroller/zynga-scroller.d.ts"],
+		["../../DefinitelyTyped/types/less/index.d.ts"],
+		["../../DefinitelyTyped/types/marked/index.d.ts"],
+		["../../DefinitelyTyped/types/mkdirp/index.d.ts"],
+		["../../DefinitelyTyped/types/mocha/index.d.ts"],
+		["../../DefinitelyTyped/types/minimist/index.d.ts"],
+		["../../DefinitelyTyped/types/mustache/index.d.ts"],
+		/*["../../DefinitelyTyped/types/node/index.d.ts"],
+		[
+			"../../DefinitelyTyped/types/node/index.d.ts",
+			"../../DefinitelyTyped/types/nw.js/index.d.ts"
+		],*/
+		["../../DefinitelyTyped/types/onsenui/index.d.ts"],
+		["../../DefinitelyTyped/types/page/index.d.ts"],
+		["../../DefinitelyTyped/types/pdf/index.d.ts"],
+		//["../../DefinitelyTyped/types/pixi.js/index.d.ts"],
+		["../../DefinitelyTyped/types/qunit/index.d.ts"],
+		["../../DefinitelyTyped/types/rimraf/index.d.ts"],
+		//["../../DefinitelyTyped/types/semver/index.d.ts"],
+		["../../DefinitelyTyped/types/source-map/index.d.ts"],
+		["../../DefinitelyTyped/types/swfobject/index.d.ts"],
+		["../../DefinitelyTyped/types/twitter/index.d.ts"],
+		//["../../DefinitelyTyped/types/underscore/index.d.ts"],
+		["../../DefinitelyTyped/types/zynga-scroller/index.d.ts"],
 	];
 	(function next()
 	{
@@ -147,9 +151,10 @@ function run_dts2as(files, callback)
 		console.error("Apache FlexJS SDK not found: " + flexHome);
 		process.exit(1);
 	}
-	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target ES6 --outDir dts2astests_temp --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
+	console.info(files.join(" "));
+	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target ES2015 --debug 1 --outDir dts2astests_temp --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
 	{},
-	function(error)
+	function(error, stdout, stderr)
 	{
 		rimraf.sync("dts2astests_temp");
 		if (error !== null)
