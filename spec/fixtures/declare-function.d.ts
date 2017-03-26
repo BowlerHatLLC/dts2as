@@ -1,1 +1,1 @@
-declare function declareFunction {}
+declare function declareFunction() {}
