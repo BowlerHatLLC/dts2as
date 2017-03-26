@@ -443,7 +443,12 @@ export default class
 	
 	private addParametersImports(as3Function: as3.FunctionDefinition, as3Type: as3.PackageLevelDefinition, imports: string[])
 	{
-		as3Function.parameters.forEach((parameter: as3.ParameterDefinition) =>
+		let params = as3Function.parameters;
+		if(!params)
+		{
+			return;
+		}
+		params.forEach((parameter: as3.ParameterDefinition) =>
 		{
 			let parameterType = parameter.type;
 			if(as3.requiresImport(parameterType, as3Type))
