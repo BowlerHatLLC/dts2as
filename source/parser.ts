@@ -493,6 +493,28 @@ export default class
 							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
 							break;
 						}
+						case ts.SyntaxKind.NumericLiteral:
+						{
+							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Number];
+							break;
+						}
+						case ts.SyntaxKind.TrueKeyword:
+						{
+							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
+							break;
+						}
+						case ts.SyntaxKind.FalseKeyword:
+						{
+							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
+							break;
+						}
+						default:
+						{
+							if(this.debugLevel >= DebugLevel.WARN && !this._currentFileIsExternal)
+							{
+								console.warn("Unknown literal type: " + literalType.literal.kind);
+							}
+						}
 					}
 					break;
 				}
@@ -601,7 +623,7 @@ export default class
 		{
 			typeInSource = this._typeParameterMap[typeInSource];
 		}
-		if(typeInSource in this._typeAliasMap)
+		while(typeInSource in this._typeAliasMap)
 		{
 			typeInSource = this._typeAliasMap[typeInSource];
 		}
@@ -753,6 +775,22 @@ export default class
 				{
 					let exportAssignment = <ts.ExportAssignment> node;
 					this.assignExport(exportAssignment);
+				}
+				return;
+			}
+			if(node.kind === ts.SyntaxKind.TypeAliasDeclaration)
+			{
+				let typeAliasDeclaration = <ts.TypeAliasDeclaration> node;
+				let aliasName = this.declarationNameToString(typeAliasDeclaration.name);
+				let typeNode = typeAliasDeclaration.type;
+				let aliasType = this.getAS3TypeFromTSTypeNode(typeNode);
+				if(aliasType)
+				{
+					//populate the alias, if possible. otherwise, wait for the
+					//next pass. this isn't ideal, but it's actuall possible
+					//for an alias to reference another alias that hasn't been
+					//parsed yet! we try over multiple passes to get them all.
+					this._typeAliasMap[aliasName] = aliasType.getFullyQualifiedName();
 				}
 				return;
 			}
