@@ -69,13 +69,13 @@ gulp.task("test-definitely-typed", function(callback)
 		[ "node_modules/typescript/lib/lib.es2017.d.ts" ],
 		//[ "node_modules/typescript/lib/typescript.d.ts" ],
 		//[ "node_modules/typescript/lib/typescriptServices.d.ts" ],
-		/*[
+		[
 			"../../DefinitelyTyped/types/createjs-lib/index.d.ts",
 			"../../DefinitelyTyped/types/tweenjs/index.d.ts",
 			"../../DefinitelyTyped/types/soundjs/index.d.ts",
 			"../../DefinitelyTyped/types/easeljs/index.d.ts",
 			"../../DefinitelyTyped/types/preloadjs/index.d.ts",
-		],*/
+		],
 		//["../../DefinitelyTyped/types/angular/index.d.ts"],
 		//["../../DefinitelyTyped/types/backbone/index.d.ts"],
 		["../../DefinitelyTyped/types/bootstrap/index.d.ts"],
