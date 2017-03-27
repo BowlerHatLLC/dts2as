@@ -490,21 +490,27 @@ export default class
 					{
 						case ts.SyntaxKind.StringLiteral:
 						{
+							//variable: "some value";
 							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
 							break;
 						}
 						case ts.SyntaxKind.NumericLiteral:
 						{
+
+							//variable: 1234;
 							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Number];
 							break;
 						}
 						case ts.SyntaxKind.TrueKeyword:
 						{
+
+							//variable: true;
 							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
 							break;
 						}
 						case ts.SyntaxKind.FalseKeyword:
 						{
+							//variable: false;
 							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
 							break;
 						}
@@ -518,13 +524,21 @@ export default class
 					}
 					break;
 				}
+				case ts.SyntaxKind.IndexedAccessType:
+				{
+					//variable: SomeType[K];
+					fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
+					break;
+				}
 				case ts.SyntaxKind.TypeLiteral:
 				{
+					//variable: {};
 					fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Object];
 					break;
 				}
 				case ts.SyntaxKind.ObjectKeyword:
 				{
+					//variable: object;
 					fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Object];
 					break;
 				}
@@ -583,10 +597,6 @@ export default class
 			else if(startArrayIndex === (endArrayIndex - 1))
 			{
 				typeInSource = typeInSource.substr(0, startArrayIndex);
-			}
-			else //it's a key of some kind
-			{
-				return as3.BuiltIns[as3.BuiltIns.String];
 			}
 		}
 		return typeInSource;
@@ -2154,7 +2164,11 @@ export default class
 			//this property can be ignored
 			return null;
 		}
-		let isStatic = propertyDeclaration.modifiers && propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		let isStatic = false;
+		if(propertyDeclaration.modifiers)
+		{
+			isStatic = propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		}
 		//if the property is declared more than once, skip it!
 		let propertyAlreadyExists = as3Type.properties.some((property) =>
 		{
@@ -2176,7 +2190,11 @@ export default class
 			//this property can be ignored
 			return;
 		}
-		let isStatic = propertyDeclaration.modifiers && propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		let isStatic = false;
+		if(propertyDeclaration.modifiers)
+		{
+			isStatic = propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		}
 		let as3Property = as3Type.getProperty(propertyName, isStatic);
 		if(as3Property === null)
 		{
@@ -2348,7 +2366,11 @@ export default class
 			return;
 		}
 		let typeParameters = this.populateTypeParameters(functionDeclaration);
-		let isStatic = functionDeclaration.modifiers && functionDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		let isStatic = false;
+		if(functionDeclaration.modifiers)
+		{
+			isStatic = functionDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		}
 		let as3Method = as3Type.getMethod(methodName, isStatic);
 		if(as3Method === null)
 		{
@@ -2386,7 +2408,6 @@ export default class
 			//use public for classes
 			as3Method.accessLevel = as3.AccessModifiers[as3.AccessModifiers.public];
 		}
-		
 		this.cleanupTypeParameters(typeParameters);
 	}
 	
@@ -2528,14 +2549,14 @@ export default class
 				 {
 					 if(property.type instanceof StaticSideClassDefinition)
 					 {
-						 property.type = <as3.TypeDefinition> as3.getDefinitionByName("Object", this._definitions);
+						 property.type = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
 					 }
 				 });
 				 definition.methods.forEach((method: as3.MethodDefinition) =>
 				 {
 					 if(method.type instanceof StaticSideClassDefinition)
 					 {
-						 method.type = <as3.TypeDefinition> as3.getDefinitionByName("Object", this._definitions);
+						 method.type = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
 					 }
 				 })
 			 }
