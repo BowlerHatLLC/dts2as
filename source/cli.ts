@@ -472,22 +472,57 @@ function compileSWC(sourcePaths: string[], externsPath: string, swcPath: string)
 	return result;
 }
 
+function checkAS3FilePath(outputSourcePath: string, packageParts: string[]): string
+{
+	let currentPath = outputSourcePath;
+	let partsCount = packageParts.length;
+	let index = 0;
+	do
+	{
+		let next = packageParts[index];
+		index++;
+		let nextLowerCase = next.toLowerCase();
+		let files = fs.readdirSync(currentPath);
+		for(let i = 0, count = files.length; i < count; i++)
+		{
+			let file = files[i];
+			if(file.toLowerCase() === nextLowerCase &&
+				file !== next)
+			{
+				//we cannot add this file to the source path because it already contains
+				//a package or file with the same name in a different case
+				return null;
+			}
+		}
+		currentPath = path.join(currentPath, next);
+		if(!fs.existsSync(currentPath))
+		{
+			//if the path does not exist, then there can't be a conflict
+			let packagePath = path.join.apply(null, packageParts);
+			return path.join(outputSourcePath, packagePath);
+		}
+	}
+	while(index < partsCount)
+	return currentPath;
+}
+
 function getAS3FilePath(symbol: as3.PackageLevelDefinition, sourcePaths: string[], directoryPrefix: string): string
 {
 	let packageParts = symbol.packageName.split(".");
 	packageParts.push(symbol.name + ".as");
-	let pathToClass = path.join.apply(null, packageParts);
 	for(let i = 0, count = sourcePaths.length; i < count; i++)
 	{
 		let sourcePath = sourcePaths[i];
-		let as3OutputPath = path.join(outputDirectory, sourcePath, pathToClass);
+		let outputSourcePath = path.join(outputDirectory, sourcePath);
 		//we're trying to avoid name conflicts because file systems aren't case
 		//sensitive, but the ActionScript language is case sensitive and each
-		//package-level symbol needs to be in a different file.
+		//package-level symbol needs to be in a different file. that's why we
+		//can't simply call fs.existsSync() here.
 		//as a workaround, we create multiple directories when a conflict is found.
-		if(!fs.existsSync(as3OutputPath))
+		let as3FilePath = checkAS3FilePath(outputSourcePath, packageParts);
+		if(as3FilePath !== null)
 		{
-			return as3OutputPath;
+			return as3FilePath;
 		}
 	}
 	let newSourcePath = directoryPrefix;
@@ -500,6 +535,7 @@ function getAS3FilePath(symbol: as3.PackageLevelDefinition, sourcePaths: string[
 	let directoryPath = path.join(outputDirectory, newSourcePath);
 	//avoid conflicts with files that already exist in the new src* directory
 	rimraf.sync(directoryPath);
+	let pathToClass = path.join.apply(null, packageParts);
 	return path.join(directoryPath, pathToClass);
 }
 	
