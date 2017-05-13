@@ -59,7 +59,7 @@ gulp.task("test", ["build-tests"], function()
 //successful execution of this task is no guarantee that the generated output
 //is correct. it simply ensures that the generated output will compile.
 //usage: gulp test-definitely-typed --flexHome <Path to Apache FlexJS SDK>
-gulp.task("test-definitely-typed", function(callback)
+gulp.task("test-definitely-typed", ["build"], function(callback)
 {
 	var libraries =
 	[
@@ -111,10 +111,9 @@ gulp.task("test-definitely-typed", function(callback)
 			"../../DefinitelyTyped/types/node/index.d.ts",
 			"../../DefinitelyTyped/types/nw.js/index.d.ts"
 		],*/
-		["../../DefinitelyTyped/types/onsenui/index.d.ts"],
 		["../../DefinitelyTyped/types/page/index.d.ts"],
 		["../../DefinitelyTyped/types/pdf/index.d.ts"],
-		//["../../DefinitelyTyped/types/pixi.js/index.d.ts"],
+		["../../DefinitelyTyped/types/pixi.js/index.d.ts"],
 		["../../DefinitelyTyped/types/qunit/index.d.ts"],
 		["../../DefinitelyTyped/types/rimraf/index.d.ts"],
 		//["../../DefinitelyTyped/types/semver/index.d.ts"],
