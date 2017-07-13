@@ -1770,6 +1770,43 @@ describe("A module", () =>
 	});
 });
 
+describe("A type alias", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser.debugLevel = DebugLevel.WARN;
+	});
+	it("may be declared", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/type-alias.d.ts"]).definitions;
+		let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("typeAlias", symbols);
+		expect(as3Variable).not.toBeNull();
+		expect(as3Variable.name).toBe("typeAlias");
+		let as3VariableType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
+		expect(as3Variable.type).toBe(as3VariableType);
+	});
+	it("may be declared in a module", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/type-alias-module.d.ts"]).definitions;
+		let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("typeAlias", symbols);
+		expect(as3Variable).not.toBeNull();
+		expect(as3Variable.name).toBe("typeAlias");
+		let as3VariableType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
+		expect(as3Variable.type).toBe(as3VariableType);
+	});
+	it("may be declared in a submodule and referenced without full module name", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/type-alias-submodule.d.ts"]).definitions;
+		let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("module1.typeAlias", symbols);
+		expect(as3Variable).not.toBeNull();
+		expect(as3Variable.name).toBe("typeAlias");
+		let as3VariableType = <as3.TypeDefinition> as3.getDefinitionByName("String", symbols);
+		expect(as3Variable.type).toBe(as3VariableType);
+	});
+});
+
 describe("An import", () =>
 {
 	let parser: TS2ASParser;

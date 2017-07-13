@@ -637,6 +637,16 @@ export default class
 		{
 			typeInSource = this._typeAliasMap[typeInSource];
 		}
+		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
+		if(packageName)
+		{
+			let typeInSourceWithPackage = packageName + "." + typeInSource;
+			while(typeInSourceWithPackage in this._typeAliasMap)
+			{
+				typeInSourceWithPackage = this._typeAliasMap[typeInSourceWithPackage];
+				typeInSource = typeInSourceWithPackage;
+			}
+		}
 		for(let moduleAlias in this._importModuleMap)
 		{
 			if(typeInSource.indexOf(moduleAlias) === 0)
@@ -792,6 +802,11 @@ export default class
 			{
 				let typeAliasDeclaration = <ts.TypeAliasDeclaration> node;
 				let aliasName = this.declarationNameToString(typeAliasDeclaration.name);
+				let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
+				if(packageName)
+				{
+					aliasName = packageName + "." + aliasName;
+				}
 				let typeNode = typeAliasDeclaration.type;
 				let aliasType = this.getAS3TypeFromTSTypeNode(typeNode);
 				if(aliasType)
@@ -1223,6 +1238,11 @@ export default class
 			{
 				let typeAliasDeclaration = <ts.TypeAliasDeclaration> node;
 				let aliasName = this.declarationNameToString(typeAliasDeclaration.name);
+				let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
+				if(packageName)
+				{
+					aliasName = packageName + "." + aliasName;
+				}
 				let typeNode = typeAliasDeclaration.type;
 				if(typeNode.kind !== ts.SyntaxKind.MappedType)
 				{
@@ -2253,7 +2273,7 @@ export default class
 		as3Property.type = propertyType;
 	}
 	
-	private populateParameters(functionLikeDeclaration: ts.FunctionLikeDeclaration): as3.ParameterDefinition[]
+	private populateParameters(functionLikeDeclaration: ts.FunctionLikeDeclaration, as3Type?: as3.TypeDefinition): as3.ParameterDefinition[]
 	{
 		let parameters = functionLikeDeclaration.parameters;
 		let as3Parameters: as3.ParameterDefinition[] = [];
@@ -2261,7 +2281,7 @@ export default class
 		{
 			let value = parameters[i];
 			let parameterName = this.declarationNameToString(value.name);
-			let parameterType = this.getAS3TypeFromTSTypeNode(value.type);
+			let parameterType = this.getAS3TypeFromTSTypeNode(value.type, as3Type);
 			if(!parameterType)
 			{
 				let functionName = "constructor";
@@ -2273,7 +2293,7 @@ export default class
 				//this is a bug in dts2as, and we warn the user that something went
 				//wrong, but we continue anyway because the output may still be
 				//useful, even if not complete
-				console.error("Error: Type " + parameterTypeName + " not found for parameter " + parameterName + " in function " + functionName + ".");
+				console.error("Error: Type " + parameterTypeName + " not found for parameter " + parameterName + " in function " + functionName + (as3Type ? " on type " + as3Type.getFullyQualifiedName() : "") + ".");
 				parameterType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
 			}
 			if(parameterType instanceof as3.InterfaceDefinition)
@@ -2343,7 +2363,7 @@ export default class
 		{
 			throw new Error("Constructor not found on class " + as3Class.getFullyQualifiedName() + ".");
 		}
-		let constructorParameters = this.populateParameters(constructorDeclaration);
+		let constructorParameters = this.populateParameters(constructorDeclaration, as3Class);
 		this.mergeFunctionParameters(as3Constructor, constructorParameters);
 		
 		this.cleanupTypeParameters(typeParameters);
@@ -2402,7 +2422,7 @@ export default class
 			console.error("Error: Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + "() on type " + as3Type.getFullyQualifiedName() + ".");
 			methodType = as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions) as as3.TypeDefinition;
 		}
-		let methodParameters = this.populateParameters(functionDeclaration);
+		let methodParameters = this.populateParameters(functionDeclaration, as3Type);
 		this.mergeFunctionParameters(as3Method, methodParameters);
 		let existingReturnType = as3Method.type;
 		if(existingReturnType !== null)
