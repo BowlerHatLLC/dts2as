@@ -76,51 +76,56 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 			"../../DefinitelyTyped/types/easeljs/index.d.ts",
 			"../../DefinitelyTyped/types/preloadjs/index.d.ts",
 		],
-		//["../../DefinitelyTyped/types/angular/index.d.ts"],
+		["../../DefinitelyTyped/types/angular/index.d.ts"],
 		//["../../DefinitelyTyped/types/backbone/index.d.ts"],
 		["../../DefinitelyTyped/types/bootstrap/index.d.ts"],
 		//["../../DefinitelyTyped/types/box2d/index.d.ts"],
 		["../../DefinitelyTyped/types/chartjs/index.d.ts"],
-		["../../DefinitelyTyped/types/commonmark/index.d.ts"],
+		["../../DefinitelyTyped/types/colors/index.d.ts"],
+		//["../../DefinitelyTyped/types/commonmark/index.d.ts"],
 		["../../DefinitelyTyped/types/facebook-js-sdk/index.d.ts"],
 		["../../DefinitelyTyped/types/firebase/index.d.ts"],
 		["../../DefinitelyTyped/types/fb/index.d.ts"],
 		["../../DefinitelyTyped/types/google.analytics/index.d.ts"],
 		["../../DefinitelyTyped/types/gsap/index.d.ts"],
-		//["../../DefinitelyTyped/types/grunt/index.d.ts"],
+		["../../DefinitelyTyped/types/grunt/index.d.ts"],
+		["../../DefinitelyTyped/types/gulp/index.d.ts"],
 		["../../DefinitelyTyped/types/handlebars/index.d.ts"],
-		//["../../DefinitelyTyped/types/history/index.d.ts"],
+		["../../DefinitelyTyped/types/history/index.d.ts"],
 		["../../DefinitelyTyped/types/humane/index.d.ts"],
-		//["../../DefinitelyTyped/types/ionic/index.d.ts"],
+		["../../DefinitelyTyped/types/ionic/index.d.ts"],
 		["../../DefinitelyTyped/types/jade/index.d.ts"],
-		["../../DefinitelyTyped/types/jquery/index.d.ts"],
-		[
+		//["../../DefinitelyTyped/types/jquery/index.d.ts"],
+		//[
 			//jquery ui modifies jquery types, so they must be
 			//compiled together
-			"../../DefinitelyTyped/types/jquery/index.d.ts",
-			"../../DefinitelyTyped/types/jqueryui/index.d.ts"
-		],
+		//	"../../DefinitelyTyped/types/jquery/index.d.ts",
+		//	"../../DefinitelyTyped/types/jqueryui/index.d.ts"
+		//],
 		["../../DefinitelyTyped/types/less/index.d.ts"],
 		["../../DefinitelyTyped/types/marked/index.d.ts"],
 		["../../DefinitelyTyped/types/mkdirp/index.d.ts"],
 		["../../DefinitelyTyped/types/mocha/index.d.ts"],
 		["../../DefinitelyTyped/types/minimist/index.d.ts"],
 		["../../DefinitelyTyped/types/mustache/index.d.ts"],
-		/*["../../DefinitelyTyped/types/node/index.d.ts"],
-		[
-			"../../DefinitelyTyped/types/node/index.d.ts",
-			"../../DefinitelyTyped/types/nw.js/index.d.ts"
-		],*/
+		["../../DefinitelyTyped/types/ncp/index.d.ts"],
+		//["../../DefinitelyTyped/types/node/index.d.ts"],
+		//[
+		//	"../../DefinitelyTyped/types/node/index.d.ts",
+		//	"../../DefinitelyTyped/types/nw.js/index.d.ts"
+		//],
 		["../../DefinitelyTyped/types/page/index.d.ts"],
-		["../../DefinitelyTyped/types/pdf/index.d.ts"],
+		["../../DefinitelyTyped/types/pdfjs-dist/index.d.ts"],
 		["../../DefinitelyTyped/types/pixi.js/index.d.ts"],
 		["../../DefinitelyTyped/types/qunit/index.d.ts"],
 		["../../DefinitelyTyped/types/rimraf/index.d.ts"],
 		//["../../DefinitelyTyped/types/semver/index.d.ts"],
+		["../../DefinitelyTyped/types/sizzle/index.d.ts"],
 		["../../DefinitelyTyped/types/source-map/index.d.ts"],
 		["../../DefinitelyTyped/types/swfobject/index.d.ts"],
 		["../../DefinitelyTyped/types/twitter/index.d.ts"],
-		//["../../DefinitelyTyped/types/underscore/index.d.ts"],
+		["../../DefinitelyTyped/types/underscore/index.d.ts"],
+		["../../DefinitelyTyped/types/yosay/index.d.ts"],
 		["../../DefinitelyTyped/types/zynga-scroller/index.d.ts"],
 	];
 	(function next()
