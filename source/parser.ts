@@ -1545,7 +1545,10 @@ export default class
 							}
 							else
 							{
-								throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedClassName + " to implement.");
+								//this is a bug in dts2as, and we warn the user that something went
+								//wrong, but we continue anyway because the output may still be
+								//useful, even if not complete
+								console.error("Error: Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedClassName + " to implement.");
 							}
 						});
 						break;
@@ -1713,7 +1716,8 @@ export default class
 						{
 							(existingInterface as as3.InterfaceDefinition).interfaces.push(otherInterface);
 						}
-						else if(otherInterface.getFullyQualifiedName() === as3.BuiltIns[as3.BuiltIns.Object])
+						else if(otherInterface !== null &&
+							otherInterface.getFullyQualifiedName() === as3.BuiltIns[as3.BuiltIns.Object])
 						{
 							//ignore when an interface extends Object because
 							//everything is an Object already
@@ -1731,7 +1735,10 @@ export default class
 						}
 						else
 						{
-							throw new Error("Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.");
+							//this is a bug in dts2as, and we warn the user that something went
+							//wrong, but we continue anyway because the output may still be
+							//useful, even if not complete
+							console.error("Error: Interface " + this.getAS3FullyQualifiedNameFromTSTypeNode(type) + " not found for " + fullyQualifiedInterfaceName + " to extend.");
 						}
 					});
 				});
@@ -2203,7 +2210,11 @@ export default class
 		let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
 		if(!propertyType)
 		{
-			throw new Error("Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " not found for property " + propertyName + " on type " + as3Type.getFullyQualifiedName() + ".");
+			//this is a bug in dts2as, and we warn the user that something went
+			//wrong, but we continue anyway because the output may still be
+			//useful, even if not complete
+			console.error("Error: Type " + this.getAS3FullyQualifiedNameFromTSTypeNode(propertyDeclaration.type) + " not found for property " + propertyName + " on type " + as3Type.getFullyQualifiedName() + ".");
+			propertyType = as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions) as as3.TypeDefinition;
 		}
 		as3Property.type = propertyType;
 		if("superClass" in as3Type)
@@ -2259,7 +2270,11 @@ export default class
 					functionName = this.declarationNameToString(functionLikeDeclaration.name);
 				}
 				let parameterTypeName = this.getAS3FullyQualifiedNameFromTSTypeNode(value.type);
-				throw new Error("Type " + parameterTypeName + " not found for parameter " + parameterName + " in function " + functionName + ".");
+				//this is a bug in dts2as, and we warn the user that something went
+				//wrong, but we continue anyway because the output may still be
+				//useful, even if not complete
+				console.error("Error: Type " + parameterTypeName + " not found for parameter " + parameterName + " in function " + functionName + ".");
+				parameterType = <as3.TypeDefinition> as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions);
 			}
 			if(parameterType instanceof as3.InterfaceDefinition)
 			{
@@ -2381,7 +2396,11 @@ export default class
 		let methodType = this.getAS3TypeFromTSTypeNode(functionDeclaration.type, as3Type);
 		if(!methodType)
 		{
-			throw new Error("Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + "() on type " + as3Type.getFullyQualifiedName() + ".");
+			//this is a bug in dts2as, and we warn the user that something went
+			//wrong, but we continue anyway because the output may still be
+			//useful, even if not complete
+			console.error("Error: Return type " + this.getAS3FullyQualifiedNameFromTSTypeNode(functionDeclaration.type) + " not found for method " + methodName + "() on type " + as3Type.getFullyQualifiedName() + ".");
+			methodType = as3.getDefinitionByName(as3.BuiltIns[as3.BuiltIns.Object], this._definitions) as as3.TypeDefinition;
 		}
 		let methodParameters = this.populateParameters(functionDeclaration);
 		this.mergeFunctionParameters(as3Method, methodParameters);
