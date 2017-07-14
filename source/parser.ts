@@ -669,10 +669,10 @@ export default class
 		{
 			typeInSource = this._typeAliasMap[typeInSource];
 		}
-		let modules = this._moduleStack.slice();
-		while(modules.length > 0)
+		let moduleStack = this._moduleStack.slice();
+		while(moduleStack.length > 0)
 		{
-			let packageName = this.getCamelCasePackage(modules.join("."));
+			let packageName = this.getCamelCasePackage(moduleStack.join("."));
 			if(packageName)
 			{
 				let typeInSourceWithPackage = packageName + "." + typeInSource;
@@ -682,7 +682,7 @@ export default class
 					typeInSource = typeInSourceWithPackage;
 				}
 			}
-			modules.pop();
+			moduleStack.pop();
 		}
 		for(let moduleAlias in this._importModuleMap)
 		{
@@ -705,7 +705,7 @@ export default class
 			}
 			return false;
 		});
-		var moduleStack = this._moduleStack.slice();
+		moduleStack = this._moduleStack.slice();
 		while(moduleStack.length > 0)
 		{
 			let packageName = this.getCamelCasePackage(moduleStack.join("."));
