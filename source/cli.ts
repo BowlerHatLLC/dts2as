@@ -38,7 +38,7 @@ let fileNames: string[];
 let debugLevel: DebugLevel = DebugLevel.NONE;
 let excludedSymbols: string[];
 let includedSymbols: string[];
-let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5;
+let scriptTarget: ts.ScriptTarget = ts.ScriptTarget.Latest;
 let moduleMetadata = false;
 
 let params = minimist(process.argv.slice(2),
@@ -143,6 +143,11 @@ for(let key in params)
 				case "ES2017":
 				{
 					scriptTarget = ts.ScriptTarget.ES2017;
+					break;
+				}
+				case "Latest":
+				{
+					scriptTarget = ts.ScriptTarget.Latest;
 					break;
 				}
 				default:
@@ -575,6 +580,6 @@ function printUsage()
 	console.info(" --moduleMetadata                  Include [JSModule] metadata for external modules.")
 	console.info(" -e SYMBOL, --exclude SYMBOL       Specify the fully-qualified name of a symbol to exclude when emitting ActionScript.");
 	console.info(" -i SYMBOL, --include SYMBOL       Specify the fully-qualified name of a symbol to include when emitting ActionScript. Excludes all other symbols.");
-	console.info(" -t VERSION, --target VERSION      Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), 'ES2015', 'ES2016', or 'ES2017'");
+	console.info(" -t VERSION, --target VERSION      Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5', 'ES2015', 'ES2016', 'ES2017', or 'Latest' (default)");
 	console.info(" -v, --version                     Print the version of dts2as.");
 }

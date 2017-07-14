@@ -24,7 +24,7 @@ describe("The parser", () =>
 	let parser: TS2ASParser;
 	it("must parse the ES5 standard library", () =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 		let es5Path = require.resolve("typescript");
 		es5Path = path.dirname(es5Path);
@@ -74,7 +74,7 @@ describe("A TypeScript definition", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may declare a class", () =>
@@ -224,7 +224,7 @@ describe("A class", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("must use interface method signature when class overrides parameter type", () =>
@@ -384,7 +384,7 @@ describe("An enum", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a property", () =>
@@ -428,7 +428,7 @@ describe("An interface", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a property", () =>
@@ -493,7 +493,7 @@ describe("A function", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
@@ -837,36 +837,12 @@ describe("A function", () =>
 	});
 });
 
-describe("A variable (using ES2015 target)", () =>
-{
-	let parser: TS2ASParser;
-	beforeAll(() =>
-	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES2015);
-		parser.debugLevel = DebugLevel.WARN;
-	});
-	describe("when typed as the symbol type in TypeScript", () =>
-	{
-		it("is typed as Symbol in ActionScript", () =>
-		{
-			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
-			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("symbolPrimitive", symbols);
-			expect(as3Variable).not.toBeNull();
-			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
-			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
-			let as3Type = as3Variable.type;
-			expect(as3Type).not.toBeNull();
-			expect(as3Type.getFullyQualifiedName()).toBe("Symbol");
-		});
-	});
-});
-
 describe("A variable", () =>
 {
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	describe("when typed as a union type in TypeScript", () =>
@@ -951,6 +927,20 @@ describe("A variable", () =>
 			let as3Type = as3Variable.type;
 			expect(as3Type).not.toBeNull();
 			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+		});
+	});
+	describe("when typed as the symbol type in TypeScript", () =>
+	{
+		it("is typed as Symbol in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("symbolPrimitive", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe("Symbol");
 		});
 	});
 	describe("when typed as the null type in TypeScript", () =>
@@ -1044,7 +1034,7 @@ describe("A method", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
@@ -1363,7 +1353,7 @@ describe("A constructor", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have a parameter", () =>
@@ -1563,7 +1553,7 @@ describe("A decomposed class", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may have multiple static side interfaces with constructors and the same name", () =>
@@ -1783,7 +1773,7 @@ describe("A module", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may be exported with a different name", () =>
@@ -1840,7 +1830,7 @@ describe("A type alias", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	it("may be declared", () =>
@@ -1886,7 +1876,7 @@ describe("An import", () =>
 	let parser: TS2ASParser;
 	beforeAll(() =>
 	{
-		parser = new TS2ASParser(ts.ScriptTarget.ES5);
+		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
 	describe("declared in a module", () =>

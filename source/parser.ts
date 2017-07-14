@@ -96,7 +96,7 @@ export interface ParserResult
 
 export default class
 {
-	constructor(scriptTarget: ts.ScriptTarget = ts.ScriptTarget.ES5)
+	constructor(scriptTarget: ts.ScriptTarget = ts.ScriptTarget.Latest)
 	{
 		this._scriptTarget = scriptTarget;
 	}
@@ -222,6 +222,11 @@ export default class
 			case ts.ScriptTarget.ES2017:
 			{
 				standardLibFileName = "lib.es2017.d.ts";
+				break;
+			}
+			case ts.ScriptTarget.Latest:
+			{
+				standardLibFileName = "lib.esnext.d.ts";
 				break;
 			}
 			default:
