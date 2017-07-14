@@ -2222,7 +2222,7 @@ export default class
 		let isStatic = false;
 		if(propertyDeclaration.modifiers)
 		{
-			isStatic = propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+			isStatic = propertyDeclaration.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword);
 		}
 		//if the property is declared more than once, skip it!
 		let propertyAlreadyExists = as3Type.properties.some((property) =>
@@ -2248,7 +2248,7 @@ export default class
 		let isStatic = false;
 		if(propertyDeclaration.modifiers)
 		{
-			isStatic = propertyDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+			isStatic = propertyDeclaration.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword);
 		}
 		let as3Property = as3Type.getProperty(propertyName, isStatic);
 		if(as3Property === null)
@@ -2405,7 +2405,11 @@ export default class
 			//this method can be ignored
 			return null;
 		}
-		let isStatic = functionDeclaration.modifiers && functionDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+		let isStatic = false;
+		if(functionDeclaration.modifiers)
+		{
+			isStatic = functionDeclaration.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword);
+		}
 		//if the property is declared more than once, skip it!
 		let methodAlreadyExists = as3Type.methods.some((method) =>
 		{
@@ -2432,7 +2436,7 @@ export default class
 		let isStatic = false;
 		if(functionDeclaration.modifiers)
 		{
-			isStatic = functionDeclaration.modifiers.some(modifier => (modifier.kind & ts.ModifierFlags.Static) === ts.ModifierFlags.Static);
+			isStatic = functionDeclaration.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.StaticKeyword);
 		}
 		let as3Method = as3Type.getMethod(methodName, isStatic);
 		if(as3Method === null)
