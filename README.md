@@ -1,6 +1,6 @@
 # dts2as
 
-A command line utility that converts TypeScript definitions (d.ts files) to ActionScript classes and interfaces and generates a SWC file. Use these SWCs with Apache FlexJS for strict compile-time type checking, as if the JavaScript library were written in ActionScript. Add the SWCs to IDEs, like Flash Builder and IntelliJ IDEA, and you'll get helpful code suggestions as you type.
+A command line utility that converts TypeScript definitions (d.ts files) to ActionScript classes and interfaces and generates a SWC file. Use these SWCs with Apache FlexJS for strict compile-time type checking, as if the JavaScript library were written in ActionScript. You can add the SWCs to IDEs, like [Visual Studio Code](https://nextgenactionscript.com/vscode/), Flash Builder, or IntelliJ IDEA, and you'll get helpful code suggestions as you type.
 
 ## Installation
 
@@ -54,15 +54,23 @@ The following arguments are available:
 
 	Print the version of `dts2as`.
 
-## Compiling with Apache FlexJS
+## Using the SWC with Apache FlexJS
 
-To use the generated SWC file with Apache FlexJS, append it to the external library path:
+To use the generated SWC file with Apache FlexJS, you need to append it to the *external* library path.
+
+If you're using the FlexJS framework components, you can compile with `mxmlc`:
+
+```
+mxmlc --external-library-path+=generated.swc src/MyProject.mxml
+```
+
+For pure ActionScript projects that target native JavaScript APIs, like the HTML DOM, you can compile with `asjsc`:
 
 ```
 asjsc --external-library-path+=generated.swc src/MyProject.as
 ```
 
-For more details, please read the following tutorial:
+For more details, please check out the following tutorial:
 
 [Introduction to `dts2as`: Using TypeScript definitions with ActionScript](http://nextgenactionscript.com/tutorials/dts2as-typescript-definitions-with-actionscript/)
 
