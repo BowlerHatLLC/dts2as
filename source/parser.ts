@@ -1972,6 +1972,11 @@ export default class
 			//this is just a duplicate variable that we can ignore.
 			return null;
 		}
+		else if(existingDefinition instanceof as3.PackageVariableDefinition)
+		{
+			//this is just a duplicate variable that we can ignore.
+			return null;
+		}
 		else if(existingDefinition !== null)
 		{
 			throw new Error("Definition with name " + fullyQualifiedName + " already exists. Cannot create package variable.");
