@@ -1,1 +1,1 @@
-export var exportVariable {}
+export var exportVariable;

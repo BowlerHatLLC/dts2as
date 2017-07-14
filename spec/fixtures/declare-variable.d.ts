@@ -1,1 +1,1 @@
-declare var declareVariable {}
+declare var declareVariable;
