@@ -845,6 +845,20 @@ describe("A variable", () =>
 		parser = new TS2ASParser(ts.ScriptTarget.Latest);
 		parser.debugLevel = DebugLevel.WARN;
 	});
+	describe("in a namespace", () =>
+	{
+		it("may omit a type and be typed with initializer", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-initializer-instead-of-type.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("NamespaceWithInitializerVar.initializerVar", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+		});
+	});
 	describe("when typed as a union type in TypeScript", () =>
 	{
 		it("is typed as Object in ActionScript", () =>

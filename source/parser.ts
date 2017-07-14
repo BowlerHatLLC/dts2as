@@ -464,6 +464,41 @@ export default class
 		}
 		return commonType;
 	}
+
+	private literalKindToTypeName(kind: ts.SyntaxKind): string
+	{
+		switch(kind)
+		{
+			case ts.SyntaxKind.StringLiteral:
+			{
+				//variable: "some value";
+				return as3.BuiltIns[as3.BuiltIns.String];
+			}
+			case ts.SyntaxKind.NumericLiteral:
+			{
+				//variable: 1234;
+				return as3.BuiltIns[as3.BuiltIns.Number];
+			}
+			case ts.SyntaxKind.TrueKeyword:
+			{
+				//variable: true;
+				return as3.BuiltIns[as3.BuiltIns.Boolean];
+			}
+			case ts.SyntaxKind.FalseKeyword:
+			{
+				//variable: false;
+				return as3.BuiltIns[as3.BuiltIns.Boolean];
+			}
+			default:
+			{
+				if(this.debugLevel >= DebugLevel.WARN && !this._currentFileIsExternal)
+				{
+					console.warn("Unknown literal type: " + kind);
+				}
+			}
+		}
+		return null;
+	}
 	
 	//checks the kind property of the TypeNode to see if a type can be
 	//determined without parsing the raw text.
@@ -499,41 +534,10 @@ export default class
 				case ts.SyntaxKind.LiteralType:
 				{
 					let literalType = <ts.LiteralTypeNode> type;
-					switch(literalType.literal.kind)
+					let literalName = this.literalKindToTypeName(literalType.literal.kind);
+					if(literalName !== null)
 					{
-						case ts.SyntaxKind.StringLiteral:
-						{
-							//variable: "some value";
-							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
-							break;
-						}
-						case ts.SyntaxKind.NumericLiteral:
-						{
-
-							//variable: 1234;
-							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Number];
-							break;
-						}
-						case ts.SyntaxKind.TrueKeyword:
-						{
-
-							//variable: true;
-							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
-							break;
-						}
-						case ts.SyntaxKind.FalseKeyword:
-						{
-							//variable: false;
-							fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
-							break;
-						}
-						default:
-						{
-							if(this.debugLevel >= DebugLevel.WARN && !this._currentFileIsExternal)
-							{
-								console.warn("Unknown literal type: " + literalType.literal.kind);
-							}
-						}
+						fullyQualifiedName = literalName;
 					}
 					break;
 				}
@@ -718,7 +722,7 @@ export default class
 		return typeInSource;
 	}
 	
-	private getAS3TypeFromTSTypeNode(type: ts.TypeNode, as3Type?: as3.TypeDefinition): as3.TypeDefinition
+	private getAS3TypeFromTSTypeNode(type: ts.TypeNode, as3Type?: as3.TypeDefinition, initializer?: ts.Expression): as3.TypeDefinition
 	{
 		let typeName = as3.BuiltIns[as3.BuiltIns.void];
 		if(type)
@@ -727,6 +731,14 @@ export default class
 			if(as3Type && typeName === "this")
 			{
 				return as3Type;
+			}
+		}
+		else if(initializer)
+		{
+			let initializerTypeName = this.literalKindToTypeName(initializer.kind);
+			if(initializerTypeName)
+			{
+				typeName = initializerTypeName;
 			}
 		}
 		return <as3.TypeDefinition> as3.getDefinitionByName(typeName, this._definitions);
@@ -1978,7 +1990,7 @@ export default class
 			throw new Error("Package-level variable not found: " + fullyQualifiedPackageVariableName);
 		}
 		
-		let variableType = this.getAS3TypeFromTSTypeNode(variableDeclaration.type);
+		let variableType = this.getAS3TypeFromTSTypeNode(variableDeclaration.type, undefined, variableDeclaration.initializer);
 		if(as3PackageLevelDefinition instanceof as3.PackageVariableDefinition)
 		{
 			let as3PackageVariable = <as3.PackageVariableDefinition> as3PackageLevelDefinition;
@@ -2255,7 +2267,7 @@ export default class
 		{
 			throw new Error("Property " + propertyName + " not found on type " + as3Type.getFullyQualifiedName() + ".");
 		}
-		let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type);
+		let propertyType = this.getAS3TypeFromTSTypeNode(propertyDeclaration.type, as3Type, propertyDeclaration.initializer);
 		if(!propertyType)
 		{
 			//this is a bug in dts2as, and we warn the user that something went
