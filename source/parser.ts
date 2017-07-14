@@ -645,15 +645,20 @@ export default class
 		{
 			typeInSource = this._typeAliasMap[typeInSource];
 		}
-		let packageName = this.getCamelCasePackage(this._moduleStack.join("."));
-		if(packageName)
+		let modules = this._moduleStack.slice();
+		while(modules.length > 0)
 		{
-			let typeInSourceWithPackage = packageName + "." + typeInSource;
-			while(typeInSourceWithPackage in this._typeAliasMap)
+			let packageName = this.getCamelCasePackage(modules.join("."));
+			if(packageName)
 			{
-				typeInSourceWithPackage = this._typeAliasMap[typeInSourceWithPackage];
-				typeInSource = typeInSourceWithPackage;
+				let typeInSourceWithPackage = packageName + "." + typeInSource;
+				while(typeInSourceWithPackage in this._typeAliasMap)
+				{
+					typeInSourceWithPackage = this._typeAliasMap[typeInSourceWithPackage];
+					typeInSource = typeInSourceWithPackage;
+				}
 			}
+			modules.pop();
 		}
 		for(let moduleAlias in this._importModuleMap)
 		{
