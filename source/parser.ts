@@ -1444,7 +1444,7 @@ export default class
 		throw new Error("Cannot find existing definition to replace, with name " + as3Class.getFullyQualifiedName());
 	}
 	
-	private populateTypeParameters(declaration: ts.Declaration)
+	private populateTypeParameters(declaration: ts.NamedDeclaration)
 	{
 		let names: string[] = [];
 		let restore = {};
