@@ -77,12 +77,16 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 			"../../DefinitelyTyped/types/preloadjs/index.d.ts",
 		],
 		["../../DefinitelyTyped/types/angular/index.d.ts"],
-		//["../../DefinitelyTyped/types/backbone/index.d.ts"],
+		[
+			//backbone modifies jquery types, so they must be
+			//compiled together
+			"../../DefinitelyTyped/types/jquery/index.d.ts",
+			"../../DefinitelyTyped/types/backbone/index.d.ts"
+		],
 		["../../DefinitelyTyped/types/bootstrap/index.d.ts"],
-		//["../../DefinitelyTyped/types/box2d/index.d.ts"],
+		["../../DefinitelyTyped/types/box2d/index.d.ts"],
 		["../../DefinitelyTyped/types/chartjs/index.d.ts"],
 		["../../DefinitelyTyped/types/colors/index.d.ts"],
-		//["../../DefinitelyTyped/types/commonmark/index.d.ts"],
 		["../../DefinitelyTyped/types/facebook-js-sdk/index.d.ts"],
 		["../../DefinitelyTyped/types/firebase/index.d.ts"],
 		["../../DefinitelyTyped/types/fb/index.d.ts"],
@@ -95,13 +99,13 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 		["../../DefinitelyTyped/types/humane/index.d.ts"],
 		["../../DefinitelyTyped/types/ionic/index.d.ts"],
 		["../../DefinitelyTyped/types/jade/index.d.ts"],
-		//["../../DefinitelyTyped/types/jquery/index.d.ts"],
-		//[
+		["../../DefinitelyTyped/types/jquery/index.d.ts"],
+		[
 			//jquery ui modifies jquery types, so they must be
 			//compiled together
-		//	"../../DefinitelyTyped/types/jquery/index.d.ts",
-		//	"../../DefinitelyTyped/types/jqueryui/index.d.ts"
-		//],
+			"../../DefinitelyTyped/types/jquery/index.d.ts",
+			"../../DefinitelyTyped/types/jqueryui/index.d.ts"
+		],
 		["../../DefinitelyTyped/types/less/index.d.ts"],
 		["../../DefinitelyTyped/types/marked/index.d.ts"],
 		["../../DefinitelyTyped/types/mkdirp/index.d.ts"],
@@ -110,16 +114,11 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 		["../../DefinitelyTyped/types/mustache/index.d.ts"],
 		["../../DefinitelyTyped/types/ncp/index.d.ts"],
 		//["../../DefinitelyTyped/types/node/index.d.ts"],
-		//[
-		//	"../../DefinitelyTyped/types/node/index.d.ts",
-		//	"../../DefinitelyTyped/types/nw.js/index.d.ts"
-		//],
 		["../../DefinitelyTyped/types/page/index.d.ts"],
 		["../../DefinitelyTyped/types/pdfjs-dist/index.d.ts"],
 		["../../DefinitelyTyped/types/pixi.js/index.d.ts"],
 		["../../DefinitelyTyped/types/qunit/index.d.ts"],
 		["../../DefinitelyTyped/types/rimraf/index.d.ts"],
-		//["../../DefinitelyTyped/types/semver/index.d.ts"],
 		["../../DefinitelyTyped/types/sizzle/index.d.ts"],
 		["../../DefinitelyTyped/types/source-map/index.d.ts"],
 		["../../DefinitelyTyped/types/swfobject/index.d.ts"],
