@@ -48,7 +48,7 @@ The following arguments are available:
 
 * `-t VERSION` or `--target VERSION`
 
-	Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5' (default), or 'ES6'
+	Specify ECMAScript target version for the TypeScript standard library: 'ES3', 'ES5', 'ES2015', 'ES2016', 'ES2017', or 'Latest' (default)
 
 * `-v` or `--version`
 
