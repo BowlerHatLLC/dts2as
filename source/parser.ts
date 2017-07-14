@@ -575,6 +575,16 @@ export default class
 					fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.Boolean];
 					break;
 				}
+				case ts.SyntaxKind.TypeOperator:
+				{
+					let typeOperatorType = <ts.TypeOperatorNode> type;
+					if(typeOperatorType.operator === ts.SyntaxKind.KeyOfKeyword)
+					{
+						//variable: keyof SomeType
+						fullyQualifiedName = as3.BuiltIns[as3.BuiltIns.String];
+					}
+					break;
+				}
 			}
 		}
 		else
