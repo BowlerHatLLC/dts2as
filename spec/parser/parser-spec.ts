@@ -459,6 +459,20 @@ describe("An interface", () =>
 		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Number", symbols);
 		expect(method.type).toBe(as3MethodType);
 	});
+	it("must skip optional methods", () =>
+	{
+		let symbols = parser.parse(["spec/fixtures/interface-optional-members.d.ts"]).definitions;
+		let as3Interface = <as3.TypeDefinition> as3.getDefinitionByName("InterfaceWithOptionalMembers", symbols);
+		expect(as3Interface).not.toBeNull();
+		expect(as3Interface.methods.length).toBe(1);
+		let method = as3Interface.methods[0];
+		expect(method).not.toBeNull();
+		expect(method.name).toBe("method2");
+		expect(method.accessLevel).toBeNull();
+		expect(method.isStatic).toBe(false);
+		let as3MethodType = <as3.TypeDefinition> as3.getDefinitionByName("Boolean", symbols);
+		expect(method.type).toBe(as3MethodType);
+	});
 	it("may extend another interface", () =>
 	{
 		let symbols = parser.parse(["spec/fixtures/interface-extends-interface.d.ts"]).definitions;

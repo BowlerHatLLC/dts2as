@@ -2255,6 +2255,10 @@ export default class
 			//this property can be ignored
 			return null;
 		}
+		if(propertyDeclaration.questionToken)
+		{
+			return null;
+		}
 		let isStatic = false;
 		if(propertyDeclaration.modifiers)
 		{
@@ -2280,6 +2284,10 @@ export default class
 		{
 			//this property can be ignored
 			return;
+		}
+		if(propertyDeclaration.questionToken)
+		{
+			return null;
 		}
 		let isStatic = false;
 		if(propertyDeclaration.modifiers)
@@ -2441,6 +2449,10 @@ export default class
 			//this method can be ignored
 			return null;
 		}
+		if(functionDeclaration.questionToken)
+		{
+			return null;
+		}
 		let isStatic = false;
 		if(functionDeclaration.modifiers)
 		{
@@ -2467,6 +2479,10 @@ export default class
 		{
 			//this method can be ignored
 			return;
+		}
+		if(functionDeclaration.questionToken)
+		{
+			return null;
 		}
 		let typeParameters = this.populateTypeParameters(functionDeclaration);
 		let isStatic = false;
