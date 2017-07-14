@@ -284,6 +284,11 @@ export default class
 	private findSourceFiles(fileName: string, result: ts.SourceFile[])
 	{
 		fileName = path.resolve(fileName);
+		if(!fs.existsSync(fileName))
+		{
+			console.error("Error: could not find source file at the specified path. Expected: " + fileName);
+			return;
+		}
 		let sourceText = fs.readFileSync(fileName, "utf8");
 		let sourceFile = ts.createSourceFile(fileName, sourceText, this._scriptTarget);
 		if(this.sourceFileExists(fileName))
@@ -292,6 +297,15 @@ export default class
 		}
 		//add referenced files first, and everything will end up in the
 		//correct order
+		sourceFile.typeReferenceDirectives.forEach((fileReference) =>
+		{
+			let typeReferencePath = path.resolve(fileName, path.join("..", "..", fileReference.fileName, "index.d.ts"));
+			if(this.sourceFileExists(typeReferencePath))
+			{
+				return;
+			}
+			this.findSourceFiles(typeReferencePath, result);
+		});
 		sourceFile.referencedFiles.forEach((fileReference) =>
 		{
 			let fileName = path.resolve(path.dirname(sourceFile.fileName), fileReference.fileName);
