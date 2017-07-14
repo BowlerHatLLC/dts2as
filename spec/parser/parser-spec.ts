@@ -1013,6 +1013,20 @@ describe("A variable", () =>
 			expect(as3Type.getFullyQualifiedName()).toBe("*");
 		});
 	});
+	describe("when typed as the object primitive type in TypeScript", () =>
+	{
+		it("is typed as Object in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("objectPrimitive", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		});
+	});
 	describe("when typed as the string[] type in TypeScript", () =>
 	{
 		it("is typed as Array in ActionScript", () =>

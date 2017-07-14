@@ -6,6 +6,7 @@ declare var nullPrimitive: null;
 declare var undefinedPrimitive: undefined;
 declare var neverPrimitive: never;
 declare var symbolPrimitive: symbol;
+declare var objectPrimitive: object;
 
 declare var arrayPrimitiveGeneric: Array<string>;
 declare var arrayPrimitiveAdjacentBrackets: string[];
