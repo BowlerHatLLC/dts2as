@@ -1055,6 +1055,90 @@ describe("A variable", () =>
 			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Array]);
 		});
 	});
+	describe("when typed as the true type in TypeScript", () =>
+	{
+		it("is typed as Boolean in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-literal-types.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variableTrueLiteral", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Boolean]);
+		});
+	});
+	describe("when typed as the false type in TypeScript", () =>
+	{
+		it("is typed as Boolean in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-literal-types.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variableFalseLiteral", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Boolean]);
+		});
+	});
+	describe("when typed as a numeric literal type in TypeScript", () =>
+	{
+		it("is typed as Number in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-literal-types.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variableNumberLiteral", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+		});
+	});
+	describe("when typed as a negative numeric literal type in TypeScript", () =>
+	{
+		it("is typed as Number in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-literal-types.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variableNegativeNumberLiteral", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Number]);
+		});
+	});
+	describe("when typed as a string literal type in TypeScript", () =>
+	{
+		it("is typed as String in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-literal-types.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variableStringLiteral", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+		});
+	});
+	describe("when typed as a object literal type in TypeScript", () =>
+	{
+		it("is typed as Object in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-literal-types.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("variableObjectLiteral", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		});
+	});
 });
 
 describe("A method", () =>

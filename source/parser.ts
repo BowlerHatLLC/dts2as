@@ -479,6 +479,11 @@ export default class
 				//variable: 1234;
 				return as3.BuiltIns[as3.BuiltIns.Number];
 			}
+			case ts.SyntaxKind.PrefixUnaryExpression:
+			{
+				//variable: -1234;
+				return as3.BuiltIns[as3.BuiltIns.Number];
+			}
 			case ts.SyntaxKind.TrueKeyword:
 			{
 				//variable: true;
