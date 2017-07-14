@@ -66,6 +66,16 @@ For more details, please read the following tutorial:
 
 [Introduction to `dts2as`: Using TypeScript definitions with ActionScript](http://nextgenactionscript.com/tutorials/dts2as-typescript-definitions-with-actionscript/)
 
+## Troubleshooting
+
+TypeScript definition files support a surprisingly large subset of the TypeScript language. Sometimes, dts2as won't know how to parse some of the more advanced syntax (although it's certainly getting better at it over time!). When dts2as runs into problems, it may not be able to compile a SWC file for you. You have a few options when dts2as fails:
+
+* Use the `--exclude` option to remove some symbols that you know you won't need, or use the `--include` option to include only the symbols that you definitely need.
+
+* Modify the original d.ts file to simplify the TypeScript syntax or to remove some symbols that you don't need.
+
+* Use the `--outDir` option instead of the `--outSWC` option to generate only ActionScript files. Then, modify the ActionScript files and compile them into a SWC yourself.
+
 ## Support this project
 
 Want to see more ActionScript transpiler tools and utilities like `dts2as`? How about in-depth articles and step-by-step video tutorials that teach you how to use ActionScript with libraries like jQuery, CreateJS, and Pixi.js? Please [become a patron](http://patreon.com/josht) and support the next generation of ActionScript development on the web -- without a plugin!
