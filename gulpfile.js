@@ -69,6 +69,16 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 		[ "node_modules/typescript/lib/lib.es2017.d.ts" ],
 		//[ "node_modules/typescript/lib/typescript.d.ts" ],
 		//[ "node_modules/typescript/lib/typescriptServices.d.ts" ],
+		["../../DefinitelyTyped/types/amcharts/index.d.ts"],
+		["../../DefinitelyTyped/types/angular/index.d.ts"],
+		["../../DefinitelyTyped/types/backbone/index.d.ts"],
+		["../../DefinitelyTyped/types/bluebird/index.d.ts"],
+		["../../DefinitelyTyped/types/bootstrap/index.d.ts"],
+		["../../DefinitelyTyped/types/box2d/index.d.ts"],
+		["../../DefinitelyTyped/types/chalk/index.d.ts"],
+		["../../DefinitelyTyped/types/chartjs/index.d.ts"],
+		["../../DefinitelyTyped/types/chrome/index.d.ts"],
+		["../../DefinitelyTyped/types/colors/index.d.ts"],
 		[
 			"../../DefinitelyTyped/types/createjs-lib/index.d.ts",
 			"../../DefinitelyTyped/types/tweenjs/index.d.ts",
@@ -76,29 +86,29 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 			"../../DefinitelyTyped/types/easeljs/index.d.ts",
 			"../../DefinitelyTyped/types/preloadjs/index.d.ts",
 		],
-		["../../DefinitelyTyped/types/angular/index.d.ts"],
-		[
-			//backbone modifies jquery types, so they must be
-			//compiled together
-			"../../DefinitelyTyped/types/jquery/index.d.ts",
-			"../../DefinitelyTyped/types/backbone/index.d.ts"
-		],
-		["../../DefinitelyTyped/types/bootstrap/index.d.ts"],
-		["../../DefinitelyTyped/types/box2d/index.d.ts"],
-		["../../DefinitelyTyped/types/chartjs/index.d.ts"],
-		["../../DefinitelyTyped/types/colors/index.d.ts"],
+		["../../DefinitelyTyped/types/d3/index.d.ts"],
+		["../../DefinitelyTyped/types/dropboxjs/index.d.ts"],
+		["../../DefinitelyTyped/types/emscripten/index.d.ts"],
 		["../../DefinitelyTyped/types/facebook-js-sdk/index.d.ts"],
-		["../../DefinitelyTyped/types/firebase/index.d.ts"],
 		["../../DefinitelyTyped/types/fb/index.d.ts"],
+		["../../DefinitelyTyped/types/firebase/index.d.ts"],
+		["../../DefinitelyTyped/types/foundation/index.d.ts"],
+		["../../DefinitelyTyped/types/gapi/index.d.ts"],
 		["../../DefinitelyTyped/types/google.analytics/index.d.ts"],
+		["../../DefinitelyTyped/types/googlemaps/index.d.ts"],
 		["../../DefinitelyTyped/types/gsap/index.d.ts"],
-		["../../DefinitelyTyped/types/grunt/index.d.ts"],
 		["../../DefinitelyTyped/types/gulp/index.d.ts"],
 		["../../DefinitelyTyped/types/handlebars/index.d.ts"],
 		["../../DefinitelyTyped/types/history/index.d.ts"],
 		["../../DefinitelyTyped/types/humane/index.d.ts"],
 		["../../DefinitelyTyped/types/ionic/index.d.ts"],
 		["../../DefinitelyTyped/types/jade/index.d.ts"],
+		[
+			//jquery mobile modifies jquery types, so they must be
+			//compiled together
+			"../../DefinitelyTyped/types/jquery/index.d.ts",
+			"../../DefinitelyTyped/types/jquerymobile/index.d.ts",
+		],
 		["../../DefinitelyTyped/types/jquery/index.d.ts"],
 		[
 			//jquery ui modifies jquery types, so they must be
@@ -106,17 +116,25 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 			"../../DefinitelyTyped/types/jquery/index.d.ts",
 			"../../DefinitelyTyped/types/jqueryui/index.d.ts"
 		],
+		["../../DefinitelyTyped/types/jsen/index.d.ts"],
+		["../../DefinitelyTyped/types/json5/index.d.ts"],
+		["../../DefinitelyTyped/types/knockout/index.d.ts"],
 		["../../DefinitelyTyped/types/less/index.d.ts"],
 		["../../DefinitelyTyped/types/marked/index.d.ts"],
+		["../../DefinitelyTyped/types/material-design-lite/index.d.ts"],
+		["../../DefinitelyTyped/types/mithril/index.d.ts"],
 		["../../DefinitelyTyped/types/mkdirp/index.d.ts"],
 		["../../DefinitelyTyped/types/mocha/index.d.ts"],
 		["../../DefinitelyTyped/types/minimist/index.d.ts"],
 		["../../DefinitelyTyped/types/mustache/index.d.ts"],
-		["../../DefinitelyTyped/types/ncp/index.d.ts"],
 		//["../../DefinitelyTyped/types/node/index.d.ts"],
+		["../../DefinitelyTyped/types/nunjucks/index.d.ts"],
+		["../../DefinitelyTyped/types/optimist/index.d.ts"],
 		["../../DefinitelyTyped/types/page/index.d.ts"],
 		["../../DefinitelyTyped/types/pdfjs-dist/index.d.ts"],
 		["../../DefinitelyTyped/types/pixi.js/index.d.ts"],
+		["../../DefinitelyTyped/types/polymer/index.d.ts"],
+		["../../DefinitelyTyped/types/pug/index.d.ts"],
 		["../../DefinitelyTyped/types/qunit/index.d.ts"],
 		["../../DefinitelyTyped/types/rimraf/index.d.ts"],
 		["../../DefinitelyTyped/types/sizzle/index.d.ts"],
@@ -124,7 +142,10 @@ gulp.task("test-definitely-typed", ["build"], function(callback)
 		["../../DefinitelyTyped/types/swfobject/index.d.ts"],
 		["../../DefinitelyTyped/types/twitter/index.d.ts"],
 		["../../DefinitelyTyped/types/underscore/index.d.ts"],
+		["../../DefinitelyTyped/types/yargs/index.d.ts"],
 		["../../DefinitelyTyped/types/yosay/index.d.ts"],
+		["../../DefinitelyTyped/types/youtube/index.d.ts"],
+		["../../DefinitelyTyped/types/yui/index.d.ts"],
 		["../../DefinitelyTyped/types/zynga-scroller/index.d.ts"],
 	];
 	(function next()
@@ -155,7 +176,7 @@ function run_dts2as(files, callback)
 		process.exit(1);
 	}
 	console.info(files.join(" "));
-	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target ES2015 --debug 1 --outDir dts2astests_temp --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
+	child_process.exec("node " + path.join("bin", "cli.js") + " --flexHome " + flexHome + " --target Latest --debug 1 --outDir dts2astests_temp --outSWC " + path.join("dts2astests_temp", "test.swc") + " " + files.join(" "),
 	{},
 	function(error, stdout, stderr)
 	{
