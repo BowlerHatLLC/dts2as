@@ -17,8 +17,7 @@ limitations under the License.
 import * as path from "path";
 import * as ts from "typescript";
 import * as as3 from "./as3";
-import TS2ASParser from "./parser";
-import {DebugLevel} from "./parser";
+import TS2ASParser, {DebugLevel} from "./parser";
 
 describe("The parser", () =>
 {
@@ -838,6 +837,30 @@ describe("A function", () =>
 	});
 });
 
+describe("A variable (using ES2015 target)", () =>
+{
+	let parser: TS2ASParser;
+	beforeAll(() =>
+	{
+		parser = new TS2ASParser(ts.ScriptTarget.ES2015);
+		parser.debugLevel = DebugLevel.WARN;
+	});
+	describe("when typed as the symbol type in TypeScript", () =>
+	{
+		it("is typed as Symbol in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("symbolPrimitive", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe("Symbol");
+		});
+	});
+});
+
 describe("A variable", () =>
 {
 	let parser: TS2ASParser;
@@ -928,6 +951,48 @@ describe("A variable", () =>
 			let as3Type = as3Variable.type;
 			expect(as3Type).not.toBeNull();
 			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.String]);
+		});
+	});
+	describe("when typed as the null type in TypeScript", () =>
+	{
+		it("is typed as Object in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("nullPrimitive", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe(as3.BuiltIns[as3.BuiltIns.Object]);
+		});
+	});
+	describe("when typed as the undefined type in TypeScript", () =>
+	{
+		it("is typed as * in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("undefinedPrimitive", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe("*");
+		});
+	});
+	describe("when typed as the never type in TypeScript", () =>
+	{
+		it("is typed as * in ActionScript", () =>
+		{
+			let symbols = parser.parse(["spec/fixtures/variable-primitives.d.ts"]).definitions;
+			let as3Variable = <as3.PackageVariableDefinition> as3.getDefinitionByName("neverPrimitive", symbols);
+			expect(as3Variable).not.toBeNull();
+			expect(as3Variable.constructor).toBe(as3.PackageVariableDefinition);
+			expect(as3Variable.accessLevel).toBe(as3.AccessModifiers[as3.AccessModifiers.public]);
+			let as3Type = as3Variable.type;
+			expect(as3Type).not.toBeNull();
+			expect(as3Type.getFullyQualifiedName()).toBe("*");
 		});
 	});
 	describe("when typed as the string[] type in TypeScript", () =>
