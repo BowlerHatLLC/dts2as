@@ -1,5 +1,7 @@
 # dts2as
 
+*Note: This project is no longer under active development.*
+
 A command line utility that converts TypeScript definitions (d.ts files) to ActionScript classes and interfaces and generates a SWC file. Use these SWCs with Apache FlexJS for strict compile-time type checking, as if the JavaScript library were written in ActionScript. You can add the SWCs to IDEs, like [Visual Studio Code](https://nextgenactionscript.com/vscode/), Flash Builder, or IntelliJ IDEA, and you'll get helpful code suggestions as you type.
 
 ## Installation
@@ -84,11 +86,7 @@ TypeScript definition files support a surprisingly large subset of the TypeScrip
 
 * Use the `--outDir` option instead of the `--outSWC` option to generate only ActionScript files. Then, modify the ActionScript files and compile them into a SWC yourself.
 
-## Support this project
-
-Want to see more ActionScript transpiler tools and utilities like `dts2as`? How about in-depth articles and step-by-step video tutorials that teach you how to use ActionScript with libraries like jQuery, CreateJS, and Pixi.js? Please [become a patron](http://patreon.com/josht) and support the next generation of ActionScript development on the web -- without a plugin!
-
-[NextGen ActionScript by Josh Tynjala on Patreon](http://patreon.com/josht)
+---
 
 Special thanks to the following sponsors for their generous support:
 
