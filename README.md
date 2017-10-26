@@ -1,6 +1,6 @@
 # dts2as
 
-*Note: This project is no longer under active development.*
+*Note: This project is no longer under active development. Use at your own risk.*
 
 A command line utility that converts TypeScript definitions (d.ts files) to ActionScript classes and interfaces and generates a SWC file. Use these SWCs with Apache FlexJS for strict compile-time type checking, as if the JavaScript library were written in ActionScript. You can add the SWCs to IDEs, like [Visual Studio Code](https://nextgenactionscript.com/vscode/), Flash Builder, or IntelliJ IDEA, and you'll get helpful code suggestions as you type.
 
